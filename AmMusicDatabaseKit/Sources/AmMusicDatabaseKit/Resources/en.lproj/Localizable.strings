@@ -1,0 +1,8 @@
+"%@ Copy" = "%@ Copy";
+"DatabaseManager audit runtime is unavailable" = "DatabaseManager audit runtime is unavailable";
+"DatabaseManager is not initialized" = "DatabaseManager is not initialized";
+"DatabaseManager write runtime is unavailable" = "DatabaseManager write runtime is unavailable";
+"Found %ld invalid library paths" = "Found %ld invalid library paths";
+"Found %ld orphan artwork files" = "Found %ld orphan artwork files";
+"Found %ld orphan lyrics files" = "Found %ld orphan lyrics files";
+"Found %ld playlist entries without backing files" = "Found %ld playlist entries without backing files";

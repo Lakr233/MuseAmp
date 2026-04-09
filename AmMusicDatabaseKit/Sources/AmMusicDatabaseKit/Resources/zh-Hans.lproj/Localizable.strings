@@ -1,0 +1,8 @@
+"%@ Copy" = "%@ 副本";
+"DatabaseManager audit runtime is unavailable" = "DatabaseManager 审计运行时不可用";
+"DatabaseManager is not initialized" = "DatabaseManager 尚未初始化";
+"DatabaseManager write runtime is unavailable" = "DatabaseManager 写入运行时不可用";
+"Found %ld invalid library paths" = "发现 %ld 个无效的媒体库路径";
+"Found %ld orphan artwork files" = "发现 %ld 个孤立封面文件";
+"Found %ld orphan lyrics files" = "发现 %ld 个孤立歌词文件";
+"Found %ld playlist entries without backing files" = "发现 %ld 个缺少源文件的播放列表条目";

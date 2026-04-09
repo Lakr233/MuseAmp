@@ -1,0 +1,14 @@
+"<root>" = "<root>";
+"Albums" = "Albums";
+"Artists" = "Artists";
+"Failed to decode %@ from %@: %@" = "Failed to decode %@ from %@: %@";
+"Request to %@ failed: %@" = "Request to %@ failed: %@";
+"Songs" = "Songs";
+"The request could not be created." = "The request could not be created.";
+"The server returned HTTP %ld." = "The server returned HTTP %ld.";
+"The server returned an invalid response." = "The server returned an invalid response.";
+"data corrupted at %@: %@" = "data corrupted at %@: %@";
+"missing key '%@' at %@" = "missing key '%@' at %@";
+"missing value for %@ at %@" = "missing value for %@ at %@";
+"server" = "server";
+"type mismatch for %@ at %@" = "type mismatch for %@ at %@";

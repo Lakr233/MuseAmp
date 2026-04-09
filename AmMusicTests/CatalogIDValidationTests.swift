@@ -1,0 +1,101 @@
+@testable import AmMusic
+import AmMusicDatabaseKit
+import Foundation
+import Testing
+
+// MARK: - isCatalogID Tests
+
+@Suite(.serialized)
+struct CatalogIDTests {
+    @Test("numeric string is a catalog ID")
+    func numericIsCatalog() {
+        #expect("1234567890".isCatalogID)
+    }
+
+    @Test("single digit is a catalog ID")
+    func singleDigitIsCatalog() {
+        #expect("0".isCatalogID)
+    }
+
+    @Test("empty string is not a catalog ID")
+    func emptyIsNotCatalog() {
+        #expect(!"".isCatalogID)
+    }
+
+    @Test("UUID string is not a catalog ID")
+    func uuidIsNotCatalog() {
+        #expect(!"D07CF011-0737-4F02-8E5B-859BB6DDF179".isCatalogID)
+    }
+
+    @Test("alphabetic string is not a catalog ID")
+    func alphaIsNotCatalog() {
+        #expect(!"unknown".isCatalogID)
+    }
+
+    @Test("artist-album folder name is not a catalog ID")
+    func folderNameIsNotCatalog() {
+        #expect(!"王靖雯 - 大概是因为你的到来".isCatalogID)
+    }
+
+    @Test("mixed alphanumeric is not a catalog ID")
+    func mixedIsNotCatalog() {
+        #expect(!"abc123".isCatalogID)
+    }
+}
+
+// MARK: - Managed Path Tests
+
+@Suite(.serialized)
+@MainActor
+struct PathConformanceTests {
+    @Test("syncLibrary removes files outside the managed album/track layout")
+    func removesInvalidPaths() async throws {
+        let sandbox = TestLibrarySandbox()
+        let locations = LibraryPaths(baseDirectory: sandbox.baseDirectory)
+        try locations.ensureDirectoriesExist()
+        let database = try sandbox.makeDatabase()
+        let indexer = SongLibraryIndexer(databaseManager: database.databaseManager)
+
+        let relativePath = "Artist/Album/Track.m4a"
+        let fileURL = locations.absoluteAudioURL(for: relativePath)
+        try FileManager.default.createDirectory(
+            at: fileURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try Data("not audio".utf8).write(to: fileURL)
+
+        let result = try await indexer.syncLibrary()
+
+        #expect(result.filesScanned == 1)
+        #expect(result.upserts == 0)
+        #expect(result.deletions == 0)
+        #expect(result.purged == 0)
+        #expect(!FileManager.default.fileExists(atPath: fileURL.path))
+    }
+
+    @Test("syncLibrary prunes unreadable opaque files")
+    func keepsManagedOpaqueIDs() async throws {
+        let sandbox = TestLibrarySandbox()
+        let database = try sandbox.makeDatabase { _ in
+            throw NSError(domain: "test", code: 1, userInfo: [NSLocalizedDescriptionKey: "unreadable"])
+        }
+        let paths = database.paths
+        let indexer = SongLibraryIndexer(databaseManager: database.databaseManager)
+
+        let relativePath = "album-opaque/track-opaque.m4a"
+        let fileURL = paths.absoluteAudioURL(for: relativePath)
+        try FileManager.default.createDirectory(
+            at: fileURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try Data("not audio".utf8).write(to: fileURL)
+
+        let result = try await indexer.syncLibrary()
+
+        #expect(result.filesScanned == 1)
+        #expect(result.upserts == 0)
+        #expect(result.deletions == 0)
+        #expect(result.purged == 0)
+        #expect(!FileManager.default.fileExists(atPath: fileURL.path))
+    }
+}

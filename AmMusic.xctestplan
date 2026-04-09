@@ -1,0 +1,45 @@
+{
+  "configurations" : [
+    {
+      "id" : "88105F5A-587E-41C4-8C90-074589EBF7CF",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:AmMusicDatabaseKit",
+        "identifier" : "AmMusicDatabaseKitTests",
+        "name" : "AmMusicDatabaseKitTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:AmMusic.xcodeproj",
+        "identifier" : "50CC00012F85000100CC0001",
+        "name" : "AmMusicTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:AmMusicPlayerKit",
+        "identifier" : "AmMusicPlayerKitTests",
+        "name" : "AmMusicPlayerKitTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:AmMusicKit",
+        "identifier" : "AmMusicKitTests",
+        "name" : "AmMusicKitTests"
+      }
+    }
+  ],
+  "version" : 1
+}

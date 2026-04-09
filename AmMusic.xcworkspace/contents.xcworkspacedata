@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "group:AmMusic.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:AmMusic.xctestplan">
+   </FileRef>
+   <FileRef
+      location = "group:AmMusicKit">
+   </FileRef>
+   <FileRef
+      location = "group:AmMusicDatabaseKit">
+   </FileRef>
+   <FileRef
+      location = "group:AmMusicPlayerKit">
+   </FileRef>
+</Workspace>

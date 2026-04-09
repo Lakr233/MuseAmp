@@ -1,0 +1,240 @@
+{
+  "originHash" : "8f1b4e5a99030ef361c81db58d7bca249d3ff77e6fb379fc897f8994f68b9738",
+  "pins" : [
+    {
+      "identity" : "alertcontroller",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Lakr233/AlertController.git",
+      "state" : {
+        "revision" : "f55a1c4d4dff4fb8869236342edc292b05a29e45",
+        "version" : "2.2.1"
+      }
+    },
+    {
+      "identity" : "choreographer",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/unixzii/Choreographer",
+      "state" : {
+        "revision" : "fa8cf25b0a16c499b299d357c1a64db6760a83ef",
+        "version" : "0.1.0"
+      }
+    },
+    {
+      "identity" : "colorfulx",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Lakr233/ColorfulX",
+      "state" : {
+        "revision" : "bdf19698a9fdd3d2cd3ade4a9434d443b4313b36",
+        "version" : "6.1.0"
+      }
+    },
+    {
+      "identity" : "colorvector",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Lakr233/ColorVector.git",
+      "state" : {
+        "revision" : "0cd0169f1487d7371ee3fd7fe93f1e918fd93d00",
+        "version" : "1.0.5"
+      }
+    },
+    {
+      "identity" : "configurablekit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Lakr233/ConfigurableKit",
+      "state" : {
+        "revision" : "e0cfe2c5b75b1d8cf60255433c9e50be52b484c0",
+        "version" : "4.2.0"
+      }
+    },
+    {
+      "identity" : "digger",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Lakr233/Digger",
+      "state" : {
+        "revision" : "265c84aa4a447564628d2788e63efc3ab7779d7e",
+        "version" : "0.0.5"
+      }
+    },
+    {
+      "identity" : "dog",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Lakr233/Dog",
+      "state" : {
+        "revision" : "3697b6b0e3df29f85e1194a49f67144a0dcd7ec9",
+        "version" : "0.1.1"
+      }
+    },
+    {
+      "identity" : "dominantcolors",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/DenDmitriev/DominantColors",
+      "state" : {
+        "revision" : "a05327d36092c47e9ddc77ce565eb35a5b4a4a6e",
+        "version" : "1.2.2"
+      }
+    },
+    {
+      "identity" : "glyphixtextfx",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ktiays/GlyphixTextFx/",
+      "state" : {
+        "revision" : "e1d0aa71c1849363a1bbef061d3d92f10481e62c",
+        "version" : "2.3.6"
+      }
+    },
+    {
+      "identity" : "kingfisher",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/onevcat/Kingfisher.git",
+      "state" : {
+        "revision" : "c152c1915f60c51e4afa0752656993ee5b3c63db",
+        "version" : "8.8.1"
+      }
+    },
+    {
+      "identity" : "listviewkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Lakr233/ListViewKit",
+      "state" : {
+        "revision" : "07f7adfa0629f8647991e3c148b7d3e060fe2917",
+        "version" : "1.2.0"
+      }
+    },
+    {
+      "identity" : "lnpopupcontroller",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/LeoNatan/LNPopupController",
+      "state" : {
+        "revision" : "6f4bfa89a32cc7254599869b4bca8d2638e74671",
+        "version" : "4.4.1"
+      }
+    },
+    {
+      "identity" : "lookinside",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Lakr233/LookInside",
+      "state" : {
+        "revision" : "7f5b367524f449df49ce8ebcfb2a3e303950083b",
+        "version" : "2.2.5"
+      }
+    },
+    {
+      "identity" : "lrucache",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nicklockwood/LRUCache",
+      "state" : {
+        "revision" : "cb5b2bd0da83ad29c0bec762d39f41c8ad0eaf3e",
+        "version" : "1.2.1"
+      }
+    },
+    {
+      "identity" : "msdisplaylink",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Lakr233/MSDisplayLink.git",
+      "state" : {
+        "revision" : "1ba3e769b734e456317fa7e45321fa7f53eefb67",
+        "version" : "2.1.0"
+      }
+    },
+    {
+      "identity" : "respring",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ktiays/Respring",
+      "state" : {
+        "revision" : "5efa8274a25dc44e418b3695f9fcfea9ef771087",
+        "version" : "1.0.0"
+      }
+    },
+    {
+      "identity" : "snapkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/SnapKit/SnapKit.git",
+      "state" : {
+        "revision" : "2842e6e84e82eb9a8dac0100ca90d9444b0307f4",
+        "version" : "5.7.1"
+      }
+    },
+    {
+      "identity" : "spindicator",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ivanvorobei/SPIndicator",
+      "state" : {
+        "revision" : "e8a045f91757b32bb29c6feff1644ef79c8daedf",
+        "version" : "1.6.5"
+      }
+    },
+    {
+      "identity" : "springinterpolation",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Lakr233/SpringInterpolation.git",
+      "state" : {
+        "revision" : "cdb556516daa9b43c16aae9436dd39e19ff930fd",
+        "version" : "1.4.0"
+      }
+    },
+    {
+      "identity" : "swift-argument-parser",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-argument-parser.git",
+      "state" : {
+        "revision" : "626b5b7b2f45e1b0b1c6f4a309296d1d21d7311b",
+        "version" : "1.7.1"
+      }
+    },
+    {
+      "identity" : "swift-collections",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-collections",
+      "state" : {
+        "revision" : "6675bc0ff86e61436e615df6fc5174e043e57924",
+        "version" : "1.4.1"
+      }
+    },
+    {
+      "identity" : "swifterswift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/SwifterSwift/SwifterSwift.git",
+      "state" : {
+        "revision" : "5d948a15446bddb6c367bc7e7100cfcbaa0e9b57",
+        "version" : "8.0.0"
+      }
+    },
+    {
+      "identity" : "then",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/devxoul/Then.git",
+      "state" : {
+        "revision" : "d41ef523faef0f911369f79c0b96815d9dbb6d7a",
+        "version" : "3.0.0"
+      }
+    },
+    {
+      "identity" : "variableblur",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nikstar/VariableBlur",
+      "state" : {
+        "branch" : "main",
+        "revision" : "5073a0d9080e488a2d317e04859c001a57fbb3e8"
+      }
+    },
+    {
+      "identity" : "wcdb-spm-prebuilt",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Lakr233/wcdb-spm-prebuilt",
+      "state" : {
+        "revision" : "9077e295997fd8cc1e0c0f669a40b2314af20a1a",
+        "version" : "2.1.15"
+      }
+    },
+    {
+      "identity" : "with",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ktiays/With",
+      "state" : {
+        "revision" : "a45e2f39e82322eb663a256941c06edd520a82e1",
+        "version" : "2.1.1"
+      }
+    }
+  ],
+  "version" : 3
+}

@@ -1,0 +1,15 @@
+{
+  "originHash" : "d51a8d2c7f8b3669255e24f3bff044684d6a26fc02bccac6d322d3c28539b4b7",
+  "pins" : [
+    {
+      "identity" : "wcdb-spm-prebuilt",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Lakr233/wcdb-spm-prebuilt",
+      "state" : {
+        "revision" : "9077e295997fd8cc1e0c0f669a40b2314af20a1a",
+        "version" : "2.1.15"
+      }
+    }
+  ],
+  "version" : 3
+}

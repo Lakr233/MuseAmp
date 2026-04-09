@@ -1,0 +1,14 @@
+import Foundation
+
+public struct CatalogAlbumRelationships: Decodable, Sendable {
+    public let artists: ResourceList<CatalogArtist>?
+    public let tracks: ResourceList<CatalogSong>?
+
+    public init(
+        artists: ResourceList<CatalogArtist>? = nil,
+        tracks: ResourceList<CatalogSong>? = nil
+    ) {
+        self.artists = artists
+        self.tracks = tracks
+    }
+}

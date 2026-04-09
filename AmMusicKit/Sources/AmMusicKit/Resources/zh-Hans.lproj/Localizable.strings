@@ -1,0 +1,14 @@
+"<root>" = "<根>";
+"Albums" = "专辑";
+"Artists" = "艺人";
+"Failed to decode %@ from %@: %@" = "无法解码 %@（来源 %@）：%@";
+"Request to %@ failed: %@" = "请求 %@ 失败：%@";
+"Songs" = "歌曲";
+"The request could not be created." = "无法创建请求。";
+"The server returned HTTP %ld." = "服务器返回了 HTTP %ld。";
+"The server returned an invalid response." = "服务器返回了无效响应。";
+"data corrupted at %@: %@" = "%@ 处的数据已损坏：%@";
+"missing key '%@' at %@" = "缺少键“%@”，位置：%@";
+"missing value for %@ at %@" = "缺少 %@ 的值，位置：%@";
+"server" = "服务器";
+"type mismatch for %@ at %@" = "%@ 类型不匹配，位置：%@";

@@ -1,0 +1,25 @@
+{
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      ".git/**",
+      ".claude/**",
+      "AmMusic.xcodeproj/**",
+      "AmMusic.xcworkspace/**",
+      "AmMusicTests/**",
+      "AmMusicKit/Tests/**",
+      "AmMusicPlayerKit/Tests/**",
+      "**/*.xcstrings",
+      "**/*.storyboard",
+      "**/*.xcassets/**",
+      "**/*.xcconfig",
+      "**/*.plist",
+      "**/Package.resolved",
+      ".gitignore",
+      ".gitattributes",
+      "AGENTS.md",
+      "repomix.config.json"
+    ]
+  }
+}
