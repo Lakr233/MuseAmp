@@ -11,23 +11,20 @@ struct DatabaseBootstrapper {
     let logger: DatabaseLogger
 
     func bootstrap() throws -> DatabaseBootstrapResult {
+        DBLog.info(logger, "DatabaseBootstrapper", "bootstrap started baseDirectory=\(paths.baseDirectory.path)")
         try paths.ensureDirectoriesExist()
 
-        var indexResetReason: DatabaseResetReason?
         let indexStore: IndexStore
         do {
-            var candidate = try IndexStore(databaseURL: paths.indexDatabaseURL, logger: logger)
+            let indexFileExists = FileManager.default.fileExists(atPath: paths.indexDatabaseURL.path)
+            DBLog.info(logger, "DatabaseBootstrapper", "index database path=\(paths.indexDatabaseURL.path) exists=\(indexFileExists)")
+            let candidate = try IndexStore(databaseURL: paths.indexDatabaseURL, logger: logger)
             let oldSchema = try candidate.schemaVersion()
             let oldFormat = try candidate.formatVersion()
+            let trackCount = (try? candidate.allTracks().count) ?? -1
+            DBLog.info(logger, "DatabaseBootstrapper", "index database opened schema=\(oldSchema.map(String.init) ?? "nil") format=\(oldFormat.map(String.init) ?? "nil") tracks=\(trackCount)")
             if oldSchema != DatabaseFormat.indexSchemaVersion || oldFormat != DatabaseFormat.indexFormatVersion {
-                let reason = oldSchema == nil && oldFormat == nil
-                    ? DatabaseResetReason.firstLaunch
-                    : DatabaseResetReason.indexVersionMismatch(oldSchema: oldSchema, oldFormat: oldFormat)
-                indexResetReason = reason
-                if FileManager.default.fileExists(atPath: paths.indexDatabaseURL.path) {
-                    try? FileManager.default.removeItem(at: paths.indexDatabaseURL)
-                }
-                candidate = try IndexStore(databaseURL: paths.indexDatabaseURL, logger: logger)
+                DBLog.info(logger, "DatabaseBootstrapper", "index schema stamp needed expected=\(DatabaseFormat.indexSchemaVersion)/\(DatabaseFormat.indexFormatVersion)")
                 try candidate.setSchemaVersions(
                     schema: DatabaseFormat.indexSchemaVersion,
                     format: DatabaseFormat.indexFormatVersion
@@ -41,8 +38,11 @@ struct DatabaseBootstrapper {
 
         let stateStore: StateStore
         do {
+            let stateFileExists = FileManager.default.fileExists(atPath: paths.stateDatabaseURL.path)
+            DBLog.info(logger, "DatabaseBootstrapper", "state database path=\(paths.stateDatabaseURL.path) exists=\(stateFileExists)")
             let candidate = try StateStore(databaseURL: paths.stateDatabaseURL, logger: logger)
             let oldVersion = try candidate.schemaVersion()
+            DBLog.info(logger, "DatabaseBootstrapper", "state database opened schema=\(oldVersion.map(String.init) ?? "nil")")
             try candidate.migrateIfNeeded(from: oldVersion, to: DatabaseFormat.stateSchemaVersion)
             stateStore = candidate
         } catch {
@@ -50,10 +50,11 @@ struct DatabaseBootstrapper {
             throw error
         }
 
+        DBLog.info(logger, "DatabaseBootstrapper", "bootstrap completed")
         return DatabaseBootstrapResult(
             indexStore: indexStore,
             stateStore: stateStore,
-            indexResetReason: indexResetReason
+            indexResetReason: nil
         )
     }
 }

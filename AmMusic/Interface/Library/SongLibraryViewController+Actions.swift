@@ -30,7 +30,11 @@ extension SongLibraryViewController {
         present(alert, animated: true)
 
         Task { [weak self, importer = environment.audioFileImporter] in
-            let result = await importer.importFiles(urls: urls)
+            let result = await importer.importFiles(urls: urls) { current, total in
+                alert.progressContext.purpose(
+                    message: String(localized: "Importing \(current) / \(total)...")
+                )
+            }
 
             await MainActor.run { [weak self] in
                 alert.dismiss(animated: true) {

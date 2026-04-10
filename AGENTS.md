@@ -18,12 +18,11 @@
 - `AmMusicDatabaseKit/` is the local library runtime package for file-backed library indexing, state, caches, downloads, playlists, and audit data.
 - `AmMusicKit/` is a separate package for remote music service integration.
 - `AmMusicPlayerKit/` is a separate package for playback engine integration.
-- `Docs/` contains repo-owned guidance documents. Keep project structure guidance here.
-- `Resources/` at repo root is reserved for repo-level assets only if needed later. App target resources stay under `AmMusic/Resources/`.
 
 ### Application Layer
 
 - `Application/` contains only app lifecycle and configuration: `AppDelegate.swift`, `SceneDelegate.swift`, `AppEnvironment.swift`, `AppEnvironment+Bootstrap.swift`, `AppEnvironment+Events.swift`, `AppPreferences.swift`.
+- `Configuration/` contains Xcode build configuration files (`Base.xcconfig`, `Development.xcconfig`, `Release.xcconfig`, `Version.xcconfig`).
 - All domain logic lives under `Backend/`, not `Application/`.
 
 ### Backend Layer
@@ -53,7 +52,6 @@
 - `Interface/NowPlaying/Components/`: reusable views and cells within now playing (LyricTimelineView, artwork background, queue cells, route picker).
 - `Interface/NowPlaying/LyricSheet/`: lyric selection sheet controller.
 - `Interface/NowPlaying/Support/`: logging and diagnostics helpers.
-- `Interface/Utility/`: utility views such as artwork/image presentation.
 
 ### Extension Layer
 
@@ -85,7 +83,7 @@
 - New playback state and queue mutations must continue to flow through `PlaybackController`; mini player and now playing screens observe it.
 - `PlaybackController` is responsible for local-vs-remote playback URL resolution, `MusicPlayerDelegate` bridging, and app-facing playback snapshots.
 - New tab-level or browse-level features should usually get a new folder under `AmMusic/Interface/`.
-- Shared UI goes into `Interface/Common/`, `Interface/Collections/`, or `Interface/Utility/` only when it is used by more than one feature or is clearly cross-feature infrastructure.
+- Shared UI goes into `Interface/Common/` or `Interface/Collections/` only when it is used by more than one feature or is clearly cross-feature infrastructure.
 - Shared UIKit menu and action providers belong under `Backend/MenuProviders/`.
 - If a UI type is only used by one feature, keep it inside that feature folder even if it looks reusable.
 
@@ -147,7 +145,7 @@
 
 ## Documentation Sync
 
-- Any structural directory change must update `Docs/ProjectOrganization.md` and this `AGENTS.md` in the same change.
+- Any structural directory change must update this `AGENTS.md` in the same change.
 - If a new subdomain is introduced under `Application/` or `Interface/`, document its scope and placement rules immediately.
 
 ---
@@ -170,7 +168,7 @@
 - **Import:** `import AmMusicKit`
 - **What:** Remote music catalog service — search, album/artist/song lookup, storefronts.
 - **Key type:** `RemoteMusicService(baseURL:)` with async methods: `search(query:type:limit:offset:)`, `album(id:)`, `artist(id:)`, `song(id:)`.
-- **Models:** `CatalogSong`, `CatalogAlbum`, `CatalogArtist`, `CatalogArtwork` (with `imageURL(width:height:)`).
+- **Models:** `CatalogSong`, `CatalogAlbum`, `CatalogArtist`, `Artwork` (with `imageURL(width:height:)`).
 
 ### AmMusicPlayerKit
 
@@ -202,12 +200,14 @@ func play()
 func pause()
 func togglePlayPause()
 func stop()
-func seek(to seconds: TimeInterval) async -> Bool
+func seek(to seconds: TimeInterval) async
 
 // Navigation
 func next()
 func previous()                       // restarts if currentTime > 3s
 func skip(to index: Int)              // index into upcoming items
+func skipToQueueIndex(_ index: Int)   // absolute index into ordered queue
+func skipCurrentItem()                // alias for next()
 
 // Queue editing
 func playNext(_ item: PlayerItem)
@@ -219,7 +219,20 @@ func removeFromQueue(at index: Int) -> PlayerItem?
 func removeFromQueue(id: String)
 func moveInQueue(from source: Int, to destination: Int)
 func clearUpcomingQueue()
+func replaceUpcomingQueue(_ items: [PlayerItem])
 func replaceQueue(items: [PlayerItem], startIndex: Int = 0)
+
+// Restoration
+func restorePlayback(
+    items: [PlayerItem], currentIndex: Int, shuffled: Bool,
+    repeatMode: RepeatMode, currentTime: TimeInterval, autoPlay: Bool
+) async -> Bool
+
+// Media Center
+func configureLikeCommand(title: String?, shortTitle: String?, handler: (() -> Bool)?)
+func updateNowPlayingSubtitle(_ text: String?)
+func setCurrentItemLiked(_ isLiked: Bool)
+func setPeriodicTimeObserverSuspended(_ suspended: Bool)
 ```
 
 #### MusicPlayerDelegate

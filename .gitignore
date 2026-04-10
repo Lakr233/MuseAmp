@@ -1,7 +1,6 @@
 # Project references and docs
 References/
-Docs/*
-!Docs/ProjectOrganization.md
+Docs/
 docs/
 
 # Xcode
@@ -150,5 +149,4 @@ Temporary Items
 /AmMusicKit/build
 /AmMusicPlayerKit/build
 .env-api-test
-/Docs
 PLAN.md

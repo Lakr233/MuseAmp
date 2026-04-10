@@ -17,23 +17,6 @@
         }
       }
     },
-    "%@ Copy" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ Copy"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ 副本"
-          }
-        }
-      }
-    },
     "%@, %lld minutes" : {
       "localizations" : {
         "en" : {
@@ -1474,23 +1457,6 @@
         }
       }
     },
-    "Force-rescan all local audio files and repair database mismatches." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Force-rescan all local audio files and repair database mismatches."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "强制重新扫描所有本地音频文件并修复数据库不匹配。"
-          }
-        }
-      }
-    },
     "Force-rescan all local audio files, re-extract artwork, and repair database mismatches." : {
       "localizations" : {
         "en" : {
@@ -1551,6 +1517,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在导入"
+          }
+        }
+      }
+    },
+    "Importing %lld / %lld..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importing %1$lld / %2$lld..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在导入 %1$lld / %2$lld..."
           }
         }
       }
@@ -1679,23 +1661,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在加载歌词..."
-          }
-        }
-      }
-    },
-    "Loading lyrics…" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Loading lyrics…"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在加载歌词…"
           }
         }
       }
@@ -3264,23 +3229,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "这将移除当前日志文件里的所有输出内容。"
-          }
-        }
-      }
-    },
-    "This will rescan all local audio files and rebuild the library database. Unreadable files will be removed." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This will rescan all local audio files and rebuild the library database. Unreadable files will be removed."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "这将重新扫描所有本地音频文件并重建资料库数据库。无法读取的文件将被移除。"
           }
         }
       }

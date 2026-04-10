@@ -32,7 +32,10 @@ final class AudioFileImporter: @unchecked Sendable {
         self.apiClient = apiClient
     }
 
-    func importFiles(urls: [URL]) async -> AudioImportResult {
+    func importFiles(
+        urls: [URL],
+        progressCallback: (@MainActor (_ current: Int, _ total: Int) -> Void)? = nil
+    ) async -> AudioImportResult {
         // Hold security-scoped access on the original picker URLs for the
         // entire import. Folder picks grant access to descendants through the
         // parent scope, so we must keep it alive until all reads/copies finish.
@@ -66,7 +69,9 @@ final class AudioFileImporter: @unchecked Sendable {
         // folder) does not produce two copies.
         var batchImported: Set<DuplicateKey> = []
 
-        for fileURL in audioFiles {
+        let totalFiles = audioFiles.count
+        for (index, fileURL) in audioFiles.enumerated() {
+            progressCallback?(index + 1, totalFiles)
             do {
                 let result = try await importSingleFile(
                     fileURL: fileURL,

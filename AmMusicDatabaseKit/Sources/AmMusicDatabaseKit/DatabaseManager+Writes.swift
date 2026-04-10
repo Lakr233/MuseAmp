@@ -18,6 +18,10 @@ extension DatabaseManager {
             progressCallback: progressCallback
         )
         try indexStore.setLastRebuild(timestamp: .init(), succeeded: true)
+        try indexStore.setSchemaVersions(
+            schema: DatabaseFormat.indexSchemaVersion,
+            format: DatabaseFormat.indexFormatVersion
+        )
         if !result.invalidRelativePaths.isEmpty {
             eventSubject.send(.invalidFilesRemoved(relativePaths: result.invalidRelativePaths))
         }
