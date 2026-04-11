@@ -16,4 +16,7 @@
    <FileRef
       location = "group:AmMusicPlayerKit">
    </FileRef>
+   <FileRef
+      location = "group:Vendor/Choreographer">
+   </FileRef>
 </Workspace>

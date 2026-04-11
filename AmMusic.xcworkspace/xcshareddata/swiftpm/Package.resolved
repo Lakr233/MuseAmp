@@ -1,5 +1,5 @@
 {
-  "originHash" : "7f0b74ef97101b715d27245b94451028d5342d99eeae2013f9c5ad1afec9b867",
+  "originHash" : "7b2948092f3aa9eb05d7a0acbe75cc3901a4b94b4fb9a3de4d7178f6a7855c91",
   "pins" : [
     {
       "identity" : "alertcontroller",
@@ -8,15 +8,6 @@
       "state" : {
         "revision" : "c42a45ca3c81689f2e94490c78c9f48c024ef7cc",
         "version" : "2.2.2"
-      }
-    },
-    {
-      "identity" : "choreographer",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/unixzii/Choreographer",
-      "state" : {
-        "revision" : "fa8cf25b0a16c499b299d357c1a64db6760a83ef",
-        "version" : "0.1.0"
       }
     },
     {
