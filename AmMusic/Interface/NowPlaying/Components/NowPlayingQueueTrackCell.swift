@@ -1,3 +1,10 @@
+//
+//  NowPlayingQueueTrackCell.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import SnapKit
 import Then
 import UIKit
@@ -76,8 +83,8 @@ final class NowPlayingQueueTrackCell: TableBaseCell {
                     top: Layout.verticalInset,
                     left: Layout.horizontalInset,
                     bottom: Layout.verticalInset,
-                    right: Layout.horizontalInset
-                )
+                    right: Layout.horizontalInset,
+                ),
             )
         }
 
@@ -100,9 +107,9 @@ final class NowPlayingQueueTrackCell: TableBaseCell {
     func configure(
         track: PlaybackTrack,
         accessoryStyle: AccessoryStyle,
-        hidesSeparator: Bool
+        hidesSeparator: Bool,
     ) {
-        titleLabel.text = track.title
+        titleLabel.text = track.title.sanitizedTrackTitle
         subtitleLabel.text = track.artistName
         artworkView.loadImage(url: track.artworkURL)
         separatorView.isHidden = hidesSeparator
@@ -121,7 +128,7 @@ final class NowPlayingQueueTrackCell: TableBaseCell {
 
         accessoryImageView.image = UIImage(
             systemName: symbolName,
-            withConfiguration: symbolConfiguration
+            withConfiguration: symbolConfiguration,
         )
     }
 }

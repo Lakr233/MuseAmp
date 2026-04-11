@@ -1,11 +1,19 @@
+//
+//  PlaybackController+Delegate.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicPlayerKit
+import Combine
 import Foundation
 
 extension PlaybackController: MusicPlayerDelegate {
     func musicPlayer(_: AmMusicPlayerKit.MusicPlayer, didChangeState state: PlaybackState) {
         AppLog.info(
             self,
-            "didChangeState previous=\(string(for: latestSnapshot.state)) new=\(string(for: state)) trackID=\(latestSnapshot.currentTrack?.id ?? "nil")"
+            "didChangeState previous=\(string(for: latestSnapshot.state)) new=\(string(for: state)) trackID=\(latestSnapshot.currentTrack?.id ?? "nil")",
         )
         refreshSnapshot(persistState: true)
     }
@@ -15,16 +23,15 @@ extension PlaybackController: MusicPlayerDelegate {
         let toID = item.map { Self.sourceTrackID(for: $0.id) } ?? "nil"
         AppLog.info(
             self,
-            "didTransitionTo from=\(fromID) to=\(toID) reason=\(string(for: reason))"
+            "didTransitionTo from=\(fromID) to=\(toID) reason=\(string(for: reason))",
         )
 
         if shouldResetCurrentTimeForTrackRepeatTransition(
             player: player,
             item: item,
-            reason: reason
+            reason: reason,
         ) {
-            timeUpdateState.pendingSeekSnapshotTime = 0
-            beginPostSeekTimeUpdateSuppression()
+            seekState.pendingSeekSnapshotTime = 0
             refreshSnapshot(currentTime: 0, duration: player.duration, persistState: true)
             return
         }
@@ -35,20 +42,15 @@ extension PlaybackController: MusicPlayerDelegate {
     func musicPlayer(_: AmMusicPlayerKit.MusicPlayer, didChangeQueue snapshot: QueueSnapshot) {
         AppLog.info(
             self,
-            "didChangeQueue total=\(snapshot.totalCount) current=\(snapshot.currentIndex.map(String.init) ?? "nil") upcoming=\(snapshot.upcoming.count) shuffled=\(snapshot.shuffled) repeat=\(string(for: snapshot.repeatMode))"
+            "didChangeQueue total=\(snapshot.totalCount) current=\(snapshot.currentIndex.map(String.init) ?? "nil") upcoming=\(snapshot.upcoming.count) shuffled=\(snapshot.shuffled) repeat=\(string(for: snapshot.repeatMode))",
         )
         refreshSnapshot(persistState: true)
     }
 
     func musicPlayer(_: AmMusicPlayerKit.MusicPlayer, didUpdateTime currentTime: TimeInterval, duration: TimeInterval) {
-        guard !isUIPublishingSuspended else {
-            return
-        }
-        guard shouldApplyTimeUpdate() else {
-            return
-        }
-        timeUpdateState.pendingSeekSnapshotTime = nil
-        refreshSnapshot(currentTime: currentTime, duration: duration)
+        guard !isUIPublishingSuspended else { return }
+        latestSnapshot = latestSnapshot.withTime(currentTime, duration: duration)
+        playbackTimeSubject.send((currentTime, duration))
     }
 
     func musicPlayer(_: AmMusicPlayerKit.MusicPlayer, didFailItem item: PlayerItem, error: any Error) {
@@ -59,7 +61,7 @@ extension PlaybackController: MusicPlayerDelegate {
     func musicPlayerDidReachEndOfQueue(_: AmMusicPlayerKit.MusicPlayer) {
         AppLog.info(
             self,
-            "didReachEndOfQueue total=\(latestSnapshot.queue.count) repeat=\(string(for: latestSnapshot.repeatMode))"
+            "didReachEndOfQueue total=\(latestSnapshot.queue.count) repeat=\(string(for: latestSnapshot.repeatMode))",
         )
     }
 }

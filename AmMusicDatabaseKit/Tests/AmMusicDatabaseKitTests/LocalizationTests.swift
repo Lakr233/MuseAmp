@@ -1,10 +1,17 @@
+//
+//  LocalizationTests.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import Foundation
 import Testing
 
 struct LocalizationTests {
-    @Test("DatabaseManager surfaces localized not-initialized error")
-    func notInitializedError() async {
+    @Test
+    func `DatabaseManager surfaces localized not-initialized error`() async {
         let root = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
             .appendingPathComponent("AmMusicDatabaseKit-L10n-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -24,13 +31,13 @@ struct LocalizationTests {
                             title: "Title",
                             artistName: "Artist",
                             albumTitle: "Album",
-                            sourceKind: .downloaded
+                            sourceKind: .downloaded,
                         ),
-                        embeddedArtwork: nil
+                        embeddedArtwork: nil,
                     )
                 },
-                setScreenAwake: { _ in }
-            )
+                setScreenAwake: { _ in },
+            ),
         )
 
         do {
@@ -40,8 +47,8 @@ struct LocalizationTests {
             let nsError = error as NSError
             #expect(
                 nsError.localizedDescription == localizedDatabaseKitString(
-                    "DatabaseManager is not initialized"
-                )
+                    "DatabaseManager is not initialized",
+                ),
             )
         }
     }

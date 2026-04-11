@@ -1,3 +1,10 @@
+//
+//  AVPlayerEngine.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AVFoundation
 
 @MainActor
@@ -23,7 +30,7 @@ final class AVPlayerEngine: AudioPlaybackEngine {
             """
             configured player allowsExternalPlayback=\(player.allowsExternalPlayback) \
             usesExternalPlaybackWhileExternalScreenIsActive=\(externalScreenPlayback)
-            """
+            """,
         )
     }
 
@@ -71,7 +78,7 @@ final class AVPlayerEngine: AudioPlaybackEngine {
                 logger.log(
                     level: finished ? .verbose : .warning,
                     component: "AVPlayerEngine",
-                    message: "seek completed finished=\(finished) seconds=\(time.seconds)"
+                    message: "seek completed finished=\(finished) seconds=\(time.seconds)",
                 )
                 continuation.resume(returning: finished)
             }
@@ -85,7 +92,7 @@ final class AVPlayerEngine: AudioPlaybackEngine {
     func addPeriodicTimeObserver(
         forInterval interval: CMTime,
         queue: DispatchQueue?,
-        using block: @escaping @Sendable (CMTime) -> Void
+        using block: @escaping @Sendable (CMTime) -> Void,
     ) -> Any {
         log(.verbose, "addPeriodicTimeObserver interval=\(interval.seconds)")
         return player.addPeriodicTimeObserver(forInterval: interval, queue: queue, using: block)
@@ -98,8 +105,10 @@ final class AVPlayerEngine: AudioPlaybackEngine {
 
     func preloadNextItem(_ item: AVPlayerItem?) {
         log(.verbose, "preloadNextItem hasItem=\(item != nil)")
-        // Remove the old preloaded item if it's still in the queue
-        if let old = preloadedItem, player.items().contains(old) {
+        // Remove the old preloaded item if it's still in the queue,
+        // but never remove the currently playing item (can happen if
+        // AVQueuePlayer auto-advanced before the reference was cleared).
+        if let old = preloadedItem, player.currentItem !== old, player.items().contains(old) {
             player.remove(old)
         }
         preloadedItem = item
@@ -108,6 +117,32 @@ final class AVPlayerEngine: AudioPlaybackEngine {
         if let item {
             player.insert(item, after: player.currentItem)
         }
+    }
+
+    func hasAdvancedToPreloadedItem() -> Bool {
+        guard let preloaded = preloadedItem else { return false }
+        return player.currentItem === preloaded
+    }
+
+    func advanceToPreloadedItem() -> Bool {
+        guard let preloaded = preloadedItem else { return false }
+
+        if player.currentItem === preloaded {
+            // AVQueuePlayer already auto-advanced; just clear the reference.
+            log(.verbose, "advanceToPreloadedItem (already current)")
+            preloadedItem = nil
+            return true
+        }
+
+        guard player.items().contains(preloaded) else { return false }
+        log(.verbose, "advanceToPreloadedItem")
+        player.advanceToNextItem()
+        preloadedItem = nil
+        return true
+    }
+
+    func clearPreloadedReference() {
+        preloadedItem = nil
     }
 
     private func log(_ level: MusicPlayerLogLevel, _ message: String) {

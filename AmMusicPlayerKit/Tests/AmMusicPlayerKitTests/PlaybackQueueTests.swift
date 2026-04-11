@@ -1,3 +1,10 @@
+//
+//  PlaybackQueueTests.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 @testable import AmMusicPlayerKit
 import Foundation
 import Testing
@@ -11,12 +18,12 @@ struct PlaybackQueueTests {
                 title: "Track \(i)",
                 artist: "Artist",
                 album: "Album",
-                durationInSeconds: 200
+                durationInSeconds: 200,
             )
         }
     }
 
-    @Test func load_setsNowPlayingToStartIndex() {
+    @Test func `load sets now playing to start index`() {
         var queue = PlaybackQueue()
         let items = Self.makeItems(5)
         queue.load(items: items, startIndex: 2, shuffle: false)
@@ -26,7 +33,7 @@ struct PlaybackQueueTests {
         #expect(queue.upcoming.count == 2) // items[3], items[4]
     }
 
-    @Test func load_withEmptyItems_clears() {
+    @Test func `load with empty items clears`() {
         var queue = PlaybackQueue()
         queue.load(items: Self.makeItems(3), startIndex: 0, shuffle: false)
         queue.load(items: [], startIndex: 0, shuffle: false)
@@ -35,7 +42,7 @@ struct PlaybackQueueTests {
         #expect(queue.items.isEmpty)
     }
 
-    @Test func advance_movesToNextItem() {
+    @Test func `advance moves to next item`() {
         var queue = PlaybackQueue()
         let items = Self.makeItems(3)
         queue.load(items: items, startIndex: 0, shuffle: false)
@@ -46,7 +53,7 @@ struct PlaybackQueueTests {
         #expect(queue.history == [items[0]])
     }
 
-    @Test func advance_whenExhaustedAndRepeatOff_returnsNil() {
+    @Test func `advance when exhausted and repeat off returns nil`() {
         var queue = PlaybackQueue()
         let items = Self.makeItems(2)
         queue.load(items: items, startIndex: 0, shuffle: false)
@@ -56,7 +63,7 @@ struct PlaybackQueueTests {
         #expect(result == nil)
     }
 
-    @Test func advance_whenExhaustedAndRepeatQueue_recyclesToStart() {
+    @Test func `advance when exhausted and repeat queue recycles to start`() {
         var queue = PlaybackQueue()
         let items = Self.makeItems(2)
         queue.load(items: items, startIndex: 0, shuffle: false)
@@ -68,7 +75,7 @@ struct PlaybackQueueTests {
         #expect(queue.history.isEmpty)
     }
 
-    @Test func rewind_whenOver3Seconds_restarts() {
+    @Test func `rewind when over3 seconds restarts`() {
         var queue = PlaybackQueue()
         queue.load(items: Self.makeItems(3), startIndex: 1, shuffle: false)
 
@@ -80,7 +87,7 @@ struct PlaybackQueueTests {
         }
     }
 
-    @Test func rewind_whenUnder3Seconds_goesToPrevious() {
+    @Test func `rewind when under3 seconds goes to previous`() {
         var queue = PlaybackQueue()
         let items = Self.makeItems(3)
         queue.load(items: items, startIndex: 0, shuffle: false)
@@ -94,7 +101,7 @@ struct PlaybackQueueTests {
         }
     }
 
-    @Test func rewind_whenNoHistory_restarts() {
+    @Test func `rewind when no history restarts`() {
         var queue = PlaybackQueue()
         queue.load(items: Self.makeItems(3), startIndex: 0, shuffle: false)
 
@@ -106,7 +113,7 @@ struct PlaybackQueueTests {
         }
     }
 
-    @Test func skip_toUpcomingIndex_works() {
+    @Test func `skip to upcoming index works`() {
         var queue = PlaybackQueue()
         let items = Self.makeItems(5)
         queue.load(items: items, startIndex: 0, shuffle: false)
@@ -116,35 +123,35 @@ struct PlaybackQueueTests {
         #expect(queue.nowPlaying == items[3])
     }
 
-    @Test func playNext_insertsAtUpcomingZero() throws {
+    @Test func `play next inserts at upcoming zero`() throws {
         var queue = PlaybackQueue()
         let items = Self.makeItems(3)
         queue.load(items: items, startIndex: 0, shuffle: false)
 
         let newItem = try PlayerItem(
             id: "new", url: #require(URL(string: "https://example.com/new.mp3")),
-            title: "New", artist: "A", album: "B"
+            title: "New", artist: "A", album: "B",
         )
         queue.playNext(newItem)
 
         #expect(queue.upcoming.first == newItem)
     }
 
-    @Test func append_addsToEnd() throws {
+    @Test func `append adds to end`() throws {
         var queue = PlaybackQueue()
         let items = Self.makeItems(2)
         queue.load(items: items, startIndex: 0, shuffle: false)
 
         let newItem = try PlayerItem(
             id: "new", url: #require(URL(string: "https://example.com/new.mp3")),
-            title: "New", artist: "A", album: "B"
+            title: "New", artist: "A", album: "B",
         )
         queue.append(newItem)
 
         #expect(queue.upcoming.last == newItem)
     }
 
-    @Test func remove_atIndex_returnsItem() {
+    @Test func `remove at index returns item`() {
         var queue = PlaybackQueue()
         let items = Self.makeItems(4)
         queue.load(items: items, startIndex: 0, shuffle: false)
@@ -154,7 +161,7 @@ struct PlaybackQueueTests {
         #expect(queue.upcoming.count == 2) // items[2], items[3]
     }
 
-    @Test func remove_byID_works() {
+    @Test func `remove by ID works`() {
         var queue = PlaybackQueue()
         let items = Self.makeItems(4)
         queue.load(items: items, startIndex: 0, shuffle: false)
@@ -163,7 +170,7 @@ struct PlaybackQueueTests {
         #expect(removed == items[2])
     }
 
-    @Test func remove_byID_doesNotRemoveCurrent() {
+    @Test func `remove by ID does not remove current`() {
         var queue = PlaybackQueue()
         let items = Self.makeItems(3)
         queue.load(items: items, startIndex: 0, shuffle: false)
@@ -172,7 +179,7 @@ struct PlaybackQueueTests {
         #expect(removed == nil) // can't remove currently playing
     }
 
-    @Test func move_reordersUpcoming() {
+    @Test func `move reorders upcoming`() {
         var queue = PlaybackQueue()
         let items = Self.makeItems(5)
         queue.load(items: items, startIndex: 0, shuffle: false)
@@ -185,7 +192,7 @@ struct PlaybackQueueTests {
         #expect(upcoming[2] == items[1])
     }
 
-    @Test func clearUpcoming_emptiesOnlyUpcoming() {
+    @Test func `clear upcoming empties only upcoming`() {
         var queue = PlaybackQueue()
         let items = Self.makeItems(4)
         queue.load(items: items, startIndex: 1, shuffle: false)
@@ -197,7 +204,7 @@ struct PlaybackQueueTests {
         #expect(queue.nowPlaying != nil)
     }
 
-    @Test func replaceAll_resetsEverything() {
+    @Test func `replace all resets everything`() {
         var queue = PlaybackQueue()
         queue.load(items: Self.makeItems(3), startIndex: 0, shuffle: false)
         _ = queue.advance()
@@ -210,7 +217,7 @@ struct PlaybackQueueTests {
         #expect(queue.upcoming.count == 1)
     }
 
-    @Test func snapshotReflectsCurrentState() {
+    @Test func `snapshot reflects current state`() {
         var queue = PlaybackQueue()
         let items = Self.makeItems(4)
         queue.load(items: items, startIndex: 0, shuffle: false)

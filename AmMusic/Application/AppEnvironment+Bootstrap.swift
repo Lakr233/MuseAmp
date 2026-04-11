@@ -1,3 +1,10 @@
+//
+//  AppEnvironment+Bootstrap.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import Foundation
 import Kingfisher
@@ -6,7 +13,7 @@ import UIKit
 extension AppEnvironment {
     static func initializeDatabaseManagerSynchronously(
         apiBaseURL: URL = AppPreferences.defaultAPIBaseURL,
-        baseDirectory: URL? = nil
+        baseDirectory: URL? = nil,
     ) throws -> DatabaseManager {
         let paths = LibraryPaths(baseDirectory: baseDirectory)
         AppLog.bootstrap(with: paths)
@@ -17,7 +24,7 @@ extension AppEnvironment {
             dependencies: makeRuntimeDependencies(
                 apiClient: apiClient,
                 metadataReader: metadataReader,
-                paths: paths
+                paths: paths,
             ),
             logSink: { level, scope, message in
                 switch level {
@@ -30,7 +37,7 @@ extension AppEnvironment {
                 case .error, .critical:
                     AppLog.error(scope, message)
                 }
-            }
+            },
         )
         try manager.initializeSynchronously()
         return manager
@@ -38,11 +45,11 @@ extension AppEnvironment {
 
     static func initializeDatabaseManager(
         apiBaseURL: URL = AppPreferences.defaultAPIBaseURL,
-        baseDirectory: URL? = nil
+        baseDirectory: URL? = nil,
     ) async throws -> DatabaseManager {
         try initializeDatabaseManagerSynchronously(
             apiBaseURL: apiBaseURL,
-            baseDirectory: baseDirectory
+            baseDirectory: baseDirectory,
         )
     }
 
@@ -51,7 +58,7 @@ extension AppEnvironment {
             FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
                 ?? URL(fileURLWithPath: NSTemporaryDirectory())
         let diskCacheProvider = DiskCacheStorageProvider(
-            directory: cachesURL.appendingPathComponent("APIResponseCache", isDirectory: true)
+            directory: cachesURL.appendingPathComponent("APIResponseCache", isDirectory: true),
         )
         return APIClient(baseURL: apiBaseURL, cacheStorageProvider: diskCacheProvider)
     }
@@ -59,7 +66,7 @@ extension AppEnvironment {
     static func makeRuntimeDependencies(
         apiClient: APIClient,
         metadataReader: EmbeddedMetadataReader,
-        paths: LibraryPaths
+        paths: LibraryPaths,
     ) -> RuntimeDependencies {
         RuntimeDependencies(
             resolveDownloadURL: { trackID in
@@ -99,7 +106,7 @@ extension AppEnvironment {
                     trackID: trackID,
                     albumID: albumID,
                     fileSize: fileSize,
-                    modifiedAt: modifiedAt
+                    modifiedAt: modifiedAt,
                 )
                 let artwork = await metadataReader.extractArtwork(from: fileURL)
                 let metadata = ImportedTrackMetadata(
@@ -116,18 +123,18 @@ extension AppEnvironment {
                     composerName: record.composerName,
                     releaseDate: record.releaseDate,
                     lyrics: nil,
-                    sourceKind: .unknown
+                    sourceKind: .unknown,
                 )
                 return AudioFileInspection(
                     metadata: metadata,
-                    embeddedArtwork: artwork
+                    embeddedArtwork: artwork,
                 )
             },
             setScreenAwake: { shouldKeepAwake in
                 DispatchQueue.main.async {
                     UIApplication.shared.isIdleTimerDisabled = shouldKeepAwake
                 }
-            }
+            },
         )
     }
 

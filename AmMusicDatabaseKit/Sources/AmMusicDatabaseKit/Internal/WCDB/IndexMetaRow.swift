@@ -1,3 +1,10 @@
+//
+//  IndexMetaRow.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 @preconcurrency import WCDBSwift
 

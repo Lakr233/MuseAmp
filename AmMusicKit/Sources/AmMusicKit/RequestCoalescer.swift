@@ -1,3 +1,10 @@
+//
+//  RequestCoalescer.swift
+//  AmMusicKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 actor RequestCoalescer {
@@ -5,7 +12,7 @@ actor RequestCoalescer {
 
     func perform(
         forKey key: String,
-        work: @escaping @Sendable () async throws -> Data
+        work: @escaping @Sendable () async throws -> Data,
     ) async throws -> Data {
         if let existing = inFlight[key] {
             do {

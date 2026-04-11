@@ -1,3 +1,10 @@
+//
+//  AppPreferences.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import ConfigurableKit
 import Foundation
 
@@ -5,6 +12,8 @@ enum AppPreferences {
     nonisolated static let apiHostKey = "wiki.qaq.ammusic.settings.api-host"
     nonisolated static let apiAuthorizationKey = "wiki.qaq.ammusic.settings.api-authorization"
     nonisolated static let lyricsAutoConvertChineseKey = "wiki.qaq.ammusic.settings.lyrics-auto-convert-chinese"
+    nonisolated static let cleanSongTitleKey = "wiki.qaq.ammusic.settings.clean-song-title"
+    nonisolated static let maxConcurrentDownloadsKey = "wiki.qaq.ammusic.settings.max-concurrent-downloads"
     nonisolated static let defaultAPIBaseURL = URL(string: "https://example.com")!
 
     nonisolated static var defaultAPIHost: String {
@@ -24,6 +33,15 @@ enum AppPreferences {
 
     nonisolated static var isLyricsAutoConvertChineseEnabled: Bool {
         ConfigurableKit.value(forKey: lyricsAutoConvertChineseKey, defaultValue: false)
+    }
+
+    nonisolated static var isCleanSongTitleEnabled: Bool {
+        ConfigurableKit.value(forKey: cleanSongTitleKey, defaultValue: false)
+    }
+
+    nonisolated static var maxConcurrentDownloads: Int {
+        let value: Int = ConfigurableKit.value(forKey: maxConcurrentDownloadsKey, defaultValue: 1)
+        return max(1, min(value, 8))
     }
 
     nonisolated static func effectiveAPIBaseURL(fallback: URL = defaultAPIBaseURL) -> URL {

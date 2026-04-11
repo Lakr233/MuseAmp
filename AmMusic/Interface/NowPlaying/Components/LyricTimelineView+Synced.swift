@@ -1,3 +1,10 @@
+//
+//  LyricTimelineView+Synced.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import UIKit
 
 // MARK: - Synced mode
@@ -6,7 +13,7 @@ extension LyricTimelineView {
     func performInitialSyncedReveal(
         with timeline: LRCLyricsTimeline,
         currentTime: TimeInterval,
-        fadingOutMessage: Bool
+        fadingOutMessage: Bool,
     ) {
         shouldAnimateNextSyncedReveal = false
 
@@ -25,7 +32,7 @@ extension LyricTimelineView {
             with: timeline,
             currentTime: currentTime,
             animated: false,
-            scrollAnimated: false
+            scrollAnimated: false,
         )
 
         layoutIfNeeded()
@@ -36,7 +43,7 @@ extension LyricTimelineView {
         with timeline: LRCLyricsTimeline,
         currentTime: TimeInterval,
         animated: Bool,
-        scrollAnimated: Bool = true
+        scrollAnimated: Bool = true,
     ) {
         let progress = timeline.progress(at: currentTime)
         let nextActiveIndex = progress?.index
@@ -53,12 +60,12 @@ extension LyricTimelineView {
                 from: previousActiveIndex,
                 to: nextActiveIndex,
                 timeline: timeline,
-                currentTime: currentTime
+                currentTime: currentTime,
             )
             applySyncedLineStateChanges(
                 from: previousActiveIndex,
                 to: nextActiveIndex,
-                animated: animated
+                animated: animated,
             )
         }
 
@@ -103,7 +110,7 @@ extension LyricTimelineView {
         let rawOffsetY = targetCenterY - (tableView.bounds.height * Layout.activeLineAnchorFraction)
         let maximumOffsetY = max(
             tableView.contentSize.height + tableView.contentInset.bottom - tableView.bounds.height,
-            -tableView.contentInset.top
+            -tableView.contentInset.top,
         )
         let minimumOffsetY = -tableView.contentInset.top
 
@@ -134,7 +141,7 @@ extension LyricTimelineView {
             return
         }
 
-        InterfaceAnimation.smoothSpringAnimate(animations: updates)
+        InterfaceAnimate.smoothSpringAnimate(animations: updates)
     }
 
     func changedLineRange(from previousActiveIndex: Int?, to nextActiveIndex: Int?) -> ClosedRange<Int>? {
@@ -175,9 +182,9 @@ extension LyricTimelineView {
         }
 
         if fadingOutMessage {
-            InterfaceAnimation.animate(
+            InterfaceAnimate.animate(
                 duration: LyricTimelineAnimation.initialRevealDuration,
-                options: LyricTimelineAnimation.easeOutOptions
+                options: LyricTimelineAnimation.easeOutOptions,
             ) {
                 self.messageLabel.alpha = 0
             } completion: { _ in
@@ -197,10 +204,10 @@ extension LyricTimelineView {
                 continue
             }
             cell.alpha = 0
-            InterfaceAnimation.animate(
+            InterfaceAnimate.animate(
                 duration: LyricTimelineAnimation.initialRevealDuration,
                 delay: Double(index) * LyricTimelineAnimation.initialRevealStagger,
-                options: LyricTimelineAnimation.easeOutOptions
+                options: LyricTimelineAnimation.easeOutOptions,
             ) {
                 cell.alpha = 1
             }
@@ -217,7 +224,7 @@ extension LyricTimelineView {
 
         let clampedOffsetY = clampedOffsetY(targetOffsetY)
 
-        InterfaceAnimation.smoothSpringAnimate {
+        InterfaceAnimate.smoothSpringAnimate {
             self.tableView.setContentOffset(CGPoint(x: 0, y: clampedOffsetY), animated: false)
             self.layoutIfNeeded()
         }
@@ -232,7 +239,7 @@ extension LyricTimelineView {
         let minimumOffsetY = -tableView.contentInset.top
         let maximumOffsetY = max(
             tableView.contentSize.height + tableView.contentInset.bottom - tableView.bounds.height,
-            minimumOffsetY
+            minimumOffsetY,
         )
         return min(max(offsetY, minimumOffsetY), maximumOffsetY)
     }

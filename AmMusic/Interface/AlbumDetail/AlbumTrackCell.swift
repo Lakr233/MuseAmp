@@ -1,3 +1,10 @@
+//
+//  AlbumTrackCell.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicKit
 import SnapKit
 import Then
@@ -101,13 +108,12 @@ final class AlbumTrackCell: TableBaseCell {
 
         durationLabel.snp.makeConstraints { make in
             make.leading.greaterThanOrEqualTo(titleStack.snp.trailing).offset(Layout.durationSpacing)
-            durationTrailingConstraint = make.trailing.equalToSuperview().inset(Layout.horizontalInset).constraint
-            durationToDownloadedConstraint = make.trailing.equalTo(downloadedBadge.snp.leading).offset(-Layout.durationSpacing).constraint
+            durationTrailingConstraint = make.trailing.equalToSuperview().inset(Layout.horizontalInset).priority(.high).constraint
+            durationToDownloadedConstraint = make.trailing.equalTo(downloadedBadge.snp.leading).offset(-Layout.durationSpacing).priority(.high).constraint
             make.width.greaterThanOrEqualTo(36)
             make.firstBaseline.equalTo(titleLabel.snp.firstBaseline)
         }
-
-        setDownloadedState(false)
+        durationToDownloadedConstraint?.deactivate()
     }
 
     override func prepareForReuse() {
@@ -127,7 +133,7 @@ final class AlbumTrackCell: TableBaseCell {
 
     func configure(number: Int, track: CatalogSong, highlighted: Bool = false, downloaded: Bool = false) {
         numberImageView.image = trackNumberImage(number)
-        titleLabel.text = track.attributes.name
+        titleLabel.text = track.attributes.name.sanitizedTrackTitle
 
         let isExplicit = track.attributes.contentRating == "explicit"
         explicitBadge.isHidden = !isExplicit
@@ -145,8 +151,13 @@ final class AlbumTrackCell: TableBaseCell {
 
     private func setDownloadedState(_ downloaded: Bool) {
         downloadedBadge.isHidden = !downloaded
-        durationTrailingConstraint?.isActive = !downloaded
-        durationToDownloadedConstraint?.isActive = downloaded
+        if downloaded {
+            durationTrailingConstraint?.deactivate()
+            durationToDownloadedConstraint?.activate()
+        } else {
+            durationToDownloadedConstraint?.deactivate()
+            durationTrailingConstraint?.activate()
+        }
     }
 
     private func trackNumberImage(_ number: Int) -> UIImage? {
@@ -157,7 +168,7 @@ final class AlbumTrackCell: TableBaseCell {
     func animateTapHighlight() {
         highlightView.layer.removeAllAnimations()
         highlightView.alpha = 1
-        InterfaceAnimation.animate(duration: 0.25, options: [.curveEaseOut, .beginFromCurrentState]) {
+        InterfaceAnimate.animate(duration: 0.25, options: .curveEaseOut) {
             self.highlightView.alpha = 0
         }
     }

@@ -1,3 +1,10 @@
+//
+//  MusicPlayerLogger.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 public enum MusicPlayerLogLevel: String {
     case verbose
     case info

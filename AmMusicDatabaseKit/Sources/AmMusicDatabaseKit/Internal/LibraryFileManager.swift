@@ -1,3 +1,10 @@
+//
+//  LibraryFileManager.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 struct LibraryFileManager {
@@ -8,7 +15,7 @@ struct LibraryFileManager {
         from sourceURL: URL,
         trackID: String,
         albumID: String,
-        fileExtension: String
+        fileExtension: String,
     ) throws -> (finalURL: URL, relativePath: String) {
         let safeExtension = sanitizePathComponent(fileExtension.nilIfEmpty ?? "m4a")
         let relativePath = "\(sanitizePathComponent(albumID))/\(sanitizePathComponent(trackID)).\(safeExtension)"
@@ -20,7 +27,7 @@ struct LibraryFileManager {
             try FileManager.default.createDirectory(
                 at: finalURL.deletingLastPathComponent(),
                 withIntermediateDirectories: true,
-                attributes: nil
+                attributes: nil,
             )
             if FileManager.default.fileExists(atPath: stagingURL.path) {
                 try FileManager.default.removeItem(at: stagingURL)
@@ -69,7 +76,7 @@ struct LibraryFileManager {
         }
         let contents = try FileManager.default.contentsOfDirectory(
             at: directory,
-            includingPropertiesForKeys: nil
+            includingPropertiesForKeys: nil,
         )
         guard contents.isEmpty else {
             return

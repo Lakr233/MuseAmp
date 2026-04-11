@@ -1,3 +1,10 @@
+//
+//  DatabaseBootstrapper.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 struct DatabaseBootstrapResult {
@@ -27,7 +34,7 @@ struct DatabaseBootstrapper {
                 DBLog.info(logger, "DatabaseBootstrapper", "index schema stamp needed expected=\(DatabaseFormat.indexSchemaVersion)/\(DatabaseFormat.indexFormatVersion)")
                 try candidate.setSchemaVersions(
                     schema: DatabaseFormat.indexSchemaVersion,
-                    format: DatabaseFormat.indexFormatVersion
+                    format: DatabaseFormat.indexFormatVersion,
                 )
             }
             indexStore = candidate
@@ -54,7 +61,7 @@ struct DatabaseBootstrapper {
         return DatabaseBootstrapResult(
             indexStore: indexStore,
             stateStore: stateStore,
-            indexResetReason: nil
+            indexResetReason: nil,
         )
     }
 }

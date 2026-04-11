@@ -1,3 +1,10 @@
+//
+//  SongLibraryViewController+Actions.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AlertController
 import AmMusicDatabaseKit
 import Then
@@ -25,14 +32,14 @@ extension SongLibraryViewController {
     func performImport(urls: [URL]) {
         let alert = AlertProgressIndicatorViewController(
             title: String(localized: "Importing"),
-            message: String(localized: "Reading audio files...")
+            message: String(localized: "Reading audio files..."),
         )
         present(alert, animated: true)
 
         Task { [weak self, importer = environment.audioFileImporter] in
             let result = await importer.importFiles(urls: urls) { current, total in
                 alert.progressContext.purpose(
-                    message: String(localized: "Importing \(current) / \(total)...")
+                    message: String(localized: "Importing \(current) / \(total)..."),
                 )
             }
 
@@ -61,7 +68,7 @@ extension SongLibraryViewController {
 
         let alert = AlertViewController(
             title: String(localized: "Import Complete"),
-            message: lines.joined(separator: "\n")
+            message: lines.joined(separator: "\n"),
         ) { context in
             context.addAction(title: String(localized: "OK"), attribute: .accent) {
                 context.dispose()
@@ -76,7 +83,7 @@ extension SongLibraryViewController {
             title: String(localized: "Refreshing Library"),
             message: String(localized: "Scanning saved songs..."),
             action: { [env = environment] in try await env.resyncSongLibrary() },
-            completion: { [weak self] in self?.reloadAlbums() }
+            completion: { [weak self] in self?.reloadAlbums() },
         )
     }
 
@@ -92,7 +99,7 @@ extension SongLibraryViewController {
             navigationItem.rightBarButtonItems = [
                 UIBarButtonItem(
                     image: UIImage(systemName: "ellipsis.circle"),
-                    menu: buildEditingMenu()
+                    menu: buildEditingMenu(),
                 ),
             ]
         } else {
@@ -100,7 +107,7 @@ extension SongLibraryViewController {
             navigationItem.rightBarButtonItems = [
                 UIBarButtonItem(
                     image: UIImage(systemName: "ellipsis.circle"),
-                    menu: buildLibraryMenu()
+                    menu: buildLibraryMenu(),
                 ).then {
                     $0.accessibilityLabel = String(localized: "Library Actions")
                 },
@@ -204,7 +211,7 @@ extension SongLibraryViewController {
                 UIAction(
                     title: option.title,
                     image: UIImage(systemName: option.imageName),
-                    state: sortOption == option ? .on : .off
+                    state: sortOption == option ? .on : .off,
                 ) { [weak self] _ in
                     self?.sortAlbums(by: option)
                 }
@@ -213,21 +220,21 @@ extension SongLibraryViewController {
 
         let export = UIAction(
             title: String(localized: "Export Selected"),
-            image: UIImage(systemName: "square.and.arrow.up")
+            image: UIImage(systemName: "square.and.arrow.up"),
         ) { [weak self] _ in
             self?.exportSelectedAlbums()
         }
 
         let copyAlbumNames = UIAction(
             title: String(localized: "Album Names"),
-            image: UIImage(systemName: "rectangle.stack")
+            image: UIImage(systemName: "rectangle.stack"),
         ) { [weak self] _ in
             self?.copySelectedAlbumNames()
         }
 
         let copyArtists = UIAction(
             title: String(localized: "Artist Names"),
-            image: UIImage(systemName: "person.text.rectangle")
+            image: UIImage(systemName: "person.text.rectangle"),
         ) { [weak self] _ in
             self?.copySelectedAlbumArtists()
         }
@@ -235,13 +242,13 @@ extension SongLibraryViewController {
         let copy = UIMenu(
             title: String(localized: "Copy"),
             image: UIImage(systemName: "square.on.square"),
-            children: [copyAlbumNames, copyArtists]
+            children: [copyAlbumNames, copyArtists],
         )
 
         let delete = UIAction(
             title: String(localized: "Delete Selected"),
             image: UIImage(systemName: "trash"),
-            attributes: .destructive
+            attributes: .destructive,
         ) { [weak self] _ in
             self?.deleteSelectedTapped()
         }
@@ -257,11 +264,11 @@ extension SongLibraryViewController {
                 UIAction(
                     title: option.title,
                     image: UIImage(systemName: option.imageName),
-                    state: sortOption == option ? .on : .off
+                    state: sortOption == option ? .on : .off,
                 ) { [weak self] _ in
                     self?.sortAlbums(by: option)
                 }
-            }
+            },
         )
         return UIMenu(options: .displayInline, children: [sortMenu])
     }
@@ -274,8 +281,8 @@ extension SongLibraryViewController {
                 tracksProvider: { [weak self] in
                     self?.playbackTracksForVisibleList() ?? []
                 },
-                sourceProvider: { .library }
-            )
+                sourceProvider: { .library },
+            ),
         ) {
             sections.append(playbackSection)
         }
@@ -284,14 +291,14 @@ extension SongLibraryViewController {
 
         let select = UIAction(
             title: String(localized: "Select"),
-            image: UIImage(systemName: "checkmark.circle")
+            image: UIImage(systemName: "checkmark.circle"),
         ) { [weak self] _ in
             self?.selectTapped()
         }
 
         let refresh = UIAction(
             title: String(localized: "Refresh"),
-            image: UIImage(systemName: "arrow.clockwise")
+            image: UIImage(systemName: "arrow.clockwise"),
         ) { [weak self] _ in
             self?.refreshLibrary()
         }

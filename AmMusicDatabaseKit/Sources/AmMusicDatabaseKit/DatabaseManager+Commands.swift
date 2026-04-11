@@ -1,3 +1,10 @@
+//
+//  DatabaseManager+Commands.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 @preconcurrency import Combine
 import Foundation
 
@@ -108,16 +115,16 @@ public extension DatabaseManager {
             userInfo: [
                 NSLocalizedDescriptionKey: String(
                     localized: "Library command requires async send",
-                    bundle: .module
+                    bundle: .module,
                 ),
-            ]
+            ],
         )
     }
 
     @DatabaseActor
     func send(
         _ command: LibraryCommand,
-        progressCallback: (@Sendable (Int, Int) -> Void)? = nil
+        progressCallback: (@Sendable (Int, Int) -> Void)? = nil,
     ) async throws -> LibraryCommandResult {
         if let result = try sendSynchronouslyIfSupported(command) {
             return result
@@ -128,7 +135,7 @@ public extension DatabaseManager {
             return try await rebuildIndex(
                 pruneInvalidFiles: pruneInvalidFiles,
                 forceArtwork: forceArtwork,
-                progressCallback: progressCallback
+                progressCallback: progressCallback,
             )
         case .pruneInvalidFiles:
             _ = try await rebuildIndex(pruneInvalidFiles: true)
@@ -143,9 +150,9 @@ public extension DatabaseManager {
                 userInfo: [
                     NSLocalizedDescriptionKey: String(
                         localized: "Unsupported library command",
-                        bundle: .module
+                        bundle: .module,
                     ),
-                ]
+                ],
             )
         }
     }

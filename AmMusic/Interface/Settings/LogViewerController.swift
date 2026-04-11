@@ -1,3 +1,10 @@
+//
+//  LogViewerController.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AlertController
 import SnapKit
 import SPIndicator
@@ -110,7 +117,7 @@ final class LogViewerController: UIViewController, UITableViewDataSource, UITabl
         let identifier = "LogCell"
         let cell = tableView.dequeueReusableCell(withIdentifier: identifier) ?? UITableViewCell(
             style: .subtitle,
-            reuseIdentifier: identifier
+            reuseIdentifier: identifier,
         )
 
         let line = displayLines[indexPath.row]
@@ -169,23 +176,23 @@ extension LogViewerController {
             children: LogLevel.allCases.map { level in
                 UIAction(
                     title: level.title,
-                    image: selectedLevels.contains(level) ? UIImage(systemName: "checkmark") : nil
+                    image: selectedLevels.contains(level) ? UIImage(systemName: "checkmark") : nil,
                 ) { [weak self] _ in
                     guard let self else { return }
                     toggleLevel(level)
                 }
-            }
+            },
         )
 
         let categoryMenu = UIMenu(
             title: String(localized: "Filter by Category"),
             image: UIImage(systemName: "tag"),
-            children: buildCategoryActions()
+            children: buildCategoryActions(),
         )
 
         let refreshAction = UIAction(
             title: String(localized: "Refresh"),
-            image: UIImage(systemName: "arrow.clockwise")
+            image: UIImage(systemName: "arrow.clockwise"),
         ) { [weak self] _ in
             guard let self else { return }
             reload()
@@ -193,7 +200,7 @@ extension LogViewerController {
 
         let shareAction = UIAction(
             title: String(localized: "Share"),
-            image: UIImage(systemName: "square.and.arrow.up")
+            image: UIImage(systemName: "square.and.arrow.up"),
         ) { [weak self] _ in
             guard let self else { return }
             shareLog()
@@ -202,7 +209,7 @@ extension LogViewerController {
         let clearAction = UIAction(
             title: String(localized: "Clear"),
             image: UIImage(systemName: "trash"),
-            attributes: .destructive
+            attributes: .destructive,
         ) { [weak self] _ in
             guard let self else { return }
             confirmClearLog()
@@ -224,7 +231,7 @@ extension LogViewerController {
         var actions: [UIMenuElement] = [
             UIAction(
                 title: String(localized: "All Categories"),
-                image: selectedCategories.isEmpty ? UIImage(systemName: "checkmark") : nil
+                image: selectedCategories.isEmpty ? UIImage(systemName: "checkmark") : nil,
             ) { [weak self] _ in
                 guard let self else { return }
                 selectedCategories.removeAll()
@@ -236,7 +243,7 @@ extension LogViewerController {
         actions.append(contentsOf: allCategories.sorted().map { category in
             UIAction(
                 title: category,
-                image: selectedCategories.contains(category) ? UIImage(systemName: "checkmark") : nil
+                image: selectedCategories.contains(category) ? UIImage(systemName: "checkmark") : nil,
             ) { [weak self] _ in
                 guard let self else { return }
                 toggleCategory(category)
@@ -327,7 +334,7 @@ extension LogViewerController {
                 timestamp: "",
                 level: .info,
                 category: category,
-                message: line
+                message: line,
             )
         }
 
@@ -338,7 +345,7 @@ extension LogViewerController {
                 timestamp: "",
                 level: .info,
                 category: category,
-                message: line
+                message: line,
             )
         }
 
@@ -346,7 +353,7 @@ extension LogViewerController {
             timestamp: parts[1].trimmingCharacters(in: .whitespacesAndNewlines),
             level: LogLevel(rawValue: parts[0].trimmingCharacters(in: .whitespacesAndNewlines)) ?? .info,
             category: category,
-            message: parts[2].trimmingCharacters(in: .whitespacesAndNewlines)
+            message: parts[2].trimmingCharacters(in: .whitespacesAndNewlines),
         )
     }
 
@@ -386,7 +393,7 @@ extension LogViewerController {
             on: self,
             title: String(localized: "Clear Logs"),
             message: String(localized: "This removes all log output from the current file log store."),
-            confirmTitle: String(localized: "Clear")
+            confirmTitle: String(localized: "Clear"),
         ) { [weak self] in
             self?.clearLog()
         }

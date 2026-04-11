@@ -1,3 +1,10 @@
+//
+//  DatabaseIntegrityFixture.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import Foundation
 
@@ -34,7 +41,7 @@ actor InspectionProvider {
                     title: "Title \(trackID)",
                     artistName: "Artist \(albumID)",
                     albumTitle: "Album \(albumID)",
-                    sourceKind: .downloaded
+                    sourceKind: .downloaded,
                 )
         return AudioFileInspection(metadata: metadata, embeddedArtwork: nil)
     }
@@ -49,7 +56,7 @@ struct DatabaseIntegrityFixture {
     init() throws {
         let temporaryRoot = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
         rootURL = temporaryRoot.appendingPathComponent(
-            "AmMusicDatabaseKitTests-\(UUID().uuidString)", isDirectory: true
+            "AmMusicDatabaseKitTests-\(UUID().uuidString)", isDirectory: true,
         )
         paths = LibraryPaths(baseDirectory: rootURL)
         artworkBackupURL = try Self.prepareArtworkIsolation(at: paths.artworkCacheDirectory)
@@ -57,7 +64,7 @@ struct DatabaseIntegrityFixture {
 
     func makeManager(
         inspectAudioFile overrideInspectAudioFile: (@Sendable (URL) async throws -> AudioFileInspection)? =
-            nil
+            nil,
     ) async -> DatabaseManager {
         let provider = inspectionProvider
         let dependencies = RuntimeDependencies(
@@ -71,7 +78,7 @@ struct DatabaseIntegrityFixture {
                 ?? { fileURL in
                     try await provider.inspect(fileURL: fileURL)
                 },
-            setScreenAwake: { _ in }
+            setScreenAwake: { _ in },
         )
         return DatabaseManager(baseDirectory: rootURL, dependencies: dependencies, logSink: nil)
     }
@@ -95,7 +102,7 @@ struct DatabaseIntegrityFixture {
         try FileManager.default.createDirectory(
             at: fileURL.deletingLastPathComponent(),
             withIntermediateDirectories: true,
-            attributes: nil
+            attributes: nil,
         )
         try Data("fixture-audio".utf8).write(to: fileURL, options: .atomic)
         return fileURL
@@ -107,7 +114,7 @@ struct DatabaseIntegrityFixture {
             return
         }
         let files = try fileManager.contentsOfDirectory(
-            at: paths.databaseDirectory, includingPropertiesForKeys: nil
+            at: paths.databaseDirectory, includingPropertiesForKeys: nil,
         )
         for file in files where file.lastPathComponent.hasPrefix("library_index.sqlite") {
             try fileManager.removeItem(at: file)
@@ -134,7 +141,7 @@ struct DatabaseIntegrityFixture {
         try fileManager.createDirectory(
             at: paths.artworkCacheDirectory.deletingLastPathComponent(),
             withIntermediateDirectories: true,
-            attributes: nil
+            attributes: nil,
         )
         try fileManager.moveItem(at: artworkBackupURL, to: paths.artworkCacheDirectory)
     }
@@ -147,7 +154,7 @@ struct DatabaseIntegrityFixture {
 
         let parent = artworkDirectory.deletingLastPathComponent()
         let backupURL = parent.appendingPathComponent(
-            "LibraryArtwork-Backup-\(UUID().uuidString)", isDirectory: true
+            "LibraryArtwork-Backup-\(UUID().uuidString)", isDirectory: true,
         )
         try fileManager.moveItem(at: artworkDirectory, to: backupURL)
         return backupURL

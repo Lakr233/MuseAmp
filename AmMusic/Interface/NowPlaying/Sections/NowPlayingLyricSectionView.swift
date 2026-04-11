@@ -1,3 +1,10 @@
+//
+//  NowPlayingLyricSectionView.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import SnapKit
 import UIKit
 
@@ -6,22 +13,22 @@ final class NowPlayingLyricSectionView: UIView {
     private var displayedLyricsText: String?
     private var isDisplayingLoading = false
 
-    var onSeekToLineTime: ((TimeInterval) -> Void)? {
+    var onSeekToLineTime: (TimeInterval) -> Void = { _ in } {
         didSet {
             lyricView.onSelectLineTime = { [weak self] selectedTime in
                 self?.lyricView.updateCurrentTime(selectedTime)
-                self?.onSeekToLineTime?(selectedTime)
+                self?.onSeekToLineTime(selectedTime)
             }
         }
     }
 
-    var onCopyAllLyrics: (([String]) -> Void)? {
+    var onCopyAllLyrics: ([String]) -> Void = { _ in } {
         didSet {
             lyricView.onCopyAllLyrics = onCopyAllLyrics
         }
     }
 
-    var onRequestManageLyrics: ((_ lyrics: [String], _ activeIndex: Int?) -> Void)? {
+    var onRequestManageLyrics: (_ lyrics: [String], _ activeIndex: Int?) -> Void = { _, _ in } {
         didSet {
             lyricView.onRequestManageLyrics = onRequestManageLyrics
         }
@@ -53,7 +60,7 @@ final class NowPlayingLyricSectionView: UIView {
 
         AppLog.info(
             self,
-            "lyrics refresh apply loading=\(isLoading) \(nowPlayingLogTextSummary(normalizedText)) currentTime=\(String(format: "%.2f", currentTime))"
+            "lyrics refresh apply loading=\(isLoading) \(nowPlayingLogTextSummary(normalizedText)) currentTime=\(String(format: "%.2f", currentTime))",
         )
         isDisplayingLoading = isLoading
         displayedLyricsText = normalizedText

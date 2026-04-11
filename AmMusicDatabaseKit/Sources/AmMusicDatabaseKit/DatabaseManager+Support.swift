@@ -1,3 +1,10 @@
+//
+//  DatabaseManager+Support.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 extension DatabaseManager {
@@ -9,9 +16,9 @@ extension DatabaseManager {
                 userInfo: [
                     NSLocalizedDescriptionKey: String(
                         localized: "DatabaseManager is not initialized",
-                        bundle: .module
+                        bundle: .module,
                     ),
-                ]
+                ],
             )
         }
     }
@@ -25,7 +32,7 @@ extension DatabaseManager {
             indexStore: indexStore,
             cacheCoordinator: cacheCoordinator,
             dependencies: dependencies,
-            logger: logger
+            logger: logger,
         )
     }
 
@@ -41,7 +48,7 @@ extension DatabaseManager {
             (try? FileManager.default.contentsOfDirectory(
                 at: paths.audioDirectory,
                 includingPropertiesForKeys: nil,
-                options: [.skipsHiddenFiles]
+                options: [.skipsHiddenFiles],
             )) ?? []
         return urls.reduce(into: 0) { count, url in
             if url.lastPathComponent.hasSuffix(".tmp") {
@@ -54,7 +61,7 @@ extension DatabaseManager {
         orphanArtwork: Int,
         orphanLyrics: Int,
         invalidPathsFound: Int,
-        unresolvedPlaylistEntries: Int
+        unresolvedPlaylistEntries: Int,
     ) -> [AuditIssue] {
         var issues: [AuditIssue] = []
         if invalidPathsFound > 0 {
@@ -64,9 +71,9 @@ extension DatabaseManager {
                     message: String(
                         format: String(localized: "Found %ld invalid library paths", bundle: .module),
                         locale: .current,
-                        invalidPathsFound
-                    )
-                )
+                        invalidPathsFound,
+                    ),
+                ),
             )
         }
         if orphanArtwork > 0 {
@@ -76,9 +83,9 @@ extension DatabaseManager {
                     message: String(
                         format: String(localized: "Found %ld orphan artwork files", bundle: .module),
                         locale: .current,
-                        orphanArtwork
-                    )
-                )
+                        orphanArtwork,
+                    ),
+                ),
             )
         }
         if orphanLyrics > 0 {
@@ -88,9 +95,9 @@ extension DatabaseManager {
                     message: String(
                         format: String(localized: "Found %ld orphan lyrics files", bundle: .module),
                         locale: .current,
-                        orphanLyrics
-                    )
-                )
+                        orphanLyrics,
+                    ),
+                ),
             )
         }
         if unresolvedPlaylistEntries > 0 {
@@ -100,12 +107,12 @@ extension DatabaseManager {
                     message: String(
                         format: String(
                             localized: "Found %ld playlist entries without backing files",
-                            bundle: .module
+                            bundle: .module,
                         ),
                         locale: .current,
-                        unresolvedPlaylistEntries
-                    )
-                )
+                        unresolvedPlaylistEntries,
+                    ),
+                ),
             )
         }
         return issues

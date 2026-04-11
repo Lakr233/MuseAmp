@@ -1,3 +1,10 @@
+//
+//  PlaylistStore.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import AmMusicKit
 import Combine
@@ -10,11 +17,11 @@ extension Notification.Name {
 final class PlaylistStore {
     let databaseManager: DatabaseManager
     let legacyFileURL: URL?
-    var playlistsChangedCancellable: AnyCancellable?
+    var cancellables: Set<AnyCancellable> = []
 
     var playlists: [Playlist] = []
 
-    var onSongAdded: ((PlaylistEntry) -> Void)?
+    var onSongAdded: (PlaylistEntry) -> Void = { _ in }
 
     init(database: MusicLibraryDatabase, legacyFileURL: URL? = nil) {
         databaseManager = database.databaseManager
@@ -43,7 +50,7 @@ final class PlaylistStore {
     func deletePlaylist(id: UUID) {
         performMutation(
             action: "deletePlaylist id=\(id.uuidString)",
-            previousPlaylists: playlists
+            previousPlaylists: playlists,
         ) {
             _ = try send(.deletePlaylist(id: id))
         }
@@ -52,7 +59,7 @@ final class PlaylistStore {
     func deletePlaylists(ids: [UUID]) {
         performMutation(
             action: "deletePlaylists count=\(ids.count)",
-            previousPlaylists: playlists
+            previousPlaylists: playlists,
         ) {
             for id in ids {
                 _ = try send(.deletePlaylist(id: id))
@@ -63,7 +70,7 @@ final class PlaylistStore {
     func renamePlaylist(id: UUID, name: String) {
         performMutation(
             action: "renamePlaylist id=\(id.uuidString)",
-            previousPlaylists: playlists
+            previousPlaylists: playlists,
         ) {
             _ = try send(.renamePlaylist(id: id, name: name))
         }
@@ -72,7 +79,7 @@ final class PlaylistStore {
     func updateCover(id: UUID, imageData: Data?) {
         performMutation(
             action: "updateCover id=\(id.uuidString)",
-            previousPlaylists: playlists
+            previousPlaylists: playlists,
         ) {
             _ = try send(.updatePlaylistCover(id: id, imageData: imageData))
         }
@@ -90,19 +97,19 @@ final class PlaylistStore {
             artworkURL: song.artworkURL,
             durationMillis: song.durationMillis,
             trackNumber: song.trackNumber,
-            lyrics: song.lyrics
+            lyrics: song.lyrics,
         )
         do {
             _ = try send(.addPlaylistEntry(entry, playlistID: playlistID))
         } catch {
             AppLog.error(
-                self, "addSong failed trackID=\(song.trackID) playlistID=\(playlistID.uuidString) error=\(error)"
+                self, "addSong failed trackID=\(song.trackID) playlistID=\(playlistID.uuidString) error=\(error)",
             )
         }
         reload()
         let inserted = playlists != previousPlaylists
         if inserted {
-            onSongAdded?(song)
+            onSongAdded(song)
             NotificationCenter.default.post(name: .playlistsDidChange, object: self)
         }
         return inserted
@@ -111,7 +118,7 @@ final class PlaylistStore {
     func updateLyrics(_ lyrics: String, trackID: String, playlistID: UUID) {
         performMutation(
             action: "updateLyrics trackID=\(trackID) playlistID=\(playlistID.uuidString)",
-            previousPlaylists: playlists
+            previousPlaylists: playlists,
         ) {
             _ = try send(.updateEntryLyrics(lyrics: lyrics, trackID: trackID, playlistID: playlistID))
         }
@@ -124,7 +131,7 @@ final class PlaylistStore {
         } catch {
             AppLog.error(
                 self,
-                "removeSong failed index=\(songIndex) playlistID=\(playlistID.uuidString) error=\(error)"
+                "removeSong failed index=\(songIndex) playlistID=\(playlistID.uuidString) error=\(error)",
             )
         }
         finishMutation(previousPlaylists: previousPlaylists, pruneLikedPlaylistIfNeededFor: playlistID)
@@ -145,7 +152,7 @@ final class PlaylistStore {
         } catch {
             AppLog.error(
                 self,
-                "updateSong failed playlistID=\(playlistID.uuidString) index=\(index) trackID=\(song.trackID) error=\(error)"
+                "updateSong failed playlistID=\(playlistID.uuidString) index=\(index) trackID=\(song.trackID) error=\(error)",
             )
         }
         reload()
@@ -174,7 +181,7 @@ final class PlaylistStore {
                         albumTitle: catalogSong.attributes.albumName,
                         artworkURL: catalogSong.attributes.artwork?.url,
                         durationMillis: catalogSong.attributes.durationInMillis,
-                        trackNumber: catalogSong.attributes.trackNumber
+                        trackNumber: catalogSong.attributes.trackNumber,
                     )
                     return (entry.trackID, refreshed)
                 }
@@ -208,7 +215,7 @@ final class PlaylistStore {
                 artworkURL: refreshed.artworkURL,
                 durationMillis: refreshed.durationMillis ?? existing.durationMillis,
                 trackNumber: refreshed.trackNumber ?? existing.trackNumber,
-                lyrics: existing.lyrics
+                lyrics: existing.lyrics,
             )
             let nameChanged = merged.title != existing.title
             let artistChanged = merged.artistName != existing.artistName
@@ -229,7 +236,7 @@ final class PlaylistStore {
 
         AppLog.info(
             self,
-            "refreshSongs playlistID=\(playlistID.uuidString) fetched=\(fetched.count) updated=\(updatedCount)"
+            "refreshSongs playlistID=\(playlistID.uuidString) fetched=\(fetched.count) updated=\(updatedCount)",
         )
         return updatedCount
     }
@@ -238,7 +245,7 @@ final class PlaylistStore {
         performMutation(
             action:
             "moveSong playlistID=\(playlistID.uuidString) source=\(source) destination=\(destination)",
-            previousPlaylists: playlists
+            previousPlaylists: playlists,
         ) {
             _ = try send(.movePlaylistEntry(playlistID: playlistID, from: source, to: destination))
         }

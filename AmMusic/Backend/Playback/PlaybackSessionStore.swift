@@ -1,3 +1,10 @@
+//
+//  PlaybackSessionStore.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicPlayerKit
 import Foundation
 
@@ -33,7 +40,7 @@ nonisolated struct PlaybackSessionStore {
             try FileManager.default.createDirectory(
                 at: fileURL.deletingLastPathComponent(),
                 withIntermediateDirectories: true,
-                attributes: nil
+                attributes: nil,
             )
             try data.write(to: fileURL, options: .atomic)
             AppLog.verbose(self, "save persisted trackCount=\(session.queue.count)")

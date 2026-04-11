@@ -11,7 +11,7 @@ final class TestLibrarySandbox {
         try? FileManager.default.createDirectory(
             at: baseDirectory,
             withIntermediateDirectories: true,
-            attributes: nil
+            attributes: nil,
         )
     }
 
@@ -24,7 +24,7 @@ final class TestLibrarySandbox {
     }
 
     func makeDatabase(
-        inspectAudioFile: (@Sendable (URL) async throws -> AudioFileInspection)? = nil
+        inspectAudioFile: (@Sendable (URL) async throws -> AudioFileInspection)? = nil,
     ) throws -> MusicLibraryDatabase {
         let paths = LibraryPaths(baseDirectory: baseDirectory)
         try paths.ensureDirectoriesExist()
@@ -38,9 +38,9 @@ final class TestLibrarySandbox {
                     title: trackID,
                     artistName: "Artist",
                     albumTitle: albumID,
-                    sourceKind: .unknown
+                    sourceKind: .unknown,
                 ),
-                embeddedArtwork: nil
+                embeddedArtwork: nil,
             )
         }
         let manager = DatabaseManager(
@@ -53,9 +53,9 @@ final class TestLibrarySandbox {
                 fetchLyrics: { _ in nil },
                 fetchArtworkData: { _ in nil },
                 inspectAudioFile: inspect,
-                setScreenAwake: { _ in }
+                setScreenAwake: { _ in },
             ),
-            logSink: nil
+            logSink: nil,
         )
         try manager.initializeSynchronously()
         return MusicLibraryDatabase(databaseManager: manager, paths: paths)
@@ -73,7 +73,7 @@ func makeMockTrack(
     title: String = "Track 1",
     artistName: String = "Artist",
     albumTitle: String = "Album",
-    fileSizeBytes: Int64 = 1024
+    fileSizeBytes: Int64 = 1024,
 ) -> AudioTrackRecord {
     AudioTrackRecord(
         trackID: trackID,
@@ -96,14 +96,14 @@ func makeMockTrack(
         hasEmbeddedArtwork: true,
         sourceKind: .unknown,
         createdAt: Date(),
-        updatedAt: Date()
+        updatedAt: Date(),
     )
 }
 
 extension TestLibrarySandbox {
     func makeIncomingAudioFile(
         name: String = "\(UUID().uuidString).m4a",
-        size: Int = 16
+        size: Int = 16,
     ) throws -> URL {
         let url = baseDirectory.appendingPathComponent(name, isDirectory: false)
         try Data(repeating: 0xAB, count: max(size, 1)).write(to: url, options: .atomic)
@@ -113,12 +113,12 @@ extension TestLibrarySandbox {
     @discardableResult
     func ingestTrack(
         _ track: AudioTrackRecord,
-        into database: MusicLibraryDatabase
+        into database: MusicLibraryDatabase,
     ) async throws -> AudioTrackRecord {
         let incomingURL = try makeIncomingAudioFile(
             name:
             "\(track.trackID).\(URL(fileURLWithPath: track.relativePath).pathExtension.nilIfEmpty ?? "m4a")",
-            size: Int(max(track.fileSizeBytes, 1))
+            size: Int(max(track.fileSizeBytes, 1)),
         )
         let metadata = ImportedTrackMetadata(
             trackID: track.trackID,
@@ -134,7 +134,7 @@ extension TestLibrarySandbox {
             composerName: track.composerName,
             releaseDate: track.releaseDate,
             lyrics: nil,
-            sourceKind: .unknown
+            sourceKind: .unknown,
         )
         return try await database.ingestAudioFile(url: incomingURL, metadata: metadata)
     }
@@ -144,7 +144,7 @@ func makeMockDownloadRecord(
     id: String = "download-1",
     title: String = "Track 1",
     state: DownloadJobStatus = .queued,
-    progress: Double = 0
+    progress: Double = 0,
 ) -> DownloadJob {
     DownloadJob(
         jobID: id,
@@ -161,25 +161,25 @@ func makeMockDownloadRecord(
         retryCount: 0,
         errorMessage: nil,
         createdAt: Date(),
-        updatedAt: Date()
+        updatedAt: Date(),
     )
 }
 
 func makeMockPlaylistEntry(
     trackID: String,
-    title: String
+    title: String,
 ) -> PlaylistEntry {
     PlaylistEntry(
         trackID: trackID,
         title: title,
         artistName: "Artist",
-        artworkURL: "https://example.com/\(trackID).jpg"
+        artworkURL: "https://example.com/\(trackID).jpg",
     )
 }
 
 func sendDatabaseCommand(
     _ database: MusicLibraryDatabase,
-    _ command: LibraryCommand
+    _ command: LibraryCommand,
 ) async throws -> LibraryCommandResult {
     try await database.databaseManager.send(command)
 }
@@ -212,28 +212,28 @@ extension MusicLibraryDatabase {
     func addEntry(_ entry: PlaylistEntry, to playlistID: UUID) async throws {
         _ = try await sendDatabaseCommand(
             self,
-            .addPlaylistEntry(entry, playlistID: playlistID)
+            .addPlaylistEntry(entry, playlistID: playlistID),
         )
     }
 
     func moveSong(in playlistID: UUID, from source: Int, to destination: Int) async throws {
         _ = try await sendDatabaseCommand(
             self,
-            .movePlaylistEntry(playlistID: playlistID, from: source, to: destination)
+            .movePlaylistEntry(playlistID: playlistID, from: source, to: destination),
         )
     }
 
     func removeSong(at index: Int, from playlistID: UUID) async throws {
         _ = try await sendDatabaseCommand(
             self,
-            .removePlaylistEntry(index: index, playlistID: playlistID)
+            .removePlaylistEntry(index: index, playlistID: playlistID),
         )
     }
 
     func updateSongLyrics(_ lyrics: String, trackID: String, playlistID: UUID) async throws {
         _ = try await sendDatabaseCommand(
             self,
-            .updateEntryLyrics(lyrics: lyrics, trackID: trackID, playlistID: playlistID)
+            .updateEntryLyrics(lyrics: lyrics, trackID: trackID, playlistID: playlistID),
         )
     }
 
@@ -248,13 +248,13 @@ extension AudioFileImporter {
         database: MusicLibraryDatabase,
         metadataReader: EmbeddedMetadataReader,
         libraryIndexer _: SongLibraryIndexer,
-        apiClient: APIClient
+        apiClient: APIClient,
     ) {
         self.init(
             paths: paths,
             database: database,
             metadataReader: metadataReader,
-            apiClient: apiClient
+            apiClient: apiClient,
         )
     }
 }

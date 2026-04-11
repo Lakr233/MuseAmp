@@ -1,3 +1,10 @@
+//
+//  NowPlayingLogSupport.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 func nowPlayingLogURLDescription(_ url: URL?) -> String {

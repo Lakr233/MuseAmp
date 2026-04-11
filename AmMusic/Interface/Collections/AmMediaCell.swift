@@ -1,3 +1,10 @@
+//
+//  AmMediaCell.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import SnapKit
 import Then
 import UIKit
@@ -8,7 +15,7 @@ class AmMediaCell: TableBaseCell {
     private let mediaRowView = AmMediaRowView()
     private let disclosureImageView = UIImageView().then {
         $0.image = UIImage(systemName: "chevron.right", withConfiguration: UIImage.SymbolConfiguration(
-            pointSize: 13, weight: .semibold
+            pointSize: 13, weight: .semibold,
         ))
         $0.tintColor = .tertiaryLabel
         $0.contentMode = .scaleAspectFit
@@ -25,8 +32,8 @@ class AmMediaCell: TableBaseCell {
             $0.top.bottom.leading.equalToSuperview().inset(
                 InterfaceStyle.Insets.symmetric(
                     vertical: InterfaceStyle.Spacing.xSmall,
-                    horizontal: InterfaceStyle.Spacing.small
-                )
+                    horizontal: InterfaceStyle.Spacing.small,
+                ),
             )
             $0.trailing.equalTo(disclosureImageView.snp.leading).offset(-8)
         }
@@ -42,7 +49,7 @@ class AmMediaCell: TableBaseCell {
             title: title,
             subtitle: subtitle,
             placeholderIcon: placeholderIcon,
-            roundArtwork: roundArtwork
+            roundArtwork: roundArtwork,
         )
     }
 
@@ -51,7 +58,7 @@ class AmMediaCell: TableBaseCell {
             title: title,
             subtitle: subtitle,
             placeholderIcon: placeholderIcon,
-            roundArtwork: roundArtwork
+            roundArtwork: roundArtwork,
         )
         mediaRowView.loadArtwork(url: artworkURL)
     }

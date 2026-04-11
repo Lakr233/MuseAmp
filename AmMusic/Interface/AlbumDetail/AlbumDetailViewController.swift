@@ -1,16 +1,29 @@
+//
+//  AlbumDetailViewController.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AlertController
 import AmMusicDatabaseKit
+import Combine
+import ConfigurableKit
 import SnapKit
 import Then
 import UIKit
 
 nonisolated enum AlbumSection: Int, Hashable {
+    case header
     case tracks
+    case footer
 }
 
 nonisolated enum AlbumItem: Hashable {
+    case header
     case skeleton(index: Int)
     case track(position: Int, id: String, number: Int)
+    case footer
 }
 
 @MainActor
@@ -21,52 +34,26 @@ class AlbumDetailViewController: MediaDetailViewController {
     var tracks: [CatalogSong] = []
     var tracksByID: [String: CatalogSong] = [:]
     var isLoadingTracks = true
+    private var hasAppliedInitialData = false
     let highlightSongIDs: Set<String>
     let pendingSongID: String?
+    private var cancellables: Set<AnyCancellable> = []
 
     var dataSource: UITableViewDiffableDataSource<AlbumSection, AlbumItem>!
     lazy var playlistMenuProvider = AddToPlaylistMenuProvider(
         playlistStore: environment.playlistStore,
-        viewController: self
+        viewController: self,
     )
     lazy var songExportPresenter = SongExportPresenter(
         viewController: self,
         lyricsStore: environment.lyricsCacheStore,
         locations: environment.paths,
-        apiClient: environment.apiClient
+        apiClient: environment.apiClient,
     )
     lazy var songContextMenuProvider = SongContextMenuProvider(
         playlistMenuProvider: playlistMenuProvider,
-        exportPresenter: songExportPresenter
+        exportPresenter: songExportPresenter,
     )
-    private let albumNameLabel = CopyableLabel().then {
-        $0.font = .systemFont(ofSize: 21, weight: .bold)
-        $0.textAlignment = .center
-        $0.numberOfLines = 0
-    }
-
-    private let artistNameLabel = CopyableLabel().then {
-        $0.font = .systemFont(ofSize: 17, weight: .medium)
-        $0.textColor = .tintColor
-        $0.textAlignment = .center
-    }
-
-    private let metaLabel = CopyableLabel().then {
-        $0.font = .preferredFont(forTextStyle: .caption1)
-        $0.textColor = .secondaryLabel
-        $0.textAlignment = .center
-        $0.numberOfLines = 0
-    }
-
-    private let badgeStack = UIStackView().then {
-        $0.axis = .horizontal
-        $0.spacing = 6
-        $0.alignment = .center
-    }
-
-    private let losslessBadge = makeAlbumBadgeView(text: String(localized: "Lossless"), icon: "waveform")
-    private let atmosBadge = makeAlbumBadgeView(text: String(localized: "Dolby Atmos"), icon: "hifispeaker.2.fill")
-    private let spatialBadge = makeAlbumBadgeView(text: String(localized: "Spatial"), icon: "ear.fill")
 
     init(album: CatalogAlbum, environment: AppEnvironment, highlightSongs: [String] = []) {
         self.album = album
@@ -81,7 +68,7 @@ class AlbumDetailViewController: MediaDetailViewController {
         let attrs = CatalogAlbumAttributes(
             artistName: song.attributes.artistName,
             name: song.attributes.albumName ?? song.attributes.name,
-            artwork: song.attributes.artwork
+            artwork: song.attributes.artwork,
         )
         album = CatalogAlbum(id: "", type: "albums", href: nil, attributes: attrs, relationships: nil)
         pendingSongID = song.id
@@ -89,6 +76,30 @@ class AlbumDetailViewController: MediaDetailViewController {
         apiClient = environment.apiClient
         highlightSongIDs = [song.id]
         super.init(tableStyle: .grouped)
+    }
+
+    /// Immediate-navigation initializer: pushes the controller right away with
+    /// whatever metadata is available, then resolves the full album lazily.
+    convenience init(songID: String, albumID: String?, albumName: String, artistName: String, environment: AppEnvironment) {
+        if let albumID, albumID.isKnownAlbumID {
+            let stub = CatalogAlbum(
+                id: albumID,
+                type: "albums",
+                href: nil,
+                attributes: CatalogAlbumAttributes(artistName: artistName, name: albumName),
+                relationships: nil,
+            )
+            self.init(album: stub, environment: environment, highlightSongs: [songID])
+        } else {
+            let stubSong = CatalogSong(
+                id: songID,
+                type: "songs",
+                href: nil,
+                attributes: CatalogSongAttributes(name: albumName, artistName: artistName, albumName: albumName),
+                relationships: nil,
+            )
+            self.init(song: stubSong, environment: environment)
+        }
     }
 
     @available(*, unavailable)
@@ -103,20 +114,25 @@ class AlbumDetailViewController: MediaDetailViewController {
         title = album.attributes.name
         navigationItem.largeTitleDisplayMode = .never
 
-        configureDetailArtwork(placeholder: "square.stack.fill", allowsPreviewOnTap: true)
         configureNavBar()
-        configureHeader()
         configureTableView()
         configureDataSource()
-        populateHeader()
         loadTracks()
 
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleLibraryDidSync),
             name: .libraryDidSync,
-            object: nil
+            object: nil,
         )
+
+        ConfigurableKit.publisher(
+            forKey: AppPreferences.cleanSongTitleKey, type: Bool.self,
+        )
+        .dropFirst()
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] _ in self?.tableView.reloadData() }
+        .store(in: &cancellables)
     }
 
     @MainActor deinit {
@@ -142,7 +158,7 @@ class AlbumDetailViewController: MediaDetailViewController {
     private func configureNavBar() {
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             image: UIImage(systemName: "ellipsis.circle"),
-            menu: buildAddMenu()
+            menu: buildAddMenu(),
         )
     }
 
@@ -177,7 +193,7 @@ class AlbumDetailViewController: MediaDetailViewController {
         tracks.map { track in
             track.playlistEntry(
                 albumID: album.id,
-                albumName: track.attributes.albumName ?? album.attributes.name
+                albumName: track.attributes.albumName ?? album.attributes.name,
             )
         }
     }
@@ -210,7 +226,7 @@ class AlbumDetailViewController: MediaDetailViewController {
             on: self,
             title: String(localized: "Delete Song"),
             message: String(localized: "Delete \"\(track.attributes.name)\" from your saved songs? This cannot be undone."),
-            confirmTitle: String(localized: "Delete Song")
+            confirmTitle: String(localized: "Delete Song"),
         ) { [weak self] in
             self?.deleteTrack(track)
         }
@@ -245,71 +261,21 @@ class AlbumDetailViewController: MediaDetailViewController {
             displayArtist: track.attributes.artistName,
             displayTitle: track.attributes.name,
             displayAlbumName: track.attributes.albumName ?? album.attributes.name,
-            artworkURL: track.attributes.artwork?.imageURL(width: 600, height: 600)
+            artworkURL: track.attributes.artwork?.imageURL(width: 600, height: 600),
         )
-    }
-
-    // MARK: - Header
-
-    private func configureHeader() {
-        badgeStack.addArrangedSubview(losslessBadge)
-        badgeStack.addArrangedSubview(atmosBadge)
-        badgeStack.addArrangedSubview(spatialBadge)
-        losslessBadge.isHidden = true
-        atmosBadge.isHidden = true
-        spatialBadge.isHidden = true
-        configureDetailHeader(
-            arrangedSubviews: [albumNameLabel, artistNameLabel, metaLabel, badgeStack],
-            artworkSize: 220,
-            customSpacings: [
-                (albumNameLabel, 4),
-                (artistNameLabel, 4),
-                (metaLabel, InterfaceStyle.Spacing.xSmall),
-            ]
-        )
-    }
-
-    private func populateHeader() {
-        albumNameLabel.text = album.attributes.name
-        artistNameLabel.text = album.attributes.artistName
-
-        var meta: [String] = []
-        if let genres = album.attributes.genreNames, let first = genres.first { meta.append(first) }
-        if let date = album.attributes.releaseDate { meta.append(String(date.prefix(4))) }
-        metaLabel.text = meta.joined(separator: " · ")
-
-        configureBadges()
-        let artworkURL = environment.apiClient.mediaURL(from: album.attributes.artwork?.url, width: 600, height: 600)
-        artworkImageView.loadImage(url: artworkURL)
-        invalidateHeaderLayout()
-    }
-
-    private func configureBadges() {
-        let traits = album.attributes.audioTraits ?? []
-
-        let showLossless = traits.contains("lossless")
-        let showAtmos = traits.contains("atmos")
-        let showSpatial = traits.contains("spatial") && !traits.contains("atmos")
-        let showAny = showLossless || showAtmos || showSpatial
-
-        InterfaceAnimation.springAnimate {
-            self.losslessBadge.isHidden = !showLossless
-            self.atmosBadge.isHidden = !showAtmos
-            self.spatialBadge.isHidden = !showSpatial
-            self.badgeStack.isHidden = !showAny
-        }
     }
 
     // MARK: - Table View
 
     private func configureTableView() {
         tableView.delegate = self
+        tableView.register(AlbumHeaderCell.self, forCellReuseIdentifier: AlbumHeaderCell.reuseID)
         tableView.register(AlbumTrackCell.self, forCellReuseIdentifier: AlbumTrackCell.reuseID)
         tableView.register(
-            AlbumTrackSkeletonCell.self, forCellReuseIdentifier: AlbumTrackSkeletonCell.reuseID
+            AlbumTrackSkeletonCell.self, forCellReuseIdentifier: AlbumTrackSkeletonCell.reuseID,
         )
+        tableView.register(DetailFooterCell.self, forCellReuseIdentifier: DetailFooterCell.reuseID)
         configureDetailTableView(backgroundColor: .systemBackground)
-        configureDetailFooter(hidden: true)
     }
 
     private static let releaseDateParser: DateFormatter = {
@@ -357,28 +323,34 @@ class AlbumDetailViewController: MediaDetailViewController {
         return lines.isEmpty ? nil : lines.joined(separator: "\n")
     }
 
-    private func updateFooter() {
-        guard !isLoadingTracks else {
-            updateFooterText(nil)
-            return
-        }
-        updateFooterText(albumFooterText())
-    }
-
     // MARK: - Diffable Data Source
 
     private func configureDataSource() {
         dataSource = UITableViewDiffableDataSource<AlbumSection, AlbumItem>(
-            tableView: tableView
+            tableView: tableView,
         ) {
             [weak self] (tableView: UITableView, indexPath: IndexPath, item: AlbumItem)
             -> UITableViewCell? in
             guard let self else { return UITableViewCell() }
 
             switch item {
+            case .header:
+                guard let cell = tableView.dequeueReusableCell(
+                    withIdentifier: AlbumHeaderCell.reuseID, for: indexPath,
+                ) as? AlbumHeaderCell else {
+                    return UITableViewCell()
+                }
+                let artworkURL = environment.apiClient.mediaURL(from: album.attributes.artwork?.url, width: 600, height: 600)
+                cell.configure(album: album, artworkURL: artworkURL)
+                cell.onPlayTapped = { [weak self] in self?.playAlbum() }
+                cell.onShuffleTapped = { [weak self] in self?.playAlbum(shuffle: true) }
+                cell.selectionStyle = .none
+                cell.isUserInteractionEnabled = true
+                return cell
+
             case .skeleton:
                 let cell = tableView.dequeueReusableCell(
-                    withIdentifier: AlbumTrackSkeletonCell.reuseID, for: indexPath
+                    withIdentifier: AlbumTrackSkeletonCell.reuseID, for: indexPath,
                 )
                 cell.selectionStyle = .none
                 cell.isUserInteractionEnabled = false
@@ -387,7 +359,7 @@ class AlbumDetailViewController: MediaDetailViewController {
             case let .track(_, id, number):
                 guard
                     let cell = tableView.dequeueReusableCell(
-                        withIdentifier: AlbumTrackCell.reuseID, for: indexPath
+                        withIdentifier: AlbumTrackCell.reuseID, for: indexPath,
                     ) as? AlbumTrackCell
                 else {
                     return UITableViewCell()
@@ -398,6 +370,17 @@ class AlbumDetailViewController: MediaDetailViewController {
                     cell.configure(number: number, track: track, highlighted: highlighted, downloaded: downloaded)
                 }
                 return cell
+
+            case .footer:
+                guard let cell = tableView.dequeueReusableCell(
+                    withIdentifier: DetailFooterCell.reuseID, for: indexPath,
+                ) as? DetailFooterCell else {
+                    return UITableViewCell()
+                }
+                cell.configure(text: albumFooterText(), audioTraits: album.attributes.audioTraits ?? [])
+                cell.selectionStyle = .none
+                cell.isUserInteractionEnabled = false
+                return cell
             }
         }
 
@@ -407,6 +390,9 @@ class AlbumDetailViewController: MediaDetailViewController {
 
     private func applySnapshot() {
         var snapshot = NSDiffableDataSourceSnapshot<AlbumSection, AlbumItem>()
+
+        snapshot.appendSections([.header])
+        snapshot.appendItems([.header], toSection: .header)
 
         snapshot.appendSections([.tracks])
         if isLoadingTracks {
@@ -420,8 +406,20 @@ class AlbumDetailViewController: MediaDetailViewController {
             snapshot.appendItems(trackItems, toSection: .tracks)
         }
 
-        dataSource.apply(snapshot, animatingDifferences: !isLoadingTracks)
-        updateFooter()
+        if !isLoadingTracks {
+            snapshot.appendSections([.footer])
+            snapshot.appendItems([.footer], toSection: .footer)
+        }
+
+        let animate = hasAppliedInitialData && !isLoadingTracks
+        dataSource.apply(snapshot, animatingDifferences: animate)
+        if !isLoadingTracks { hasAppliedInitialData = true }
+    }
+
+    func reloadHeader() {
+        guard var snapshot = dataSource?.snapshot() else { return }
+        snapshot.reconfigureItems([.header])
+        dataSource.apply(snapshot, animatingDifferences: hasAppliedInitialData)
     }
 
     // MARK: - Load Tracks
@@ -437,7 +435,40 @@ class AlbumDetailViewController: MediaDetailViewController {
         if !duplicateTrackIDs.isEmpty {
             AppLog.warning(self, "Album tracks contain duplicate identifiers count=\(duplicateTrackIDs.count) albumID=\(album.id)")
         }
+        fillAlbumArtworkFromTracksIfNeeded()
         refreshNavBarMenu()
+    }
+
+    private func fillAlbumArtworkFromTracksIfNeeded() {
+        guard album.attributes.artwork == nil,
+              let fallbackArtwork = tracks.lazy.compactMap(\.attributes.artwork).first
+        else { return }
+        let attrs = album.attributes
+        let patched = CatalogAlbumAttributes(
+            artistName: attrs.artistName,
+            name: attrs.name,
+            url: attrs.url,
+            trackCount: attrs.trackCount,
+            releaseDate: attrs.releaseDate,
+            recordLabel: attrs.recordLabel,
+            upc: attrs.upc,
+            copyright: attrs.copyright,
+            genreNames: attrs.genreNames,
+            audioTraits: attrs.audioTraits,
+            contentRating: attrs.contentRating,
+            isSingle: attrs.isSingle,
+            isComplete: attrs.isComplete,
+            isCompilation: attrs.isCompilation,
+            artwork: fallbackArtwork,
+            playParams: attrs.playParams,
+        )
+        album = CatalogAlbum(
+            id: album.id,
+            type: album.type,
+            href: album.href,
+            attributes: patched,
+            relationships: album.relationships,
+        )
     }
 
     private func loadTracks() {
@@ -469,8 +500,7 @@ class AlbumDetailViewController: MediaDetailViewController {
                     }
                     album = resolvedAlbum
                     title = album.attributes.name
-                    populateHeader()
-                    invalidateHeaderLayout(animated: true)
+                    reloadHeader()
                 } catch {
                     if !hasExistingTracks {
                         isLoadingTracks = false
@@ -493,8 +523,7 @@ class AlbumDetailViewController: MediaDetailViewController {
                     return
                 }
                 album = full
-                populateHeader()
-                invalidateHeaderLayout(animated: true)
+                reloadHeader()
                 if !hasExistingTracks {
                     isLoadingTracks = false
                     setTracks(trackData)
@@ -518,7 +547,7 @@ class AlbumDetailViewController: MediaDetailViewController {
             guard case let .track(_, id, _) = item, highlightSongIDs.contains(id),
                   let indexPath = dataSource.indexPath(for: item)
             else { continue }
-            InterfaceAnimation.springAnimate {
+            InterfaceAnimate.springAnimate {
                 self.tableView.scrollToRow(at: indexPath, at: .middle, animated: false)
             }
             return

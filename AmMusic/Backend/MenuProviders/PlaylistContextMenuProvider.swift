@@ -1,3 +1,10 @@
+//
+//  PlaylistContextMenuProvider.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AlertController
 import AmMusicDatabaseKit
 import UIKit
@@ -17,7 +24,7 @@ final class PlaylistContextMenuProvider {
         onOpen: ((Playlist) -> Void)? = nil,
         onRename: ((Playlist) -> Void)? = nil,
         onDuplicate: ((Playlist) -> Void)? = nil,
-        onDelete: ((Playlist) -> Void)? = nil
+        onDelete: ((Playlist) -> Void)? = nil,
     ) -> UIMenu? {
         let deferred = UIDeferredMenuElement.uncached { [weak self] completion in
             guard let self, let playlist = playlistProvider() else {
@@ -32,7 +39,7 @@ final class PlaylistContextMenuProvider {
             if includesOpenAction, let onOpen {
                 primaryActions.append(UIAction(
                     title: String(localized: "Open"),
-                    image: UIImage(systemName: "arrow.right.circle")
+                    image: UIImage(systemName: "arrow.right.circle"),
                 ) { _ in
                     guard let playlist = playlistProvider() else { return }
                     onOpen(playlist)
@@ -42,7 +49,7 @@ final class PlaylistContextMenuProvider {
             if !isLiked {
                 primaryActions.append(UIAction(
                     title: String(localized: "Rename"),
-                    image: UIImage(systemName: "pencil")
+                    image: UIImage(systemName: "pencil"),
                 ) { [weak self] _ in
                     self?.presentRenameAlert(playlistProvider: playlistProvider, onRename: onRename)
                 })
@@ -50,7 +57,7 @@ final class PlaylistContextMenuProvider {
 
             primaryActions.append(UIAction(
                 title: String(localized: "Duplicate"),
-                image: UIImage(systemName: "plus.square.on.square")
+                image: UIImage(systemName: "plus.square.on.square"),
             ) { [weak self] _ in
                 guard let self, let playlist = playlistProvider() else { return }
                 if let duplicated = playlistStore.duplicatePlaylist(id: playlist.id) {
@@ -68,7 +75,7 @@ final class PlaylistContextMenuProvider {
                 let mergeActions: [UIAction] = mergeTargets.map { target in
                     UIAction(
                         title: target.name,
-                        image: UIImage(systemName: "music.note.list")
+                        image: UIImage(systemName: "music.note.list"),
                     ) { [weak self] _ in
                         guard let playlist = playlistProvider() else { return }
                         self?.playlistStore.mergeSongs(from: playlist.id, into: target.id)
@@ -77,7 +84,7 @@ final class PlaylistContextMenuProvider {
                 let mergeMenu = UIMenu(
                     title: String(localized: "Merge Into…"),
                     image: UIImage(systemName: "arrow.triangle.merge"),
-                    children: mergeActions
+                    children: mergeActions,
                 )
                 if let mergeSection = MenuSectionProvider.inline([mergeMenu]) {
                     sections.append(mergeSection)
@@ -94,7 +101,7 @@ final class PlaylistContextMenuProvider {
                 destructiveActions.append(UIAction(
                     title: String(localized: "Remove All Songs"),
                     image: UIImage(systemName: "xmark.circle"),
-                    attributes: .destructive
+                    attributes: .destructive,
                 ) { [weak self] _ in
                     self?.presentClearSongsAlert(playlistProvider: playlistProvider)
                 })
@@ -104,7 +111,7 @@ final class PlaylistContextMenuProvider {
                 destructiveActions.append(UIAction(
                     title: String(localized: "Delete"),
                     image: UIImage(systemName: "trash"),
-                    attributes: .destructive
+                    attributes: .destructive,
                 ) { [weak self] _ in
                     self?.presentDeleteAlert(playlistProvider: playlistProvider, onDelete: onDelete)
                 })
@@ -124,7 +131,7 @@ final class PlaylistContextMenuProvider {
 
     private func presentRenameAlert(
         playlistProvider: @escaping () -> Playlist?,
-        onRename: ((Playlist) -> Void)?
+        onRename: ((Playlist) -> Void)?,
     ) {
         guard let viewController, let playlist = playlistProvider() else {
             return
@@ -134,7 +141,7 @@ final class PlaylistContextMenuProvider {
             title: String(localized: "Rename Playlist"),
             message: String(localized: "Enter a new name for this playlist."),
             placeholder: String(localized: "Playlist Name"),
-            text: playlist.name
+            text: playlist.name,
         ) { [weak self] name in
             let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else {
@@ -152,7 +159,7 @@ final class PlaylistContextMenuProvider {
 
     private func presentDeleteAlert(
         playlistProvider: @escaping () -> Playlist?,
-        onDelete: ((Playlist) -> Void)?
+        onDelete: ((Playlist) -> Void)?,
     ) {
         guard let viewController, let playlist = playlistProvider() else {
             return
@@ -162,7 +169,7 @@ final class PlaylistContextMenuProvider {
             on: viewController,
             title: String(localized: "Delete Playlist"),
             message: String(localized: "Delete \"\(playlist.name)\"? This cannot be undone."),
-            confirmTitle: String(localized: "Delete")
+            confirmTitle: String(localized: "Delete"),
         ) { [weak self] in
             self?.playlistStore.deletePlaylist(id: playlist.id)
             onDelete?(playlist)
@@ -178,7 +185,7 @@ final class PlaylistContextMenuProvider {
             on: viewController,
             title: String(localized: "Remove All Songs"),
             message: String(localized: "Remove all songs from \"\(playlist.name)\"? This cannot be undone."),
-            confirmTitle: String(localized: "Remove All")
+            confirmTitle: String(localized: "Remove All"),
         ) { [weak self] in
             self?.playlistStore.clearSongs(in: playlist.id)
         }
@@ -188,7 +195,8 @@ final class PlaylistContextMenuProvider {
         var children: [UIMenuElement] = [
             UIAction(
                 title: String(localized: "Playlist Name"),
-                image: UIImage(systemName: "textformat")
+                subtitle: playlist.name,
+                image: UIImage(systemName: "textformat"),
             ) { _ in
                 UIPasteboard.general.string = playlist.name
             },
@@ -197,7 +205,8 @@ final class PlaylistContextMenuProvider {
         if !playlist.songs.isEmpty {
             children.append(UIAction(
                 title: String(localized: "All Song Names"),
-                image: UIImage(systemName: "music.note.list")
+                subtitle: playlist.songs.first?.title,
+                image: UIImage(systemName: "music.note.list"),
             ) { _ in
                 UIPasteboard.general.string = playlist.songs.map(\.title).joined(separator: "\n")
             })

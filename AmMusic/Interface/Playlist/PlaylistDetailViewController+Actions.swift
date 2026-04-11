@@ -1,5 +1,13 @@
+//
+//  PlaylistDetailViewController+Actions.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AlertController
 import AmMusicDatabaseKit
+import AmMusicPlayerKit
 import UIKit
 
 extension PlaylistDetailViewController {
@@ -8,7 +16,7 @@ extension PlaylistDetailViewController {
             title: String(localized: "Rename Playlist"),
             message: String(localized: "Enter a new name for this playlist."),
             placeholder: String(localized: "Playlist Name"),
-            text: playlist?.name ?? ""
+            text: playlist?.name ?? "",
         ) { [weak self] name in
             guard let self else { return }
             let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -35,7 +43,7 @@ extension PlaylistDetailViewController {
 
         let progress = AlertProgressIndicatorViewController(
             title: String(localized: "Refreshing"),
-            message: String(localized: "Fetching latest song data...")
+            message: String(localized: "Fetching latest song data..."),
         )
         present(progress, animated: true)
 
@@ -62,7 +70,7 @@ extension PlaylistDetailViewController {
                     let albumID = await self.resolvedAlbumID(for: entry, apiClient: environment.apiClient)
                     return entry.downloadRequest(
                         albumID: albumID ?? "unknown",
-                        apiBaseURL: environment.apiClient.baseURL
+                        apiBaseURL: environment.apiClient.baseURL,
                     )
                 }
             }
@@ -91,9 +99,14 @@ extension PlaylistDetailViewController {
         else {
             return
         }
+        let allTracks = playlistPlaybackTracks()
+        let startIndex = allTracks.firstIndex(of: track) ?? 0
         Task { @MainActor in
-            let count = await environment.playbackController.playNext([track])
-            PlaybackFeedbackPresenter.presentPlayNextSuccess(count: count, tracks: [track])
+            await environment.playbackController.play(
+                tracks: allTracks,
+                startAt: startIndex,
+                source: .playlist(playlistID),
+            )
         }
     }
 
@@ -105,7 +118,7 @@ extension PlaylistDetailViewController {
         if tracks.count != playlist.songs.count {
             AppLog.warning(
                 self,
-                "playlistPlaybackTracks dropped tracks expected=\(playlist.songs.count) actual=\(tracks.count) playlistID=\(playlistID)"
+                "playlistPlaybackTracks dropped tracks expected=\(playlist.songs.count) actual=\(tracks.count) playlistID=\(playlistID)",
             )
         }
         return tracks
@@ -121,7 +134,7 @@ extension PlaylistDetailViewController {
         presentConfirmationAlert(
             title: String(localized: "Remove Song"),
             message: String(localized: "Remove \"\(song.title)\" from this playlist?"),
-            confirmTitle: String(localized: "Remove")
+            confirmTitle: String(localized: "Remove"),
         ) { [weak self] in
             self?.removeSongFromPlaylist(song)
         }
@@ -131,7 +144,7 @@ extension PlaylistDetailViewController {
         presentConfirmationAlert(
             title: String(localized: "Delete Song"),
             message: String(localized: "Delete \"\(song.title)\" from your saved songs? This cannot be undone."),
-            confirmTitle: String(localized: "Delete Song")
+            confirmTitle: String(localized: "Delete Song"),
         ) { [weak self] in
             self?.deleteSong(song)
         }
@@ -143,7 +156,11 @@ extension PlaylistDetailViewController {
             return
         }
         store.removeSong(at: currentIndex, from: playlistID)
-        tableView.deleteRows(at: [IndexPath(row: currentIndex, section: 0)], with: .automatic)
+
+        let item = PlaylistDetailItem.song(entryID: song.entryID, trackID: song.trackID)
+        var snapshot = dataSource.snapshot()
+        snapshot.deleteItems([item])
+        dataSource.apply(snapshot, animatingDifferences: true)
         populateHeader()
     }
 
@@ -169,7 +186,7 @@ extension PlaylistDetailViewController {
             displayArtist: entry.artistName,
             displayTitle: entry.title,
             displayAlbumName: entry.albumTitle,
-            artworkURL: entry.artworkURL.flatMap { environment.apiClient.mediaURL(from: $0, width: 600, height: 600) }
+            artworkURL: entry.artworkURL.flatMap { environment.apiClient.mediaURL(from: $0, width: 600, height: 600) },
         )
     }
 
@@ -186,7 +203,7 @@ extension PlaylistDetailViewController {
             return
         }
 
-        albumNavigationHelper.pushAlbumDetail(songID: entry.trackID, albumID: entry.albumID)
+        albumNavigationHelper.pushAlbumDetail(songID: entry.trackID, albumID: entry.albumID, albumName: entry.albumTitle ?? "", artistName: entry.artistName)
     }
 
     func isSongDownloaded(_ entry: PlaylistEntry) -> Bool {
@@ -210,14 +227,14 @@ extension PlaylistDetailViewController {
             name: selectedTrack.albumTitle.nilIfEmpty ?? selectedTrack.title,
             trackCount: albumTracks.count,
             releaseDate: selectedTrack.releaseDate,
-            genreNames: selectedTrack.genreName.map { [$0] }
+            genreNames: selectedTrack.genreName.map { [$0] },
         )
         let relationships = CatalogAlbumRelationships(
             tracks: ResourceList(
                 href: nil,
                 next: nil,
-                data: albumTracks.map { $0.catalogSong() }
-            )
+                data: albumTracks.map { $0.catalogSong() },
+            ),
         )
 
         return CatalogAlbum(
@@ -225,7 +242,7 @@ extension PlaylistDetailViewController {
             type: "albums",
             href: nil,
             attributes: attributes,
-            relationships: relationships
+            relationships: relationships,
         )
     }
 
@@ -245,14 +262,14 @@ extension PlaylistDetailViewController {
         title: String,
         message: String,
         confirmTitle: String,
-        action: @escaping () -> Void
+        action: @escaping () -> Void,
     ) {
         ConfirmationAlertPresenter.present(
             on: self,
             title: title,
             message: message,
             confirmTitle: confirmTitle,
-            onConfirm: action
+            onConfirm: action,
         )
     }
 
@@ -267,15 +284,21 @@ extension PlaylistDetailViewController {
         return albumID.nilIfEmpty
     }
 
-    func generatedCoverImage(for playlist: Playlist, sideLength: CGFloat) async -> UIImage? {
+    func generatedCoverImage(for playlist: Playlist, sideLength: CGFloat, shuffled: Bool = false) async -> UIImage? {
         guard let environment else { return nil }
         let apiBaseURL = environment.apiClient.baseURL
+        let paths = environment.paths
         return await environment.playlistCoverArtworkCache.image(
             for: playlist,
             sideLength: sideLength,
-            scale: UIScreen.main.scale
-        ) { rawURL, width, height in
-            APIClient.resolveMediaURL(rawURL, width: width, height: height, baseURL: apiBaseURL)
+            scale: UIScreen.main.scale,
+            shuffled: shuffled,
+        ) { entry, width, height in
+            let localURL = paths.artworkCacheURL(for: entry.trackID)
+            if FileManager.default.fileExists(atPath: localURL.path) {
+                return localURL
+            }
+            return APIClient.resolveMediaURL(entry.artworkURL, width: width, height: height, baseURL: apiBaseURL)
         }
     }
 }

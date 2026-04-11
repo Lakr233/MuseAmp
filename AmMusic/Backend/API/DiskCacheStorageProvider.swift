@@ -1,3 +1,10 @@
+//
+//  DiskCacheStorageProvider.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicKit
 import CryptoKit
 import Foundation
@@ -31,7 +38,7 @@ actor DiskCacheStorageProvider: CacheStorageProvider {
 
     func store(_ envelope: CacheEnvelope, forKey key: String) {
         let stored = StoredEnvelope(
-            data: envelope.data, cachedAt: envelope.cachedAt, version: envelope.version
+            data: envelope.data, cachedAt: envelope.cachedAt, version: envelope.version,
         )
         guard let encoded = try? PropertyListEncoder().encode(stored) else {
             AppLog.warning(self, "store encode failure key=\(key) size=\(envelope.data.count)")
@@ -61,7 +68,7 @@ actor DiskCacheStorageProvider: CacheStorageProvider {
             let urls = try? fileManager.contentsOfDirectory(
                 at: directory,
                 includingPropertiesForKeys: nil,
-                options: .skipsHiddenFiles
+                options: .skipsHiddenFiles,
             )
         else {
             AppLog.warning(self, "removeAll failed to enumerate cache directory")

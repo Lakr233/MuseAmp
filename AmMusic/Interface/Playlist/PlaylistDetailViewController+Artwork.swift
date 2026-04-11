@@ -1,3 +1,10 @@
+//
+//  PlaylistDetailViewController+Artwork.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import Foundation
 import UIKit
@@ -67,7 +74,7 @@ extension PlaylistDetailViewController {
                 localFileURL: environment.paths.absoluteAudioURL(for: localTrack.relativePath),
                 destinationURL: destinationURL,
                 remoteRequest: remoteRequest,
-                metadataReader: environment.metadataReader
+                metadataReader: environment.metadataReader,
             )
         }
 
@@ -99,7 +106,7 @@ extension PlaylistDetailViewController {
                 guard shouldReload else {
                     return
                 }
-                tableView.reloadData()
+                applySnapshot()
             }
         }
     }
@@ -119,7 +126,7 @@ private extension PlaylistDetailViewController {
             } catch {
                 AppLog.error(
                     "PlaylistDetailViewController",
-                    "store embedded artwork failed trackID=\(job.trackID) error=\(error.localizedDescription)"
+                    "store embedded artwork failed trackID=\(job.trackID) error=\(error.localizedDescription)",
                 )
             }
         }
@@ -136,7 +143,7 @@ private extension PlaylistDetailViewController {
         } catch {
             AppLog.error(
                 "PlaylistDetailViewController",
-                "store remote artwork failed trackID=\(job.trackID) error=\(error.localizedDescription)"
+                "store remote artwork failed trackID=\(job.trackID) error=\(error.localizedDescription)",
             )
             return false
         }
@@ -144,12 +151,12 @@ private extension PlaylistDetailViewController {
 
     nonisolated static func writeArtworkData(
         _ artworkData: Data,
-        to destinationURL: URL
+        to destinationURL: URL,
     ) throws {
         try FileManager.default.createDirectory(
             at: destinationURL.deletingLastPathComponent(),
             withIntermediateDirectories: true,
-            attributes: nil
+            attributes: nil,
         )
         try artworkData.write(to: destinationURL, options: .atomic)
     }

@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Lakr233/Digger",
       "state" : {
-        "revision" : "265c84aa4a447564628d2788e63efc3ab7779d7e",
-        "version" : "0.0.5"
+        "revision" : "6bd5c7dfb07b0be8635241fe60508636de83cd43",
+        "version" : "0.1.0"
       }
     },
     {

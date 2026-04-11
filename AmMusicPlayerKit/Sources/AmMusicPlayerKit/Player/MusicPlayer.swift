@@ -1,3 +1,10 @@
+//
+//  MusicPlayer.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AVFoundation
 import Foundation
 import MediaPlayer
@@ -127,7 +134,7 @@ public final class MusicPlayer {
                     self?.log(.warning, "audio route old device unavailable; pausing playback")
                     self?.pause()
                 }
-            }
+            },
         )
     }
 
@@ -188,7 +195,7 @@ public extension MusicPlayer {
     func configureLikeCommand(
         title: String? = nil,
         shortTitle: String? = nil,
-        handler: (() -> Bool)? = nil
+        handler: (() -> Bool)? = nil,
     ) {
         likeCommandLocalizedTitle = title ?? String(localized: "Like", bundle: .module)
         likeCommandLocalizedShortTitle = shortTitle
@@ -197,7 +204,7 @@ public extension MusicPlayer {
             isEnabled: canHandleLikeCommand,
             isActive: currentItemLiked,
             localizedTitle: likeCommandLocalizedTitle,
-            localizedShortTitle: likeCommandLocalizedShortTitle
+            localizedShortTitle: likeCommandLocalizedShortTitle,
         )
     }
 
@@ -214,7 +221,7 @@ public extension MusicPlayer {
             isEnabled: canHandleLikeCommand,
             isActive: currentItemLiked,
             localizedTitle: likeCommandLocalizedTitle,
-            localizedShortTitle: likeCommandLocalizedShortTitle
+            localizedShortTitle: likeCommandLocalizedShortTitle,
         )
     }
 }

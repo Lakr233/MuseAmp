@@ -1,3 +1,10 @@
+//
+//  DatabaseManager+Audit.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public extension DatabaseManager {
@@ -10,9 +17,9 @@ public extension DatabaseManager {
                 userInfo: [
                     NSLocalizedDescriptionKey: String(
                         localized: "DatabaseManager audit runtime is unavailable",
-                        bundle: .module
+                        bundle: .module,
                     ),
-                ]
+                ],
             )
         }
 
@@ -23,7 +30,7 @@ public extension DatabaseManager {
             .count
         let orphanLyrics = try cacheCoordinator.orphanLyricsTrackIDs(validTrackIDs: validTrackIDs).count
         let unresolvedPlaylistEntries = try stateStore.unresolvedPlaylistEntryCount(
-            validTrackIDs: validTrackIDs
+            validTrackIDs: validTrackIDs,
         )
         let indexSchemaVersion = try indexStore.schemaVersion()
         let indexFormatVersion = try indexStore.formatVersion()
@@ -37,7 +44,7 @@ public extension DatabaseManager {
             orphanArtwork: orphanArtwork,
             orphanLyrics: orphanLyrics,
             invalidPathsFound: invalidPathsFound,
-            unresolvedPlaylistEntries: unresolvedPlaylistEntries
+            unresolvedPlaylistEntries: unresolvedPlaylistEntries,
         )
 
         eventSubject.send(.auditUpdated)
@@ -46,13 +53,13 @@ public extension DatabaseManager {
                 path: paths.indexDatabaseURL.path,
                 sizeBytes: fileSize(at: paths.indexDatabaseURL),
                 schemaVersion: indexSchemaVersion,
-                formatVersion: indexFormatVersion
+                formatVersion: indexFormatVersion,
             ),
             stateDatabase: .init(
                 path: paths.stateDatabaseURL.path,
                 sizeBytes: fileSize(at: paths.stateDatabaseURL),
                 schemaVersion: stateSchemaVersion,
-                formatVersion: nil
+                formatVersion: nil,
             ),
             counts: .init(
                 tracks: indexStore.allTracks().count,
@@ -62,7 +69,7 @@ public extension DatabaseManager {
                 activeDownloads: stateStore.activeDownloads().count,
                 failedDownloads: stateStore.failedDownloads().count,
                 artworkFiles: artworkCount,
-                lyricsFiles: lyricsCount
+                lyricsFiles: lyricsCount,
             ),
             invalidPathsFound: invalidPathsFound,
             orphanArtworkFiles: orphanArtwork,
@@ -76,7 +83,7 @@ public extension DatabaseManager {
             currentStateSchemaVersion: DatabaseFormat.stateSchemaVersion,
             lastRebuildSucceeded: indexStore.lastRebuildSucceeded(),
             lastRebuildTimestamp: indexStore.lastRebuildTimestamp(),
-            issues: issues
+            issues: issues,
         )
     }
 }

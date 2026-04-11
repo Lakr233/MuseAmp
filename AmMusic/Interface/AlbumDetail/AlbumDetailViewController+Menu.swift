@@ -1,3 +1,10 @@
+//
+//  AlbumDetailViewController+Menu.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import UIKit
 
@@ -10,7 +17,7 @@ extension AlbumDetailViewController {
         let copyMenu = CopyMenuProvider.albumMenu(
             albumName: album.attributes.name,
             artistName: album.attributes.artistName,
-            songNames: tracks.map(\.attributes.name)
+            songNames: tracks.map(\.attributes.name),
         )
 
         var menuSections: [UIMenuElement] = []
@@ -31,14 +38,14 @@ extension AlbumDetailViewController {
         let isDownloaded = environment.downloadStore.isDownloaded(trackID: track.id)
         let downloadAction: UIAction? = isDownloaded ? nil : UIAction(
             title: String(localized: "Download"),
-            image: UIImage(systemName: "arrow.down.circle")
+            image: UIImage(systemName: "arrow.down.circle"),
         ) { [weak self] _ in
             self?.saveTrackToLibrary(track)
         }
 
         let entry = track.playlistEntry(
             albumID: album.id,
-            albumName: track.attributes.albumName ?? album.attributes.name
+            albumName: track.attributes.albumName ?? album.attributes.name,
         )
         var primaryActions = trackPrimaryPlaybackActions(for: track)
         if let downloadAction {
@@ -50,7 +57,7 @@ extension AlbumDetailViewController {
             destructiveActions.append(UIAction(
                 title: String(localized: "Delete Song"),
                 image: UIImage(systemName: "trash"),
-                attributes: .destructive
+                attributes: .destructive,
             ) { [weak self] _ in
                 self?.confirmDeleteTrack(track)
             })
@@ -69,8 +76,8 @@ extension AlbumDetailViewController {
                     return [item]
                 },
                 primaryActions: primaryActions,
-                destructiveActions: destructiveActions
-            )
+                destructiveActions: destructiveActions,
+            ),
         ) ?? UIMenu(children: primaryActions)
     }
 
@@ -78,19 +85,19 @@ extension AlbumDetailViewController {
         guard !tracks.isEmpty else { return [] }
         let shufflePlayAction = UIAction(
             title: String(localized: "Shuffle Play"),
-            image: UIImage(systemName: "shuffle")
+            image: UIImage(systemName: "shuffle"),
         ) { [weak self] _ in
             self?.playAlbum(shuffle: true)
         }
         let playNextAction = UIAction(
             title: String(localized: "Play Next"),
-            image: UIImage(systemName: "text.insert")
+            image: UIImage(systemName: "text.insert"),
         ) { [weak self] _ in
             self?.queueDownloadedAlbumTracks(playNext: true)
         }
         let addToQueueAction = UIAction(
             title: String(localized: "Add to Queue"),
-            image: UIImage(systemName: "text.append")
+            image: UIImage(systemName: "text.append"),
         ) { [weak self] _ in
             self?.queueDownloadedAlbumTracks(playNext: false)
         }
@@ -98,7 +105,7 @@ extension AlbumDetailViewController {
         return [
             UIAction(
                 title: String(localized: "Play"),
-                image: UIImage(systemName: "play.fill")
+                image: UIImage(systemName: "play.fill"),
             ) { [weak self] _ in
                 self?.playAlbum()
             },
@@ -107,30 +114,29 @@ extension AlbumDetailViewController {
     }
 
     func trackPrimaryPlaybackActions(for track: CatalogSong) -> [UIMenuElement] {
-        guard let playbackTrack = downloadedPlaybackTrack(for: track) else {
-            return [makeLikeAction(for: track.playbackTrack(apiClient: apiClient))]
-        }
+        let playbackTrack = track.playbackTrack(apiClient: apiClient)
 
+        let playAction = UIAction(
+            title: String(localized: "Play"),
+            image: UIImage(systemName: "play.fill"),
+        ) { [weak self] _ in
+            self?.playAlbumStarting(trackID: track.id)
+        }
         let playNextAction = UIAction(
             title: String(localized: "Play Next"),
-            image: UIImage(systemName: "text.insert")
+            image: UIImage(systemName: "text.insert"),
         ) { [weak self] _ in
             self?.queueTrack(playbackTrack, playNext: true)
         }
         let addToQueueAction = UIAction(
             title: String(localized: "Add to Queue"),
-            image: UIImage(systemName: "text.append")
+            image: UIImage(systemName: "text.append"),
         ) { [weak self] _ in
             self?.queueTrack(playbackTrack, playNext: false)
         }
 
         return [
-            UIAction(
-                title: String(localized: "Play"),
-                image: UIImage(systemName: "play.fill")
-            ) { [weak self] _ in
-                self?.playAlbumStarting(with: playbackTrack)
-            },
+            playAction,
             PlaybackMenuProvider.makePlayAtMenu(children: [playNextAction, addToQueueAction]),
             makeLikeAction(for: playbackTrack),
         ]
@@ -140,7 +146,7 @@ extension AlbumDetailViewController {
         let isLiked = environment.playbackController.isLiked(trackID: track.id)
         return UIAction(
             title: isLiked ? String(localized: "Unlike") : String(localized: "Like"),
-            image: UIImage(systemName: isLiked ? "heart.slash" : "heart")
+            image: UIImage(systemName: isLiked ? "heart.slash" : "heart"),
         ) { [weak self] _ in
             _ = self?.environment.playbackController.toggleLiked(track)
         }
@@ -152,7 +158,7 @@ extension AlbumDetailViewController {
 extension AlbumDetailViewController {
     func makeDownloadAllAction() -> UIAction {
         DownloadMenuProvider.downloadAllAction(
-            allDownloaded: areAllTracksDownloaded
+            allDownloaded: areAllTracksDownloaded,
         ) { [weak self] in
             self?.saveToLibrary()
         }
@@ -163,12 +169,12 @@ extension AlbumDetailViewController {
             return UIAction(
                 title: String(localized: "Save as Playlist"),
                 image: UIImage(systemName: "plus.rectangle.on.folder"),
-                attributes: .disabled
+                attributes: .disabled,
             ) { _ in }
         }
         return UIAction(
             title: String(localized: "Save as Playlist"),
-            image: UIImage(systemName: "plus.rectangle.on.folder")
+            image: UIImage(systemName: "plus.rectangle.on.folder"),
         ) { [weak self] _ in
             self?.saveAlbumAsPlaylist()
         }
@@ -182,14 +188,14 @@ extension AlbumDetailViewController {
                 self?.playlistEntriesForCurrentTracks() ?? []
             },
             title: String(localized: "Add to Playlist"),
-            allowsCreatingPlaylist: false
+            allowsCreatingPlaylist: false,
         ) { [weak self] playlistID in
             self?.fetchLyricsInBackground(trackIDs: self?.tracks.map(\.id) ?? [], playlistID: playlistID)
         }
         return UIMenu(
             title: String(localized: "Save to Playlist"),
             image: UIImage(systemName: "text.badge.plus"),
-            children: [playlistMenu]
+            children: [playlistMenu],
         )
     }
 }

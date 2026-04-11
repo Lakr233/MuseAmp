@@ -1,3 +1,10 @@
+//
+//  AppNavigationCoordinator.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import UIKit
 
 @MainActor
@@ -16,7 +23,7 @@ final class AppNavigationCoordinator {
         let vc = AlbumDetailViewController(
             album: album,
             environment: environment,
-            highlightSongs: highlightSongs
+            highlightSongs: highlightSongs,
         )
         push(vc)
     }
@@ -30,21 +37,15 @@ final class AppNavigationCoordinator {
         push(vc)
     }
 
-    func showAlbumDetail(songID: String, albumID: String?) {
-        Task { [weak self] in
-            guard let self else { return }
-
-            if let albumID, albumID.isKnownAlbumID,
-               let album = try? await environment.apiClient.album(id: albumID)
-            {
-                showAlbumDetail(album, highlightSongs: [songID])
-                return
-            }
-
-            if let song = try? await environment.apiClient.song(id: songID) {
-                showAlbumDetail(forSong: song)
-            }
-        }
+    func showAlbumDetail(songID: String, albumID: String?, albumName: String = "", artistName: String = "") {
+        let vc = AlbumDetailViewController(
+            songID: songID,
+            albumID: albumID,
+            albumName: albumName,
+            artistName: artistName,
+            environment: environment,
+        )
+        push(vc)
     }
 
     // MARK: - Playlist Navigation

@@ -1,3 +1,10 @@
+//
+//  PlaylistStore+Support.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import AmMusicKit
 import Combine
@@ -5,7 +12,7 @@ import Foundation
 
 extension PlaylistStore {
     func bindDatabaseEvents() {
-        playlistsChangedCancellable = databaseManager.events
+        databaseManager.events
             .receive(on: DispatchQueue.main)
             .sink { [weak self] event in
                 guard case .playlistsChanged = event else {
@@ -18,6 +25,7 @@ extension PlaylistStore {
                 reload()
                 notifyIfNeeded(previousPlaylists: previousPlaylists)
             }
+            .store(in: &cancellables)
     }
 
     var likedSongsPlaylistDefaultName: String {
@@ -51,7 +59,7 @@ extension PlaylistStore {
         _ = createPlaylist(
             id: Playlist.likedSongsPlaylistID,
             name: likedSongsPlaylistDefaultName,
-            coverImageData: LikedSongsPlaylistArtwork.makePNGData()
+            coverImageData: LikedSongsPlaylistArtwork.makePNGData(),
         )
         return likedSongsPlaylist()
     }
@@ -73,18 +81,18 @@ extension PlaylistStore {
                 _ = try send(.renamePlaylist(id: playlist.id, name: likedSongsPlaylistDefaultName))
             } catch {
                 AppLog.error(
-                    self, "backfillLikedSongsPlaylistMetadataIfNeeded rename failed error=\(error)"
+                    self, "backfillLikedSongsPlaylistMetadataIfNeeded rename failed error=\(error)",
                 )
             }
         }
         if shouldUpdateCover {
             do {
                 _ = try send(
-                    .updatePlaylistCover(id: playlist.id, imageData: LikedSongsPlaylistArtwork.makePNGData())
+                    .updatePlaylistCover(id: playlist.id, imageData: LikedSongsPlaylistArtwork.makePNGData()),
                 )
             } catch {
                 AppLog.error(
-                    self, "backfillLikedSongsPlaylistMetadataIfNeeded cover update failed error=\(error)"
+                    self, "backfillLikedSongsPlaylistMetadataIfNeeded cover update failed error=\(error)",
                 )
             }
         }
@@ -93,7 +101,7 @@ extension PlaylistStore {
     }
 
     func finishMutation(
-        previousPlaylists: [Playlist], pruneLikedPlaylistIfNeededFor playlistID: UUID? = nil
+        previousPlaylists: [Playlist], pruneLikedPlaylistIfNeededFor playlistID: UUID? = nil,
     ) {
         reload()
 
@@ -142,7 +150,7 @@ extension PlaylistStore {
         } catch {
             AppLog.error(
                 self,
-                "migrateLegacyPlaylistsIfNeeded read failed path=\(legacyFileURL.lastPathComponent) error=\(error)"
+                "migrateLegacyPlaylistsIfNeeded read failed path=\(legacyFileURL.lastPathComponent) error=\(error)",
             )
             return
         }
@@ -157,7 +165,7 @@ extension PlaylistStore {
         } catch {
             AppLog.error(
                 self,
-                "migrateLegacyPlaylistsIfNeeded import failed count=\(legacyPlaylists.count) error=\(error)"
+                "migrateLegacyPlaylistsIfNeeded import failed count=\(legacyPlaylists.count) error=\(error)",
             )
             return
         }
@@ -168,7 +176,7 @@ extension PlaylistStore {
                 try FileManager.default.removeItem(at: migratedURL)
             } catch {
                 AppLog.error(
-                    self, "migrateLegacyPlaylistsIfNeeded remove existing migrated file failed error=\(error)"
+                    self, "migrateLegacyPlaylistsIfNeeded remove existing migrated file failed error=\(error)",
                 )
             }
         }
@@ -182,7 +190,7 @@ extension PlaylistStore {
     func performMutation(
         action: String,
         previousPlaylists: [Playlist],
-        operation: () throws -> Void
+        operation: () throws -> Void,
     ) {
         do {
             try operation()

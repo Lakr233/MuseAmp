@@ -1,3 +1,10 @@
+//
+//  NowPlayingControlIslandViewModel.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Combine
 import UIKit
 
@@ -45,19 +52,20 @@ final class NowPlayingControlIslandViewModel {
             isPlaying: true,
             isFavorite: false,
             routeName: String(localized: "iPhone"),
-            routeSymbolName: "iphone"
+            routeSymbolName: "iphone",
         )
     }
 
     var content = Content.placeholder
-    var currentTrackID: String?
+    var currentTrackID: String = ""
     let contentSelectorPublisher = CurrentValueSubject<ContentSelector, Never>(.artwork)
 
-    var onFavorite: (() -> Void)?
-    var onPrevious: (() -> Void)?
-    var onTogglePlayPause: (() -> Void)?
-    var onNext: (() -> Void)?
-    var onSeek: ((TimeInterval) -> Void)?
+    var onFavorite: () -> Void = {}
+    var onPrevious: () -> Void = {}
+    var onTogglePlayPause: () -> Void = {}
+    var onNext: () -> Void = {}
+    var onSeek: (TimeInterval) -> Void = { _ in }
+    var onTitleTapped: () -> Void = {}
 
     var selectedContentSelector: ContentSelector {
         contentSelectorPublisher.value
@@ -71,22 +79,26 @@ final class NowPlayingControlIslandViewModel {
     }
 
     func favorite() {
-        onFavorite?()
+        onFavorite()
     }
 
     func previous() {
-        onPrevious?()
+        onPrevious()
     }
 
     func togglePlayPause() {
-        onTogglePlayPause?()
+        onTogglePlayPause()
     }
 
     func next() {
-        onNext?()
+        onNext()
     }
 
     func seek(to seconds: TimeInterval) {
-        onSeek?(seconds)
+        onSeek(seconds)
+    }
+
+    func titleTapped() {
+        onTitleTapped()
     }
 }

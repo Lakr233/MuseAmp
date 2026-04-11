@@ -1,3 +1,10 @@
+//
+//  SettingsViewController+API.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AlertController
 import ConfigurableKit
 import UIKit
@@ -8,7 +15,7 @@ extension SettingsViewController {
         view.configure(icon: .init(systemName: "server.rack"))
         view.configure(title: String(localized: "API Endpoint"))
         view.configure(
-            description: String(localized: "Enter the API host name. HTTPS is enforced automatically.")
+            description: String(localized: "Enter the API host name. HTTPS is enforced automatically."),
         )
         view.configure(value: currentAPIEndpointValue)
         view.use { [weak self, weak view] in
@@ -23,7 +30,7 @@ extension SettingsViewController {
         view.configure(icon: .init(systemName: "lock"))
         view.configure(title: String(localized: "Authorization"))
         view.configure(
-            description: String(localized: "Enter the token used for Authorization: Bearer <token>.")
+            description: String(localized: "Enter the token used for Authorization: Bearer <token>."),
         )
         view.configure(value: currentAuthorizationValue)
         view.use { [weak self, weak view] in
@@ -41,7 +48,7 @@ extension SettingsViewController {
             ephemeralAnnotation: .action { [weak self] _ in
                 guard let self else { return }
                 confirmClearAPICache()
-            }
+            },
         )
     }
 }
@@ -61,19 +68,19 @@ private extension SettingsViewController {
 
         let editAction = UIAction(
             title: String(localized: "Edit"),
-            image: UIImage(systemName: "character.cursor.ibeam")
+            image: UIImage(systemName: "character.cursor.ibeam"),
         ) { [weak self, weak view] _ in
             guard let self, let view else { return }
             let input = AlertInputViewController(
                 title: String(localized: "Edit API Endpoint"),
                 message: String(localized: "Enter a host name. HTTPS is enforced automatically."),
                 placeholder: AppPreferences.defaultAPIHost,
-                text: currentValue
+                text: currentValue,
             ) { [weak view] newValue in
                 let normalized = AppPreferences.normalizeHost(newValue) ?? ""
                 ConfigurableKit.set(value: normalized, forKey: AppPreferences.apiHostKey)
                 view?.configure(
-                    value: normalized.isEmpty ? AppPreferences.defaultAPIHost : normalized
+                    value: normalized.isEmpty ? AppPreferences.defaultAPIHost : normalized,
                 )
             }
             present(input, animated: true)
@@ -84,7 +91,7 @@ private extension SettingsViewController {
         if !currentValue.isEmpty {
             let copyAction = UIAction(
                 title: String(localized: "Copy"),
-                image: UIImage(systemName: "doc.on.doc")
+                image: UIImage(systemName: "doc.on.doc"),
             ) { _ in
                 UIPasteboard.general.string = currentValue
             }
@@ -93,7 +100,7 @@ private extension SettingsViewController {
 
         let useDefaultAction = UIAction(
             title: String(format: String(localized: "Use Default (%@)"), AppPreferences.defaultAPIHost),
-            image: UIImage(systemName: "arrow.counterclockwise")
+            image: UIImage(systemName: "arrow.counterclockwise"),
         ) { [weak view] _ in
             ConfigurableKit.set(value: "", forKey: AppPreferences.apiHostKey)
             view?.configure(value: AppPreferences.defaultAPIHost)
@@ -108,14 +115,14 @@ private extension SettingsViewController {
 
         let editAction = UIAction(
             title: String(localized: "Edit"),
-            image: UIImage(systemName: "character.cursor.ibeam")
+            image: UIImage(systemName: "character.cursor.ibeam"),
         ) { [weak self, weak view] _ in
             guard let self, let view else { return }
             let input = AlertInputViewController(
                 title: String(localized: "Edit Authorization"),
                 message: String(localized: "Enter the token for Authorization: Bearer <token>."),
                 placeholder: "token",
-                text: currentToken
+                text: currentToken,
             ) { [weak view] newValue in
                 let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
                 ConfigurableKit.set(value: trimmed, forKey: AppPreferences.apiAuthorizationKey)
@@ -129,13 +136,13 @@ private extension SettingsViewController {
         if !currentToken.isEmpty {
             let copyAction = UIAction(
                 title: String(localized: "Copy"),
-                image: UIImage(systemName: "doc.on.doc")
+                image: UIImage(systemName: "doc.on.doc"),
             ) { _ in
                 UIPasteboard.general.string = currentToken
             }
             let clearAction = UIAction(
                 title: String(localized: "Clear"),
-                image: UIImage(systemName: "xmark.circle")
+                image: UIImage(systemName: "xmark.circle"),
             ) { [weak view] _ in
                 ConfigurableKit.set(value: "", forKey: AppPreferences.apiAuthorizationKey)
                 view?.configure(value: String(localized: "Not Configured"))

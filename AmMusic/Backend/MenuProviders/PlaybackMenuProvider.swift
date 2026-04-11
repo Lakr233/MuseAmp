@@ -1,3 +1,10 @@
+//
+//  PlaybackMenuProvider.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import UIKit
 
 final class PlaybackMenuProvider {
@@ -10,7 +17,7 @@ final class PlaybackMenuProvider {
     func songPrimaryActions(
         trackProvider: @escaping () -> PlaybackTrack?,
         queueProvider: @escaping () -> [PlaybackTrack],
-        sourceProvider: @escaping () -> PlaybackSource
+        sourceProvider: @escaping () -> PlaybackSource,
     ) -> [UIMenuElement] {
         [
             UIDeferredMenuElement.uncached { [weak self] completion in
@@ -25,17 +32,17 @@ final class PlaybackMenuProvider {
                 let likeImage = UIImage(systemName: isLiked ? "heart.slash" : "heart")
                 let playNextAction = UIAction(
                     title: String(localized: "Play Next"),
-                    image: UIImage(systemName: "text.insert")
+                    image: UIImage(systemName: "text.insert"),
                 ) { [weak self] _ in
                     guard let self else { return }
                     Task { @MainActor in
-                        let count = await self.playbackController.playNext([track])
-                        PlaybackFeedbackPresenter.presentPlayNextSuccess(count: count, tracks: [track])
+                        let result = await self.playbackController.playNext([track])
+                        PlaybackFeedbackPresenter.presentPlayNextResult(result, tracks: [track])
                     }
                 }
                 let addToQueueAction = UIAction(
                     title: String(localized: "Add to Queue"),
-                    image: UIImage(systemName: "text.append")
+                    image: UIImage(systemName: "text.append"),
                 ) { [weak self] _ in
                     guard let self else { return }
                     Task { @MainActor in
@@ -47,14 +54,14 @@ final class PlaybackMenuProvider {
                 completion([
                     UIAction(
                         title: playTitle,
-                        image: UIImage(systemName: "play.fill")
+                        image: UIImage(systemName: "play.fill"),
                     ) { [weak self] _ in
                         guard let self else { return }
                         Task { @MainActor in
                             let didPlay = await self.playbackController.play(
                                 track: track,
                                 in: queueProvider(),
-                                source: sourceProvider()
+                                source: sourceProvider(),
                             )
                             if didPlay {
                                 PlaybackFeedbackPresenter.presentPlaySuccess(tracks: [track], startIndex: 0)
@@ -66,7 +73,7 @@ final class PlaybackMenuProvider {
                     Self.makePlayAtMenu(children: [playNextAction, addToQueueAction]),
                     UIAction(
                         title: likeTitle,
-                        image: likeImage
+                        image: likeImage,
                     ) { [weak self] _ in
                         _ = self?.playbackController.toggleLiked(track)
                     },
@@ -77,7 +84,7 @@ final class PlaybackMenuProvider {
 
     func listPrimaryActions(
         tracksProvider: @escaping () -> [PlaybackTrack],
-        sourceProvider: @escaping () -> PlaybackSource
+        sourceProvider: @escaping () -> PlaybackSource,
     ) -> [UIMenuElement] {
         [
             UIDeferredMenuElement.uncached { [weak self] completion in
@@ -92,14 +99,14 @@ final class PlaybackMenuProvider {
                 }
                 let shufflePlayAction = UIAction(
                     title: String(localized: "Shuffle Play"),
-                    image: UIImage(systemName: "shuffle")
+                    image: UIImage(systemName: "shuffle"),
                 ) { [weak self] _ in
                     guard let self else { return }
                     Task { @MainActor in
                         let didPlay = await self.playbackController.play(
                             tracks: tracks,
                             source: sourceProvider(),
-                            shuffle: true
+                            shuffle: true,
                         )
                         if didPlay {
                             PlaybackFeedbackPresenter.presentPlaySuccess(tracks: tracks, shuffle: true)
@@ -110,17 +117,17 @@ final class PlaybackMenuProvider {
                 }
                 let playNextAction = UIAction(
                     title: String(localized: "Play Next"),
-                    image: UIImage(systemName: "text.insert")
+                    image: UIImage(systemName: "text.insert"),
                 ) { [weak self] _ in
                     guard let self else { return }
                     Task { @MainActor in
-                        let count = await self.playbackController.playNext(tracks)
-                        PlaybackFeedbackPresenter.presentPlayNextSuccess(count: count, tracks: tracks)
+                        let result = await self.playbackController.playNext(tracks)
+                        PlaybackFeedbackPresenter.presentPlayNextResult(result, tracks: tracks)
                     }
                 }
                 let addToQueueAction = UIAction(
                     title: String(localized: "Add to Queue"),
-                    image: UIImage(systemName: "text.append")
+                    image: UIImage(systemName: "text.append"),
                 ) { [weak self] _ in
                     guard let self else { return }
                     Task { @MainActor in
@@ -132,13 +139,13 @@ final class PlaybackMenuProvider {
                 completion([
                     UIAction(
                         title: String(localized: "Play"),
-                        image: UIImage(systemName: "play.fill")
+                        image: UIImage(systemName: "play.fill"),
                     ) { [weak self] _ in
                         guard let self else { return }
                         Task { @MainActor in
                             let didPlay = await self.playbackController.play(
                                 tracks: tracks,
-                                source: sourceProvider()
+                                source: sourceProvider(),
                             )
                             if didPlay {
                                 PlaybackFeedbackPresenter.presentPlaySuccess(tracks: tracks, startIndex: 0)
@@ -159,7 +166,7 @@ extension PlaybackMenuProvider {
         UIMenu(
             title: String(localized: "Play At..."),
             image: UIImage(systemName: "ellipsis.circle"),
-            children: children
+            children: children,
         )
     }
 }

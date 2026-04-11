@@ -1,3 +1,10 @@
+//
+//  MusicPlayerTests.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 @testable import AmMusicPlayerKit
 import CoreMedia
 import Foundation
@@ -63,12 +70,12 @@ struct MusicPlayerTests {
                 title: "Track \(i)",
                 artist: "Artist",
                 album: "Album",
-                durationInSeconds: 200
+                durationInSeconds: 200,
             )
         }
     }
 
-    @Test func startPlayback_setsStatePlaying() {
+    @Test func `start playback sets state playing`() {
         let engine = MockAudioPlaybackEngine()
         let player = MusicPlayer(engine: engine)
         let delegate = MockDelegate()
@@ -81,7 +88,7 @@ struct MusicPlayerTests {
         #expect(engine.replaceItemCallCount >= 1)
     }
 
-    @Test func startPlayback_delegateReceivesTransition() {
+    @Test func `start playback delegate receives transition`() {
         let engine = MockAudioPlaybackEngine()
         let player = MusicPlayer(engine: engine)
         let delegate = MockDelegate()
@@ -94,7 +101,7 @@ struct MusicPlayerTests {
         #expect(delegate.transitions.first?.0 == items[0])
     }
 
-    @Test func pause_setsStatePaused() {
+    @Test func `pause sets state paused`() {
         let engine = MockAudioPlaybackEngine()
         let player = MusicPlayer(engine: engine)
         player.startPlayback(items: Self.makeItems(2))
@@ -104,7 +111,7 @@ struct MusicPlayerTests {
         #expect(engine.pauseCallCount >= 1)
     }
 
-    @Test func play_afterPause_setsStatePlaying() {
+    @Test func `play after pause sets state playing`() {
         let engine = MockAudioPlaybackEngine()
         let player = MusicPlayer(engine: engine)
         player.startPlayback(items: Self.makeItems(2))
@@ -114,7 +121,7 @@ struct MusicPlayerTests {
         #expect(player.state == .playing)
     }
 
-    @Test func togglePlayPause_togglesState() {
+    @Test func `toggle play pause toggles state`() {
         let engine = MockAudioPlaybackEngine()
         let player = MusicPlayer(engine: engine)
         player.startPlayback(items: Self.makeItems(2))
@@ -126,7 +133,7 @@ struct MusicPlayerTests {
         #expect(player.state == .playing)
     }
 
-    @Test func next_advancesTrack() {
+    @Test func `next advances track`() {
         let engine = MockAudioPlaybackEngine()
         let player = MusicPlayer(engine: engine)
         let delegate = MockDelegate()
@@ -139,7 +146,7 @@ struct MusicPlayerTests {
         #expect(player.currentItem == items[1])
     }
 
-    @Test func next_delegateReceivesTransitionWithUserNext() {
+    @Test func `next delegate receives transition with user next`() {
         let engine = MockAudioPlaybackEngine()
         let player = MusicPlayer(engine: engine)
         let delegate = MockDelegate()
@@ -158,7 +165,7 @@ struct MusicPlayerTests {
         }
     }
 
-    @Test func previous_restartsWhenOver3Seconds() {
+    @Test func `previous restarts when over3 seconds`() {
         let engine = MockAudioPlaybackEngine()
         engine.mockCurrentTime = CMTimeMakeWithSeconds(5.0, preferredTimescale: 600)
         let player = MusicPlayer(engine: engine)
@@ -170,7 +177,7 @@ struct MusicPlayerTests {
         // (seek is async, but the intent is verified by the mock state)
     }
 
-    @Test func stop_clearsEverything() {
+    @Test func `stop clears everything`() {
         let engine = MockAudioPlaybackEngine()
         let player = MusicPlayer(engine: engine)
         let delegate = MockDelegate()
@@ -184,7 +191,7 @@ struct MusicPlayerTests {
         #expect(player.queue.totalCount == 0)
     }
 
-    @Test func startPlayback_publishesEnrichedNowPlayingInfo() throws {
+    @Test func `start playback publishes enriched now playing info`() throws {
         Self.resetSystemMediaCenter()
         let engine = MockAudioPlaybackEngine()
         let player = MusicPlayer(engine: engine)
@@ -204,7 +211,7 @@ struct MusicPlayerTests {
         Self.resetSystemMediaCenter()
     }
 
-    @Test func pauseAndStop_publishPlaybackStateChanges() {
+    @Test func `pause and stop publish playback state changes`() {
         Self.resetSystemMediaCenter()
         let engine = MockAudioPlaybackEngine()
         let player = MusicPlayer(engine: engine)
@@ -221,7 +228,7 @@ struct MusicPlayerTests {
         Self.resetSystemMediaCenter()
     }
 
-    @Test func restorePlayback_publishesPausedStateAndMetadata() async throws {
+    @Test func `restore playback publishes paused state and metadata`() async throws {
         Self.resetSystemMediaCenter()
         let engine = MockAudioPlaybackEngine()
         let player = MusicPlayer(engine: engine)
@@ -233,7 +240,7 @@ struct MusicPlayerTests {
             shuffled: false,
             repeatMode: .off,
             currentTime: 25,
-            autoPlay: false
+            autoPlay: false,
         )
 
         #expect(restored)
@@ -248,7 +255,7 @@ struct MusicPlayerTests {
         Self.resetSystemMediaCenter()
     }
 
-    @Test func endOfQueue_notifiesDelegate() {
+    @Test func `end of queue notifies delegate`() {
         let engine = MockAudioPlaybackEngine()
         let player = MusicPlayer(engine: engine)
         let delegate = MockDelegate()
@@ -260,7 +267,7 @@ struct MusicPlayerTests {
         #expect(delegate.endOfQueueCalled)
     }
 
-    @Test func next_atEndWithRepeatOff_clearsPlaybackState() {
+    @Test func `next at end with repeat off clears playback state`() {
         let engine = MockAudioPlaybackEngine()
         let player = MusicPlayer(engine: engine)
 
@@ -272,7 +279,7 @@ struct MusicPlayerTests {
         #expect(player.queue.totalCount == 0)
     }
 
-    @Test func previous_atQueueStartWithRepeatQueue_wrapsToLastTrack() {
+    @Test func `previous at queue start with repeat queue wraps to last track`() {
         let engine = MockAudioPlaybackEngine()
         engine.mockCurrentTime = .zero
         let player = MusicPlayer(engine: engine)
@@ -286,7 +293,7 @@ struct MusicPlayerTests {
         #expect(player.queue.currentIndex == 2)
     }
 
-    @Test func addToQueue_updatesQueue() throws {
+    @Test func `add to queue updates queue`() throws {
         let engine = MockAudioPlaybackEngine()
         let player = MusicPlayer(engine: engine)
         let delegate = MockDelegate()
@@ -297,14 +304,14 @@ struct MusicPlayerTests {
 
         let newItem = try PlayerItem(
             id: "new", url: #require(URL(string: "https://example.com/new.mp3")),
-            title: "New", artist: "A", album: "B"
+            title: "New", artist: "A", album: "B",
         )
         player.addToQueue(newItem)
 
         #expect(player.queue.upcoming.contains(newItem))
     }
 
-    @Test func replaceUpcomingQueue_publishesSingleQueueUpdate() {
+    @Test func `replace upcoming queue publishes single queue update`() {
         let engine = MockAudioPlaybackEngine()
         let player = MusicPlayer(engine: engine)
         let delegate = MockDelegate()
@@ -322,7 +329,7 @@ struct MusicPlayerTests {
         #expect(player.queue.upcoming == replacement)
     }
 
-    @Test func playNext_insertsAtFrontOfUpcoming() throws {
+    @Test func `play next inserts at front of upcoming`() throws {
         let engine = MockAudioPlaybackEngine()
         let player = MusicPlayer(engine: engine)
 
@@ -331,14 +338,14 @@ struct MusicPlayerTests {
 
         let newItem = try PlayerItem(
             id: "priority", url: #require(URL(string: "https://example.com/p.mp3")),
-            title: "Priority", artist: "A", album: "B"
+            title: "Priority", artist: "A", album: "B",
         )
         player.playNext(newItem)
 
         #expect(player.queue.upcoming.first == newItem)
     }
 
-    @Test func shuffled_setter_togglesShuffle() {
+    @Test func `shuffled setter toggles shuffle`() {
         let engine = MockAudioPlaybackEngine()
         let player = MusicPlayer(engine: engine)
         player.startPlayback(items: Self.makeItems(5))
@@ -350,7 +357,7 @@ struct MusicPlayerTests {
         #expect(player.queue.shuffled == false)
     }
 
-    @Test func repeatMode_setter_changesMode() {
+    @Test func `repeat mode setter changes mode`() {
         let engine = MockAudioPlaybackEngine()
         let player = MusicPlayer(engine: engine)
         player.startPlayback(items: Self.makeItems(3))
@@ -362,7 +369,7 @@ struct MusicPlayerTests {
         #expect(player.repeatMode == .queue)
     }
 
-    @Test func periodicTimeObserverSuspendsAndResumesCallbacks() async {
+    @Test func `periodic time observer suspends and resumes callbacks`() async {
         let engine = MockAudioPlaybackEngine()
         let player = MusicPlayer(engine: engine)
         let delegate = MockDelegate()
@@ -392,7 +399,7 @@ struct MusicPlayerTests {
         #expect(delegate.timeUpdates.last?.0 == 7)
     }
 
-    @Test func handleItemEnd_withRepeatTrack_restartsCurrentItem() {
+    @Test func `handle item end with repeat track restarts current item`() {
         let engine = MockAudioPlaybackEngine()
         let player = MusicPlayer(engine: engine)
         let items = Self.makeItems(3)
@@ -411,7 +418,7 @@ struct MusicPlayerTests {
         #expect(engine.lastReplacedItem != nil)
     }
 
-    @Test func handleItemEnd_withRepeatOff_advances() {
+    @Test func `handle item end with repeat off advances`() {
         let engine = MockAudioPlaybackEngine()
         let player = MusicPlayer(engine: engine)
         let items = Self.makeItems(3)
@@ -422,7 +429,7 @@ struct MusicPlayerTests {
         #expect(player.currentItem == items[1])
     }
 
-    @Test func injectedLogger_receivesPlaybackLogs() {
+    @Test func `injected logger receives playback logs`() {
         let engine = MockAudioPlaybackEngine()
         let logger = MockPlayerLogger()
         let player = MusicPlayer(engine: engine, logger: logger)
@@ -434,7 +441,7 @@ struct MusicPlayerTests {
         #expect(logger.entries.contains { $0.component == "MusicPlayer" && $0.message.contains("pause requested") })
     }
 
-    @Test func injectedLogger_receivesEngineLogs() {
+    @Test func `injected logger receives engine logs`() {
         let engine = MockAudioPlaybackEngine()
         let logger = MockPlayerLogger()
         _ = MusicPlayer(engine: engine, logger: logger)
@@ -445,7 +452,7 @@ struct MusicPlayerTests {
         #expect(logger.entries.contains { $0.component == "AVPlayerEngine" && $0.message.contains("play") })
     }
 
-    @Test func avPlayerEngine_disablesExternalPlaybackToAvoidAppleTVBlackScreen() {
+    @Test func `av player engine disables external playback to avoid apple TV black screen`() {
         let logger = MockPlayerLogger()
         let engine = AVPlayerEngine(logger: logger)
         let routePlayer = engine.routePlayer

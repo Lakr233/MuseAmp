@@ -1,3 +1,10 @@
+//
+//  ShineBarView.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import SnapKit
 import Then
 import UIKit
@@ -33,7 +40,7 @@ final class ShineBarView: UIView {
         guard bounds.size != lastBoundsSize, bounds.width > 0 else { return }
         lastBoundsSize = bounds.size
         gradientLayer.frame = CGRect(
-            x: -bounds.width, y: 0, width: bounds.width * 3, height: bounds.height
+            x: -bounds.width, y: 0, width: bounds.width * 3, height: bounds.height,
         )
         startShimmer()
     }

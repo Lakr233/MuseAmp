@@ -1,3 +1,10 @@
+//
+//  PlaybackInfo.swift
+//  AmMusicKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public struct PlaybackInfo: Decodable, Hashable, Sendable {
@@ -18,7 +25,7 @@ public struct PlaybackInfo: Decodable, Hashable, Sendable {
         artistID: String,
         album: String,
         albumID: String,
-        codec: String
+        codec: String,
     ) {
         self.playbackURL = playbackURL
         self.size = size

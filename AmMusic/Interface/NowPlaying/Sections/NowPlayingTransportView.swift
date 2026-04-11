@@ -1,10 +1,17 @@
+//
+//  NowPlayingTransportView.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AVKit
 import GlyphixTextFx
 import SnapKit
 import Then
 import UIKit
 
-final class NowPlayingTransportView: UIView {
+class NowPlayingTransportView: UIView {
     private enum Layout {
         static let horizontalInset: CGFloat = 20
         static let verticalInset: CGFloat = 12
@@ -36,13 +43,13 @@ final class NowPlayingTransportView: UIView {
     private let titleJumpButton = UIButton(type: .system).then {
         $0.backgroundColor = .clear
         $0.tintColor = .clear
-        $0.accessibilityLabel = String(localized: "Open Lyrics")
-        $0.accessibilityHint = String(localized: "Switches to the lyrics view")
+        $0.accessibilityLabel = String(localized: "Show in Album")
+        $0.accessibilityHint = String(localized: "Opens the album page for the current song")
     }
 
     private let titleLabel = GlyphixTextLabel().then {
         $0.font = UIFontMetrics(forTextStyle: .title3).scaledFont(
-            for: .systemFont(ofSize: 20, weight: .semibold)
+            for: .systemFont(ofSize: 20, weight: .semibold),
         )
         $0.textColor = Palette.primaryText
         $0.textAlignment = .center
@@ -56,7 +63,7 @@ final class NowPlayingTransportView: UIView {
 
     private let artistLabel = GlyphixTextLabel().then {
         $0.font = UIFontMetrics(forTextStyle: .footnote).scaledFont(
-            for: .systemFont(ofSize: 13, weight: .regular)
+            for: .systemFont(ofSize: 13, weight: .regular),
         )
         $0.textColor = Palette.subtitleText
         $0.textAlignment = .center
@@ -75,21 +82,15 @@ final class NowPlayingTransportView: UIView {
     }
 
     private let elapsedLabel = UILabel().then {
-        $0.font = UIFontMetrics(forTextStyle: .caption1).scaledFont(
-            for: .monospacedDigitSystemFont(ofSize: 13, weight: .medium)
-        )
+        $0.font = .monospacedSystemFont(ofSize: 13, weight: .medium)
         $0.textColor = Palette.secondaryText
-        $0.textAlignment = .center
-        $0.adjustsFontForContentSizeCategory = true
+        $0.textAlignment = .right
     }
 
     private let remainingLabel = UILabel().then {
-        $0.font = UIFontMetrics(forTextStyle: .caption1).scaledFont(
-            for: .monospacedDigitSystemFont(ofSize: 13, weight: .medium)
-        )
+        $0.font = .monospacedSystemFont(ofSize: 13, weight: .medium)
         $0.textColor = Palette.secondaryText
-        $0.textAlignment = .center
-        $0.adjustsFontForContentSizeCategory = true
+        $0.textAlignment = .left
     }
 
     private let progressTrackView = UIView().then {
@@ -106,21 +107,6 @@ final class NowPlayingTransportView: UIView {
         $0.layer.cornerRadius = 4
     }
 
-    private let currentLyricLabel = GlyphixTextLabel().then {
-        $0.font = UIFontMetrics(forTextStyle: .footnote).scaledFont(
-            for: .systemFont(ofSize: 13, weight: .medium)
-        )
-        $0.textColor = Palette.primaryText
-        $0.textAlignment = .center
-        $0.numberOfLines = 1
-        $0.lineBreakMode = .byTruncatingTail
-        $0.isBlurEffectEnabled = false
-        $0.isSmoothRenderingEnabled = false
-        $0.countsDown = true
-        $0.clipsToBounds = false
-        $0.isHidden = true
-    }
-
     private let transportStack = UIStackView().then {
         $0.axis = .horizontal
         $0.alignment = .center
@@ -132,7 +118,7 @@ final class NowPlayingTransportView: UIView {
         systemName: "heart",
         pointSize: Layout.favoriteSymbolPointSize,
         weight: .regular,
-        accessibilityLabel: String(localized: "Favorite")
+        accessibilityLabel: String(localized: "Favorite"),
     )
 
     private let favoriteButtonContainer = UIView()
@@ -141,21 +127,21 @@ final class NowPlayingTransportView: UIView {
         systemName: "backward.fill",
         pointSize: 20,
         weight: .regular,
-        accessibilityLabel: String(localized: "Previous")
+        accessibilityLabel: String(localized: "Previous"),
     )
 
     private lazy var playPauseButton = makeIconButton(
         systemName: "pause.fill",
         pointSize: 24,
         weight: .regular,
-        accessibilityLabel: String(localized: "Play Pause")
+        accessibilityLabel: String(localized: "Play Pause"),
     )
 
     private lazy var nextButton = makeIconButton(
         systemName: "forward.fill",
         pointSize: 20,
         weight: .regular,
-        accessibilityLabel: String(localized: "Next")
+        accessibilityLabel: String(localized: "Next"),
     )
 
     private let routePickerContainer = UIView().then {
@@ -165,6 +151,7 @@ final class NowPlayingTransportView: UIView {
 
     private weak var viewModel: NowPlayingControlIslandViewModel?
     private var progressWidthConstraint: Constraint?
+    private var transportBottomConstraint: Constraint?
     private var currentProgress: CGFloat = 0
     private var currentTime: TimeInterval = 0
     private var currentDuration: TimeInterval = 0
@@ -202,7 +189,6 @@ final class NowPlayingTransportView: UIView {
     func setAnimationsSuspended(_ suspended: Bool) {
         titleLabel.disablesAnimations = suspended
         artistLabel.disablesAnimations = suspended
-        currentLyricLabel.disablesAnimations = suspended
 
         if isScrubbing {
             endScrubbingInteraction(commit: false)
@@ -222,12 +208,12 @@ final class NowPlayingTransportView: UIView {
 
     func configure(
         with content: NowPlayingControlIslandViewModel.Content,
-        animated: Bool = false
+        animated: Bool = false,
     ) {
         let layoutAnimationView = layoutAnimationContainerView()
         let shouldAnimateProgressChange = shouldAnimateProgressChange(
             to: content,
-            requestedAnimation: animated
+            requestedAnimation: animated,
         )
 
         let updates = { [self] in
@@ -247,10 +233,10 @@ final class NowPlayingTransportView: UIView {
                         systemName: content.isFavorite ? "heart.fill" : "heart",
                         withConfiguration: UIImage.SymbolConfiguration(
                             pointSize: Layout.favoriteSymbolPointSize,
-                            weight: .regular
-                        )
+                            weight: .regular,
+                        ),
                     ),
-                    for: .normal
+                    for: .normal,
                 )
             }
             if currentPlaybackState != content.isPlaying {
@@ -258,9 +244,9 @@ final class NowPlayingTransportView: UIView {
                 playPauseButton.setImage(
                     UIImage(
                         systemName: content.isPlaying ? "pause.fill" : "play.fill",
-                        withConfiguration: UIImage.SymbolConfiguration(pointSize: 24, weight: .regular)
+                        withConfiguration: UIImage.SymbolConfiguration(pointSize: 24, weight: .regular),
                     ),
-                    for: .normal
+                    for: .normal,
                 )
             }
             favoriteButton.isEnabled = content.hasActiveTrack
@@ -287,22 +273,13 @@ final class NowPlayingTransportView: UIView {
             return
         }
 
-        InterfaceAnimation.springAnimate(
+        InterfaceAnimate.springAnimate(
             duration: 0.42,
             dampingRatio: 0.9,
-            initialVelocity: 1
+            initialVelocity: 1,
         ) {
             updates()
             layoutAnimationView.layoutIfNeeded()
-        }
-    }
-
-    func updateCurrentLyricLine(_ line: String?) {
-        let hasLine = line != nil && !line!.isEmpty
-        currentLyricLabel.text = line
-        currentLyricLabel.isHidden = !hasLine
-        InterfaceAnimation.smoothSpringAnimate {
-            self.layoutAnimationContainerView().layoutIfNeeded()
         }
     }
 
@@ -317,6 +294,19 @@ final class NowPlayingTransportView: UIView {
         }
     }
 
+    func installSupplementaryView(
+        _ view: UIView,
+        spacing: CGFloat = NowPlayingArtworkLayout.contentSpacing,
+    ) {
+        transportBottomConstraint?.deactivate()
+        addSubview(view)
+        view.snp.makeConstraints { make in
+            make.top.equalTo(transportStack.snp.bottom).offset(spacing).priority(.high)
+            make.leading.trailing.equalToSuperview().inset(Layout.horizontalInset).priority(.high)
+            make.bottom.equalToSuperview().inset(Layout.verticalInset).priority(.high)
+        }
+    }
+
     private func setupViewHierarchy() {
         titleStack.addArrangedSubview(titleLabel)
         titleStack.addArrangedSubview(artistLabel)
@@ -328,7 +318,6 @@ final class NowPlayingTransportView: UIView {
         progressRow.addArrangedSubview(progressTrackView)
         progressRow.addArrangedSubview(remainingLabel)
         addSubview(progressRow)
-        addSubview(currentLyricLabel)
 
         favoriteButtonContainer.addSubview(favoriteButton)
         transportStack.addArrangedSubview(favoriteButtonContainer)
@@ -352,11 +341,11 @@ final class NowPlayingTransportView: UIView {
         }
 
         elapsedLabel.snp.makeConstraints { make in
-            make.width.greaterThanOrEqualTo(30)
+            make.width.equalTo(44)
         }
 
         remainingLabel.snp.makeConstraints { make in
-            make.width.greaterThanOrEqualTo(38)
+            make.width.equalTo(50)
         }
 
         progressTrackView.snp.makeConstraints { make in
@@ -392,12 +381,7 @@ final class NowPlayingTransportView: UIView {
             make.top.equalTo(progressRow.snp.bottom).offset(Layout.verticalContentSpacing).priority(.high)
             make.leading.trailing.equalToSuperview().inset(Layout.horizontalInset).priority(.high)
             make.height.equalTo(Layout.buttonSize).priority(.high)
-        }
-
-        currentLyricLabel.snp.makeConstraints { make in
-            make.top.equalTo(transportStack.snp.bottom).offset(NowPlayingArtworkLayout.contentSpacing).priority(.high)
-            make.leading.trailing.equalToSuperview().inset(Layout.horizontalInset).priority(.high)
-            make.bottom.equalToSuperview().inset(Layout.verticalInset).priority(.high)
+            transportBottomConstraint = make.bottom.equalToSuperview().inset(Layout.verticalInset).priority(.high).constraint
         }
     }
 
@@ -413,7 +397,7 @@ final class NowPlayingTransportView: UIView {
 
     private func applyPlaybackProgress(
         _ content: NowPlayingControlIslandViewModel.Content,
-        animated: Bool
+        animated: Bool,
     ) {
         currentTime = content.currentTime
         currentDuration = content.duration
@@ -435,17 +419,17 @@ final class NowPlayingTransportView: UIView {
             return
         }
 
-        InterfaceAnimation.springAnimate(
+        InterfaceAnimate.springAnimate(
             duration: 0.32,
             dampingRatio: 0.92,
             initialVelocity: 0.9,
-            animations: updates
+            animations: updates,
         )
     }
 
     private func shouldAnimateProgressChange(
         to content: NowPlayingControlIslandViewModel.Content,
-        requestedAnimation: Bool
+        requestedAnimation: Bool,
     ) -> Bool {
         guard !requestedAnimation, !isScrubbing, currentDuration > 0 else {
             return false
@@ -496,14 +480,14 @@ final class NowPlayingTransportView: UIView {
         scrubbingFeedbackGenerator.prepare()
         scrubbingFeedbackGenerator.impactOccurred(intensity: 0.8)
 
-        InterfaceAnimation.quickAnimate(duration: 0.18) {
+        InterfaceAnimate.quickAnimate(duration: 0.18) {
             self.progressTrackView.transform = CGAffineTransform(scaleX: 1, y: Layout.scrubbingTrackScaleY)
             self.progressFillView.transform = CGAffineTransform(scaleX: 1, y: Layout.scrubbingTrackScaleY)
             self.elapsedLabel.transform = CGAffineTransform(scaleX: Layout.scrubbingLabelScale, y: Layout.scrubbingLabelScale)
             self.remainingLabel.transform = CGAffineTransform(scaleX: Layout.scrubbingLabelScale, y: Layout.scrubbingLabelScale)
             self.playPauseButton.transform = CGAffineTransform(
                 scaleX: Layout.scrubbingPlayPauseScale,
-                y: Layout.scrubbingPlayPauseScale
+                y: Layout.scrubbingPlayPauseScale,
             )
         }
     }
@@ -517,7 +501,7 @@ final class NowPlayingTransportView: UIView {
         isScrubbing = false
         currentProgress = scrubbingProgress
 
-        InterfaceAnimation.quickAnimate {
+        InterfaceAnimate.quickAnimate {
             self.progressTrackView.transform = .identity
             self.progressFillView.transform = .identity
             self.elapsedLabel.transform = .identity
@@ -550,7 +534,7 @@ final class NowPlayingTransportView: UIView {
         systemName: String,
         pointSize: CGFloat,
         weight: UIImage.SymbolWeight,
-        accessibilityLabel: String
+        accessibilityLabel: String,
     ) -> UIButton {
         UIButton(type: .system).then {
             var configuration = UIButton.Configuration.plain()
@@ -558,7 +542,7 @@ final class NowPlayingTransportView: UIView {
             configuration.contentInsets = .zero
             configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(
                 pointSize: pointSize,
-                weight: weight
+                weight: weight,
             )
             $0.configuration = configuration
             $0.tintColor = Palette.primaryText
@@ -570,7 +554,7 @@ final class NowPlayingTransportView: UIView {
     @objc
     private func titleJumpTapped() {
         buttonFeedbackGenerator.impactOccurred()
-        viewModel?.setContentSelector(.lyrics)
+        viewModel?.titleTapped()
     }
 
     @objc

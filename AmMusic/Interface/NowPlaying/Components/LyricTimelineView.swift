@@ -1,3 +1,10 @@
+//
+//  LyricTimelineView.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import SnapKit
 import Then
 import UIKit
@@ -10,16 +17,12 @@ enum LyricTimelineAnimation {
     static let outgoingFadeStagger: TimeInterval = 0.04
     static let plainRevealDuration: TimeInterval = 0.26
     static let plainRevealTranslationY: CGFloat = 12
-    static let easeOutOptions: UIView.AnimationOptions = [
-        .allowUserInteraction,
-        .beginFromCurrentState,
-        .curveEaseOut,
-    ]
+    static let easeOutOptions: UIView.AnimationOptions = .curveEaseOut
 }
 
 enum LyricTimelineLineStyle {
     static let textFont = UIFontMetrics(forTextStyle: .title2).scaledFont(
-        for: .systemFont(ofSize: 28, weight: .bold)
+        for: .systemFont(ofSize: 28, weight: .bold),
     )
     static let activeAlpha: CGFloat = 1.0
     static let inactiveAlpha: CGFloat = 0.25
@@ -62,7 +65,7 @@ final class LyricTimelineView: UIView, UIGestureRecognizerDelegate {
     let messageLabel = UILabel().then {
         $0.textColor = UIColor.white.withAlphaComponent(0.76)
         $0.font = UIFontMetrics(forTextStyle: .body).scaledFont(
-            for: .systemFont(ofSize: 17, weight: .medium)
+            for: .systemFont(ofSize: 17, weight: .medium),
         )
         $0.textAlignment = .center
         $0.numberOfLines = 0
@@ -72,14 +75,14 @@ final class LyricTimelineView: UIView, UIGestureRecognizerDelegate {
 
     let topBlurView = VariableBlurUIView(
         maxBlurRadius: 2,
-        direction: .blurredTopClearBottom
+        direction: .blurredTopClearBottom,
     ).then {
         $0.isUserInteractionEnabled = false
     }
 
     let bottomBlurView = VariableBlurUIView(
         maxBlurRadius: 2,
-        direction: .blurredBottomClearTop
+        direction: .blurredBottomClearTop,
     ).then {
         $0.isUserInteractionEnabled = false
     }
@@ -92,6 +95,7 @@ final class LyricTimelineView: UIView, UIGestureRecognizerDelegate {
     var pendingAutoScrollToActiveLine = false
     var isAutoScrollInCooldown = false
     var isBlurHiddenByInteraction = false
+    var tapScrollCooldownDeadline: Date = .distantPast
     var lineTransitionSequence = 0
     weak var activeOutgoingTransitionOverlay: UIView?
     private var messageLeadingConstraint: Constraint?
@@ -100,12 +104,12 @@ final class LyricTimelineView: UIView, UIGestureRecognizerDelegate {
 
     lazy var scrollTapGestureRecognizer = UITapGestureRecognizer(
         target: self,
-        action: #selector(handleScrollViewTap(_:))
+        action: #selector(handleScrollViewTap(_:)),
     )
 
-    var onSelectLineTime: ((TimeInterval) -> Void)?
-    var onCopyAllLyrics: (([String]) -> Void)?
-    var onRequestManageLyrics: ((_ lyrics: [String], _ activeIndex: Int?) -> Void)?
+    var onSelectLineTime: (TimeInterval) -> Void = { _ in }
+    var onCopyAllLyrics: ([String]) -> Void = { _ in }
+    var onRequestManageLyrics: (_ lyrics: [String], _ activeIndex: Int?) -> Void = { _, _ in }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -210,7 +214,7 @@ final class LyricTimelineView: UIView, UIGestureRecognizerDelegate {
             apply(
                 mode: lines.isEmpty ? .message(String(localized: "No lyrics available")) : .plain(lines),
                 currentTime: currentTime,
-                animated: false
+                animated: false,
             )
             return
         }
@@ -219,6 +223,7 @@ final class LyricTimelineView: UIView, UIGestureRecognizerDelegate {
     }
 
     func updateCurrentTime(_ currentTime: TimeInterval) {
+        guard Date() >= tapScrollCooldownDeadline else { return }
         self.currentTime = currentTime
         syncVisibleState(animated: window != nil)
     }
@@ -279,7 +284,6 @@ extension LyricTimelineView: UITableViewDataSource, UITableViewDelegate {
                 horizontalInset: cachedHorizontalInset,
                 state: .inapplicable,
                 seekTime: nil,
-                onTap: nil
             )
         case let .synced(timeline):
             let line = timeline.lines[row]
@@ -289,10 +293,11 @@ extension LyricTimelineView: UITableViewDataSource, UITableViewDelegate {
                 text: line.text,
                 horizontalInset: cachedHorizontalInset,
                 state: state,
-                seekTime: isLeadingPaddingLine ? nil : line.time
+                seekTime: isLeadingPaddingLine ? nil : line.time,
             ) { [weak self] selectedTime in
                 self?.beginBlurHideCooldown()
-                self?.onSelectLineTime?(selectedTime)
+                self?.tapScrollCooldownDeadline = .distantPast
+                self?.onSelectLineTime(selectedTime)
             }
         }
 
@@ -302,7 +307,7 @@ extension LyricTimelineView: UITableViewDataSource, UITableViewDelegate {
     func tableView(
         _: UITableView,
         contextMenuConfigurationForRowAt indexPath: IndexPath,
-        point _: CGPoint
+        point _: CGPoint,
     ) -> UIContextMenuConfiguration? {
         if case let .synced(timeline) = mode,
            isSyntheticLeadingPaddingLine(at: indexPath.row, in: timeline)
@@ -313,8 +318,30 @@ extension LyricTimelineView: UITableViewDataSource, UITableViewDelegate {
         guard let menu = makeLyricContextMenu() else { return nil }
         return UIContextMenuConfiguration(
             identifier: indexPath as NSIndexPath,
-            previewProvider: nil
+            previewProvider: nil,
         ) { _ in menu }
+    }
+
+    func tableView(
+        _: UITableView,
+        previewForHighlightingContextMenuWithConfiguration configuration: UIContextMenuConfiguration,
+    ) -> UITargetedPreview? {
+        CellContextMenuPreviewHelper.targetedPreview(
+            for: configuration,
+            in: tableView,
+            backgroundColor: .clear,
+        )
+    }
+
+    func tableView(
+        _: UITableView,
+        previewForDismissingContextMenuWithConfiguration configuration: UIContextMenuConfiguration,
+    ) -> UITargetedPreview? {
+        CellContextMenuPreviewHelper.targetedPreview(
+            for: configuration,
+            in: tableView,
+            backgroundColor: .clear,
+        )
     }
 
     func scrollViewWillBeginDragging(_: UIScrollView) {

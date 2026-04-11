@@ -1,9 +1,25 @@
+//
+//  PlaybackController.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import AmMusicKit
 import AmMusicPlayerKit
 import AVFoundation
 import Combine
 import Foundation
+
+enum PlayNextResult {
+    case played(Int)
+    case queued(Int)
+    case resumed
+    case alreadyPlaying
+    case alreadyQueued
+    case failed
+}
 
 @MainActor
 final class PlaybackController: ObservableObject {
@@ -22,18 +38,16 @@ final class PlaybackController: ObservableObject {
         var didAttemptPersistedRestore = false
     }
 
-    struct TimeUpdateState {
-        var suppressionDeadline: Date?
-        var flushTask: Task<Void, Never>?
+    struct SeekState {
         var pendingSeekSnapshotTime: TimeInterval?
     }
 
-    static let postSeekTimeUpdateSuppressionInterval: TimeInterval = 0.25
     static let periodicPlaybackStatusLogInterval: TimeInterval = 15
     nonisolated static let queueItemIDPrefix = "queue-item"
 
     @Published var snapshot = PlaybackSnapshot.empty
     var latestSnapshot = PlaybackSnapshot.empty
+    let playbackTimeSubject = PassthroughSubject<(currentTime: TimeInterval, duration: TimeInterval), Never>()
 
     let database: MusicLibraryDatabase
     let downloadStore: DownloadStore
@@ -45,7 +59,7 @@ final class PlaybackController: ObservableObject {
 
     var queueState = QueueState()
     var restoreState = RestoreState()
-    var timeUpdateState = TimeUpdateState()
+    var seekState = SeekState()
     var playlistsDidChangeObserver: NSObjectProtocol?
     var playbackStatusLogTimer: Timer?
     var routeChangeObserver: NSObjectProtocol?
@@ -59,7 +73,7 @@ final class PlaybackController: ObservableObject {
         paths: LibraryPaths,
         playlistStore: PlaylistStore,
         player: AmMusicPlayerKit.MusicPlayer,
-        sessionStore: PlaybackSessionStore? = nil
+        sessionStore: PlaybackSessionStore? = nil,
     ) {
         self.database = database
         self.downloadStore = downloadStore
@@ -71,7 +85,7 @@ final class PlaybackController: ObservableObject {
         player.delegate = self
         player.configureLikeCommand(
             title: String(localized: "Like"),
-            shortTitle: String(localized: "Like")
+            shortTitle: String(localized: "Like"),
         ) { [weak self] in
             guard let self else {
                 return false
@@ -81,7 +95,7 @@ final class PlaybackController: ObservableObject {
         playlistsDidChangeObserver = NotificationCenter.default.addObserver(
             forName: .playlistsDidChange,
             object: playlistStore,
-            queue: .main
+            queue: .main,
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.refreshSnapshot(persistState: true)
@@ -90,7 +104,7 @@ final class PlaybackController: ObservableObject {
         routeChangeObserver = NotificationCenter.default.addObserver(
             forName: AVAudioSession.routeChangeNotification,
             object: AVAudioSession.sharedInstance(),
-            queue: .main
+            queue: .main,
         ) { [weak self] notification in
             let reason = (notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt)
                 .flatMap(AVAudioSession.RouteChangeReason.init(rawValue:))
@@ -108,7 +122,7 @@ final class PlaybackController: ObservableObject {
         metadataReader: EmbeddedMetadataReader,
         paths: LibraryPaths,
         playlistStore: PlaylistStore,
-        sessionStore: PlaybackSessionStore? = nil
+        sessionStore: PlaybackSessionStore? = nil,
     ) {
         self.init(
             apiClient: apiClient,
@@ -118,7 +132,7 @@ final class PlaybackController: ObservableObject {
             paths: paths,
             playlistStore: playlistStore,
             player: AmMusicPlayerKit.MusicPlayer(logger: Self.playerLogger),
-            sessionStore: sessionStore
+            sessionStore: sessionStore,
         )
     }
 
@@ -129,7 +143,7 @@ final class PlaybackController: ObservableObject {
         tracks: [PlaybackTrack],
         startAt startIndex: Int = 0,
         source: PlaybackSource,
-        shuffle: Bool = false
+        shuffle: Bool = false,
     ) async -> Bool {
         guard !tracks.isEmpty else {
             AppLog.warning(self, "play ignored for empty track list")
@@ -156,7 +170,7 @@ final class PlaybackController: ObservableObject {
         track: PlaybackTrack,
         in tracks: [PlaybackTrack],
         source: PlaybackSource,
-        shuffle: Bool = false
+        shuffle: Bool = false,
     ) async -> Bool {
         let trackIDs = tracks.map(\.id)
         let startIndex = trackIDs.firstIndex(of: track.id) ?? 0
@@ -165,31 +179,36 @@ final class PlaybackController: ObservableObject {
     }
 
     @discardableResult
-    func playNext(_ tracks: [PlaybackTrack]) async -> Int {
-        guard !tracks.isEmpty else { return 0 }
+    func playNext(_ tracks: [PlaybackTrack]) async -> PlayNextResult {
+        guard !tracks.isEmpty else { return .failed }
         if player.queue.totalCount == 0 {
             let started = await play(tracks: tracks, source: .adHoc(name: "Queue"))
-            return started ? tracks.count : 0
+            return started ? .played(tracks.count) : .failed
         }
 
         if tracks.count == 1, let track = tracks.first {
             if track.id == latestSnapshot.currentTrack?.id {
+                if latestSnapshot.state == .paused {
+                    AppLog.info(self, "playNext: resuming paused track trackID=\(track.id)")
+                    player.play()
+                    return .resumed
+                }
                 AppLog.info(self, "playNext: track is currently playing, no-op trackID=\(track.id)")
-                return 1
+                return .alreadyPlaying
             }
             if let nextTrack = latestSnapshot.upcoming.first, nextTrack.id == track.id {
                 AppLog.info(self, "playNext: track is already next, no-op trackID=\(track.id)")
-                return 1
+                return .alreadyQueued
             }
         }
 
         let resolvedItems = await resolvePlayableItems(for: tracks)
-        guard !resolvedItems.isEmpty else { return 0 }
+        guard !resolvedItems.isEmpty else { return .failed }
         for resolvedItem in resolvedItems {
             queueState.trackLookup[resolvedItem.item.id] = resolvedItem.track
         }
         player.playNext(resolvedItems.map(\.item))
-        return resolvedItems.count
+        return .queued(resolvedItems.count)
     }
 
     @discardableResult
@@ -230,8 +249,13 @@ final class PlaybackController: ObservableObject {
     }
 
     func previous() {
-        AppLog.info(self, "previous requested trackID=\(latestSnapshot.currentTrack?.id ?? "nil") currentTime=\(formattedPlaybackTime(player.currentTime))")
+        let willRestart = player.currentTime > 3
+        AppLog.info(self, "previous requested trackID=\(latestSnapshot.currentTrack?.id ?? "nil") currentTime=\(formattedPlaybackTime(player.currentTime)) willRestart=\(willRestart)")
         player.previous()
+        if willRestart {
+            seekState.pendingSeekSnapshotTime = 0
+            refreshSnapshot(currentTime: 0, duration: player.duration, persistState: true)
+        }
     }
 
     func restartCurrentTrack() {
@@ -241,11 +265,9 @@ final class PlaybackController: ObservableObject {
 
         Task { @MainActor [weak self] in
             guard let self else { return }
-            timeUpdateState.pendingSeekSnapshotTime = 0
-            beginPostSeekTimeUpdateSuppression()
+            seekState.pendingSeekSnapshotTime = 0
             _ = await player.seek(to: 0)
             player.play()
-            beginPostSeekTimeUpdateSuppression()
             refreshSnapshot(currentTime: 0, duration: player.duration, persistState: true)
         }
     }
@@ -303,15 +325,13 @@ final class PlaybackController: ObservableObject {
     func seek(to seconds: TimeInterval) {
         AppLog.info(self, "seek requested target=\(formattedPlaybackTime(max(seconds, 0))) from=\(formattedPlaybackTime(player.currentTime))")
         let targetTime = max(seconds, 0)
-        timeUpdateState.pendingSeekSnapshotTime = targetTime
-        beginPostSeekTimeUpdateSuppression()
+        seekState.pendingSeekSnapshotTime = targetTime
         refreshSnapshot(currentTime: targetTime, duration: player.duration)
 
         Task { [weak self] in
             guard let self else { return }
             await player.seek(to: targetTime)
             await MainActor.run {
-                self.beginPostSeekTimeUpdateSuppression()
                 self.refreshSnapshot(currentTime: targetTime, duration: self.player.duration, persistState: true)
             }
         }
@@ -393,9 +413,6 @@ final class PlaybackController: ObservableObject {
         AppLog.info(self, "Playback UI publishing suspended=\(suspended)")
 
         if suspended {
-            timeUpdateState.flushTask?.cancel()
-            timeUpdateState.flushTask = nil
-            timeUpdateState.suppressionDeadline = nil
             playbackStatusLogTimer?.invalidate()
             playbackStatusLogTimer = nil
             return
@@ -404,7 +421,7 @@ final class PlaybackController: ObservableObject {
         refreshSnapshot(
             currentTime: player.currentTime,
             duration: player.duration,
-            persistState: true
+            persistState: true,
         )
     }
 
@@ -437,7 +454,7 @@ final class PlaybackController: ObservableObject {
             let localFileURL = persistedTrack.localRelativePath.map { paths.absoluteAudioURL(for: $0) }
             let artworkURL = await restoredArtworkURL(
                 for: persistedTrack,
-                localFileURL: localFileURL
+                localFileURL: localFileURL,
             )
             tracks.append(
                 PlaybackTrack(
@@ -448,8 +465,8 @@ final class PlaybackController: ObservableObject {
                     albumID: persistedTrack.albumID,
                     artworkURL: artworkURL,
                     durationInSeconds: persistedTrack.durationInSeconds,
-                    localFileURL: localFileURL
-                )
+                    localFileURL: localFileURL,
+                ),
             )
         }
         let resolvedItems = await resolvePlayableItems(for: tracks)
@@ -473,7 +490,7 @@ final class PlaybackController: ObservableObject {
             shuffled: session.shuffled,
             repeatMode: session.repeatMode,
             currentTime: restoredCurrentTime,
-            autoPlay: allowAutoPlay && session.shouldResumePlayback
+            autoPlay: allowAutoPlay && session.shouldResumePlayback,
         )
         guard restored else {
             sessionStore.clear()
@@ -482,13 +499,12 @@ final class PlaybackController: ObservableObject {
         refreshSnapshot(
             currentTime: restoredCurrentTime,
             duration: player.duration,
-            persistState: true
+            persistState: true,
         )
         return true
     }
 
     deinit {
-        timeUpdateState.flushTask?.cancel()
         playbackStatusLogTimer?.invalidate()
         if let playlistsDidChangeObserver {
             NotificationCenter.default.removeObserver(playlistsDidChangeObserver)

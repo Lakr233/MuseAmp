@@ -1,3 +1,10 @@
+//
+//  SongExportItem.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import Foundation
 
@@ -19,7 +26,7 @@ nonisolated struct SongExportItem {
         albumID: String? = nil,
         albumName: String? = nil,
         artworkURL: URL? = nil,
-        fallbackBaseName: String? = nil
+        fallbackBaseName: String? = nil,
     ) {
         self.sourceURL = sourceURL
         self.trackID = trackID
@@ -32,7 +39,7 @@ nonisolated struct SongExportItem {
         preferredFileBaseName = Self.preferredFileBaseName(
             artistName: artistName,
             title: title,
-            fallbackBaseName: fallbackBaseName
+            fallbackBaseName: fallbackBaseName,
         )
     }
 }
@@ -41,7 +48,7 @@ private nonisolated extension SongExportItem {
     static func preferredFileBaseName(
         artistName: String,
         title: String,
-        fallbackBaseName: String
+        fallbackBaseName: String,
     ) -> String {
         let artist = sanitizeDisplayFileName(artistName)
         let title = sanitizeDisplayFileName(title)

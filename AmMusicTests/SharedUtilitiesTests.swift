@@ -7,24 +7,24 @@ import UIKit
 
 @Suite(.serialized)
 struct AVMetadataHelperTests {
-    @Test("matches returns true when identifier contains token")
-    func matchesIdentifier() throws {
+    @Test
+    func `matches returns true when identifier contains token`() throws {
         let item = AVMutableMetadataItem()
         item.identifier = .commonIdentifierArtwork
         let frozen = try #require(item.copy() as? AVMetadataItem)
         #expect(AVMetadataHelper.matches(frozen, tokens: ["artwork"]))
     }
 
-    @Test("matches returns false for unrelated tokens")
-    func matchesUnrelated() throws {
+    @Test
+    func `matches returns false for unrelated tokens`() throws {
         let item = AVMutableMetadataItem()
         item.identifier = .commonIdentifierTitle
         let frozen = try #require(item.copy() as? AVMetadataItem)
         #expect(!AVMetadataHelper.matches(frozen, tokens: ["artwork", "coverart"]))
     }
 
-    @Test("matches is case-insensitive")
-    func matchesCaseInsensitive() throws {
+    @Test
+    func `matches is case-insensitive`() throws {
         let item = AVMutableMetadataItem()
         item.identifier = .commonIdentifierArtwork
         let frozen = try #require(item.copy() as? AVMetadataItem)
@@ -32,8 +32,8 @@ struct AVMetadataHelperTests {
         #expect(AVMetadataHelper.matches(frozen, tokens: ["artwork"]))
     }
 
-    @Test("matches with empty tokens returns false")
-    func matchesEmptyTokens() throws {
+    @Test
+    func `matches with empty tokens returns false`() throws {
         let item = AVMutableMetadataItem()
         item.identifier = .commonIdentifierTitle
         let frozen = try #require(item.copy() as? AVMetadataItem)
@@ -45,46 +45,46 @@ struct AVMetadataHelperTests {
 
 @Suite(.serialized)
 struct SanitizedLogTextTests {
-    @Test("collapses whitespace")
-    func collapsesWhitespace() {
+    @Test
+    func `collapses whitespace`() {
         #expect(sanitizedLogText("hello   world") == "hello world")
     }
 
-    @Test("trims leading and trailing whitespace")
-    func trimsEdges() {
+    @Test
+    func `trims leading and trailing whitespace`() {
         #expect(sanitizedLogText("  hello  ") == "hello")
     }
 
-    @Test("replaces double quotes with single quotes")
-    func replacesQuotes() {
+    @Test
+    func `replaces double quotes with single quotes`() {
         #expect(sanitizedLogText("say \"hello\"") == "say 'hello'")
     }
 
-    @Test("collapses newlines and tabs")
-    func collapsesNewlines() {
+    @Test
+    func `collapses newlines and tabs`() {
         #expect(sanitizedLogText("line1\n\tline2") == "line1 line2")
     }
 
-    @Test("truncates when maxLength is set")
-    func truncates() {
+    @Test
+    func `truncates when maxLength is set`() {
         let result = sanitizedLogText("abcdefghij", maxLength: 5)
         #expect(result == "abcde...")
     }
 
-    @Test("does not truncate when under maxLength")
-    func noTruncateUnderLimit() {
+    @Test
+    func `does not truncate when under maxLength`() {
         let result = sanitizedLogText("abc", maxLength: 10)
         #expect(result == "abc")
     }
 
-    @Test("no truncation when maxLength is nil")
-    func noTruncateNil() {
+    @Test
+    func `no truncation when maxLength is nil`() {
         let long = String(repeating: "a", count: 200)
         #expect(sanitizedLogText(long).count == 200)
     }
 
-    @Test("handles empty string")
-    func emptyString() {
+    @Test
+    func `handles empty string`() {
         #expect(sanitizedLogText("") == "")
     }
 }
@@ -94,8 +94,8 @@ struct SanitizedLogTextTests {
 @Suite(.serialized)
 @MainActor
 struct RemoveAnimationsTests {
-    @Test("removeAnimationsRecursively visits subviews")
-    func removesFromSubviews() {
+    @Test
+    func `removeAnimationsRecursively visits subviews`() {
         let parent = UIView()
         let child = UIView()
         let grandchild = UIView()
@@ -119,8 +119,8 @@ struct RemoveAnimationsTests {
 @Suite(.serialized)
 @MainActor
 struct CellContextMenuPreviewHelperTests {
-    @Test("returns nil when identifier is not an IndexPath")
-    func nilForInvalidIdentifier() {
+    @Test
+    func `returns nil when identifier is not an IndexPath`() {
         let tableView = UITableView()
         let config = UIContextMenuConfiguration(identifier: "bad" as NSString, previewProvider: nil, actionProvider: nil)
         let result = CellContextMenuPreviewHelper.targetedPreview(for: config, in: tableView)

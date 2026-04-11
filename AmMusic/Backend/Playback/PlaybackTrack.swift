@@ -1,3 +1,10 @@
+//
+//  PlaybackTrack.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import AmMusicKit
 import Foundation
@@ -20,7 +27,7 @@ nonisolated struct PlaybackTrack: Identifiable, Hashable {
         albumID: String? = nil,
         artworkURL: URL? = nil,
         durationInSeconds: TimeInterval? = nil,
-        localFileURL: URL? = nil
+        localFileURL: URL? = nil,
     ) {
         self.id = id
         self.title = title
@@ -38,7 +45,7 @@ nonisolated struct PlaybackTrack: Identifiable, Hashable {
             title: title,
             artistName: artistName,
             albumTitle: albumName,
-            durationMillis: durationInSeconds.map { Int(($0 * 1000).rounded()) }
+            durationMillis: durationInSeconds.map { Int(($0 * 1000).rounded()) },
         )
     }
 }
@@ -52,7 +59,7 @@ extension CatalogSong {
             albumName: attributes.albumName,
             albumID: relationships?.albums?.data.first?.id,
             artworkURL: apiClient.mediaURL(from: attributes.artwork?.url, width: 600, height: 600),
-            durationInSeconds: attributes.durationInMillis.map { TimeInterval($0) / 1000 }
+            durationInSeconds: attributes.durationInMillis.map { TimeInterval($0) / 1000 },
         )
     }
 }
@@ -66,7 +73,7 @@ extension PlaylistEntry {
             albumName: albumTitle,
             albumID: albumID,
             artworkURL: apiClient.mediaURL(from: artworkURL, width: 600, height: 600),
-            durationInSeconds: durationMillis.map { TimeInterval($0) / 1000 }
+            durationInSeconds: durationMillis.map { TimeInterval($0) / 1000 },
         )
     }
 }

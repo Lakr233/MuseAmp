@@ -1,3 +1,10 @@
+//
+//  PlaylistViewController+Editing.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AlertController
 import AmMusicDatabaseKit
 import Then
@@ -26,7 +33,7 @@ extension PlaylistViewController {
     func makeMenuButton() -> UIBarButtonItem {
         UIBarButtonItem(
             image: UIImage(systemName: "ellipsis.circle"),
-            menu: buildPlaylistMenu()
+            menu: buildPlaylistMenu(),
         ).then {
             $0.accessibilityLabel = String(localized: "Playlist Actions")
         }
@@ -35,7 +42,7 @@ extension PlaylistViewController {
     func buildPlaylistMenu() -> UIMenu {
         let select = UIAction(
             title: String(localized: "Select"),
-            image: UIImage(systemName: "checkmark.circle")
+            image: UIImage(systemName: "checkmark.circle"),
         ) { [weak self] _ in
             self?.selectTapped()
         }
@@ -53,11 +60,11 @@ extension PlaylistViewController {
                 UIAction(
                     title: option.title,
                     image: UIImage(systemName: option.imageName),
-                    state: sortOption == option ? .on : .off
+                    state: sortOption == option ? .on : .off,
                 ) { [weak self] _ in
                     self?.sortPlaylists(by: option)
                 }
-            }
+            },
         )
         return UIMenu(options: .displayInline, children: [sortMenu])
     }
@@ -67,7 +74,7 @@ extension PlaylistViewController {
             image: UIImage(systemName: "trash"),
             style: .plain,
             target: self,
-            action: #selector(deleteSelectedTapped)
+            action: #selector(deleteSelectedTapped),
         ).then {
             $0.accessibilityIdentifier = "playlist.deleteSelected"
             $0.isEnabled = !selectedPlaylists().isEmpty
@@ -116,7 +123,7 @@ extension PlaylistViewController {
             title: title,
             message: message,
             confirmTitle: isSingle ? String(localized: "Delete") : String(localized: "Delete Playlists"),
-            onConfirm: onDelete
+            onConfirm: onDelete,
         )
     }
 

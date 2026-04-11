@@ -1,3 +1,10 @@
+//
+//  DownloadJobStatus.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public enum DownloadJobStatus: String, Sendable, Codable, CaseIterable, Hashable {

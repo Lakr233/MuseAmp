@@ -1,3 +1,10 @@
+//
+//  DownloadRequest.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public struct DownloadRequest: Sendable, Codable, Hashable {
@@ -16,7 +23,7 @@ public struct DownloadRequest: Sendable, Codable, Hashable {
         artistName: String,
         albumTitle: String? = nil,
         artworkURL: String? = nil,
-        sourceURL: String? = nil
+        sourceURL: String? = nil,
     ) {
         self.trackID = trackID
         self.albumID = albumID

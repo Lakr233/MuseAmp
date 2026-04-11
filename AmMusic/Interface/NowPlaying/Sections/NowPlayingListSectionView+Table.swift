@@ -1,3 +1,10 @@
+//
+//  NowPlayingListSectionView+Table.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import UIKit
 
 // MARK: - UITableViewDelegate
@@ -7,6 +14,7 @@ extension NowPlayingListSectionView: UITableViewDelegate {
         guard let item = dataSource.itemIdentifier(for: indexPath) else { return false }
         return !NowPlayingQueueItemIdentifier.isControls(item)
             && !NowPlayingQueueItemIdentifier.isEmptyQueue(item)
+            && !NowPlayingQueueItemIdentifier.isFooter(item)
     }
 
     func tableView(_: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
@@ -20,6 +28,10 @@ extension NowPlayingListSectionView: UITableViewDelegate {
 
         if NowPlayingQueueItemIdentifier.isEmptyQueue(item) {
             return 72
+        }
+
+        if NowPlayingQueueItemIdentifier.isFooter(item) {
+            return Layout.footerRowHeight
         }
 
         return queueTableView.rowHeight
@@ -36,73 +48,107 @@ extension NowPlayingListSectionView: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: false)
         guard let displayTrack = displayTrack(at: indexPath) else { return }
-        onSelectQueueTrack?(.queue(index: displayTrack.queueIndex))
+        onSelectQueueTrack(.queue(index: displayTrack.queueIndex))
     }
 
     func tableView(
         _: UITableView,
         contextMenuConfigurationForRowAt indexPath: IndexPath,
-        point _: CGPoint
+        point _: CGPoint,
     ) -> UIContextMenuConfiguration? {
         guard let displayTrack = displayTrack(at: indexPath),
-              let currentPlayerIndex = playerIndex,
-              displayTrack.queueIndex > currentPlayerIndex
+              let currentPlayerIndex = playerIndex
         else {
             return nil
         }
 
         let queueIndex = displayTrack.queueIndex
+        let track = displayTrack.track
+        let isCurrentTrack = queueIndex == currentPlayerIndex
+        let isHistoryTrack = queueIndex < currentPlayerIndex
+
         return UIContextMenuConfiguration(
             identifier: indexPath as NSIndexPath,
-            previewProvider: nil
+            previewProvider: nil,
         ) { [weak self] _ in
-            let removeAction = UIAction(
-                title: String(localized: "Remove from Queue"),
-                image: UIImage(systemName: "text.badge.minus"),
-                attributes: .destructive
-            ) { _ in
-                self?.pendingContextMenuRemoval = queueIndex
+            var actions: [UIAction] = []
+
+            if isCurrentTrack {
+                actions.append(UIAction(
+                    title: String(localized: "Play from Beginning"),
+                    image: UIImage(systemName: "arrow.counterclockwise"),
+                ) { _ in
+                    self?.onRestartCurrentTrack()
+                })
+            } else if isHistoryTrack {
+                actions.append(UIAction(
+                    title: String(localized: "Play from Here"),
+                    image: UIImage(systemName: "play"),
+                ) { _ in
+                    self?.onPlayFromHere(queueIndex)
+                })
+                actions.append(UIAction(
+                    title: String(localized: "Play Next"),
+                    image: UIImage(systemName: "text.line.first.and.arrowtriangle.forward"),
+                ) { _ in
+                    self?.onPlayNext(track)
+                })
+            } else {
+                actions.append(UIAction(
+                    title: String(localized: "Play from Here"),
+                    image: UIImage(systemName: "play"),
+                ) { _ in
+                    self?.onPlayFromHere(queueIndex)
+                })
+                actions.append(UIAction(
+                    title: String(localized: "Remove from Queue"),
+                    image: UIImage(systemName: "text.badge.minus"),
+                    attributes: .destructive,
+                ) { _ in
+                    self?.pendingContextMenuRemoval = queueIndex
+                })
             }
-            return UIMenu(children: [removeAction])
+
+            return UIMenu(children: actions)
         }
     }
 
     func tableView(
         _: UITableView,
-        previewForHighlightingContextMenuWithConfiguration configuration: UIContextMenuConfiguration
+        previewForHighlightingContextMenuWithConfiguration configuration: UIContextMenuConfiguration,
     ) -> UITargetedPreview? {
         CellContextMenuPreviewHelper.targetedPreview(
             for: configuration,
             in: queueTableView,
-            backgroundColor: UIColor.white.withAlphaComponent(0.08)
+            backgroundColor: UIColor.white.withAlphaComponent(0.08),
         )
     }
 
     func tableView(
         _: UITableView,
-        previewForDismissingContextMenuWithConfiguration configuration: UIContextMenuConfiguration
+        previewForDismissingContextMenuWithConfiguration configuration: UIContextMenuConfiguration,
     ) -> UITargetedPreview? {
         CellContextMenuPreviewHelper.targetedPreview(
             for: configuration,
             in: queueTableView,
-            backgroundColor: UIColor.white.withAlphaComponent(0.08)
+            backgroundColor: UIColor.white.withAlphaComponent(0.08),
         )
     }
 
     func tableView(
         _: UITableView,
         willEndContextMenuInteraction _: UIContextMenuConfiguration,
-        animator: (any UIContextMenuInteractionAnimating)?
+        animator: (any UIContextMenuInteractionAnimating)?,
     ) {
         guard let queueIndex = pendingContextMenuRemoval else { return }
         pendingContextMenuRemoval = nil
 
         if let animator {
             animator.addCompletion { [weak self] in
-                self?.onRemoveQueueTrack?(queueIndex)
+                self?.onRemoveQueueTrack(queueIndex)
             }
         } else {
-            onRemoveQueueTrack?(queueIndex)
+            onRemoveQueueTrack(queueIndex)
         }
     }
 }
@@ -139,7 +185,7 @@ extension NowPlayingListSectionView {
 
         AppLog.info(
             self,
-            "queue refresh autoscroll targetOffsetY=\(String(format: "%.2f", targetOffsetY)) anchor=\(queueTracks.isEmpty ? "controls-top" : "current-row@1/3") animated=\(animated) viewportHeight=\(String(format: "%.2f", queueTableView.bounds.height))"
+            "queue refresh autoscroll targetOffsetY=\(String(format: "%.2f", targetOffsetY)) anchor=\(queueTracks.isEmpty ? "controls-top" : "current-row@1/3") animated=\(animated) viewportHeight=\(String(format: "%.2f", queueTableView.bounds.height))",
         )
 
         if animated {
@@ -168,7 +214,7 @@ extension NowPlayingListSectionView {
     func animateScroll(to targetOffsetY: CGFloat) {
         let clampedOffsetY = clampedOffsetY(targetOffsetY)
 
-        InterfaceAnimation.smoothSpringAnimate {
+        InterfaceAnimate.smoothSpringAnimate {
             self.queueTableView.setContentOffset(CGPoint(x: 0, y: clampedOffsetY), animated: false)
             self.layoutIfNeeded()
         }
@@ -191,33 +237,26 @@ extension NowPlayingListSectionView {
 
             pendingProgrammaticScrollRetry = nil
 
-            guard let blockedUntil = isProgramaticScrollBlocked,
-                  blockedUntil <= Date()
-            else {
+            guard isProgramaticScrollBlocked <= Date() else {
                 return
             }
 
-            isProgramaticScrollBlocked = nil
+            isProgramaticScrollBlocked = .distantPast
             performPendingAutoScrollIfNeeded(animated: true)
         }
 
         pendingProgrammaticScrollRetry = retryWorkItem
         DispatchQueue.main.asyncAfter(
             deadline: .now() + Layout.programmaticScrollBlockDuration,
-            execute: retryWorkItem
+            execute: retryWorkItem,
         )
     }
 
     func hasActiveProgrammaticScrollBlock() -> Bool {
-        guard let blockedUntil = isProgramaticScrollBlocked else {
+        if isProgramaticScrollBlocked <= Date() {
+            isProgramaticScrollBlocked = .distantPast
             return false
         }
-
-        if blockedUntil <= Date() {
-            isProgramaticScrollBlocked = nil
-            return false
-        }
-
         return true
     }
 
@@ -226,7 +265,7 @@ extension NowPlayingListSectionView {
             queueTableView.contentSize.height
                 + queueTableView.adjustedContentInset.bottom
                 - queueTableView.bounds.height,
-            -queueTableView.adjustedContentInset.top
+            -queueTableView.adjustedContentInset.top,
         )
         return min(max(offsetY, -queueTableView.adjustedContentInset.top), maximumOffsetY)
     }

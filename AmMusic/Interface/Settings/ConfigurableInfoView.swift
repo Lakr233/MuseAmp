@@ -1,3 +1,10 @@
+//
+//  ConfigurableInfoView.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import ConfigurableKit
 import UIKit
 
@@ -19,7 +26,7 @@ final class ConfigurableInfoView: ConfigurableView {
             .foregroundColor: UIColor.tintColor,
             .font: UIFont.systemFont(
                 ofSize: UIFont.preferredFont(forTextStyle: .subheadline).pointSize,
-                weight: .semibold
+                weight: .semibold,
             ),
             .underlineStyle: NSUnderlineStyle.single.rawValue,
         ])

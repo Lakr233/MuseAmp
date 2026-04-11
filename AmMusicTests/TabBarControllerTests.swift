@@ -1,12 +1,13 @@
 @testable import AmMusic
+import LNPopupController
 import Testing
 import UIKit
 
 @Suite(.serialized)
 @MainActor
 struct TabBarControllerTests {
-    @Test("Reselecting a root tab scrolls its primary scroll view to top")
-    func reselectingRootTabScrollsToTop() {
+    @Test
+    func `Reselecting a root tab scrolls its primary scroll view to top`() {
         let sandbox = TestLibrarySandbox()
         let tabBar = TabBarController(environment: sandbox.makeEnvironment())
         tabBar.loadViewIfNeeded()
@@ -26,8 +27,8 @@ struct TabBarControllerTests {
         #expect(root.scrollView.contentOffset.y == -root.scrollView.adjustedContentInset.top)
     }
 
-    @Test("Reselecting a nested tab pops to root then scrolls to top")
-    func reselectingNestedTabPopsToRootAndScrollsToTop() {
+    @Test
+    func `Reselecting a nested tab pops to root then scrolls to top`() {
         let sandbox = TestLibrarySandbox()
         let tabBar = TabBarController(environment: sandbox.makeEnvironment())
         tabBar.loadViewIfNeeded()
@@ -52,8 +53,8 @@ struct TabBarControllerTests {
         #expect(navigationController.viewControllers.count == 1)
     }
 
-    @Test("Tab bar has correct accessibility identifiers")
-    func tabAccessibilityIDs() throws {
+    @Test
+    func `Tab bar has correct accessibility identifiers`() throws {
         let sandbox = TestLibrarySandbox()
         let tabBar = TabBarController(environment: sandbox.makeEnvironment())
         tabBar.loadViewIfNeeded()
@@ -67,18 +68,18 @@ struct TabBarControllerTests {
 
         let vcs = try #require(tabBar.viewControllers)
         let tabIDs = vcs.map(\.tabBarItem.accessibilityIdentifier)
-        #expect(tabIDs == ["tab.library", "tab.playlist", "tab.search", "tab.settings"])
+        #expect(tabIDs == ["tab.albums", "tab.songs", "tab.playlist", "tab.search", "tab.settings"])
     }
 
-    @Test("Each tab wraps its root in UINavigationController with large titles")
-    func navigationControllerWrapping() throws {
+    @Test
+    func `Each tab wraps its root in UINavigationController with large titles`() throws {
         let sandbox = TestLibrarySandbox()
         let tabBar = TabBarController(environment: sandbox.makeEnvironment())
         tabBar.loadViewIfNeeded()
 
         if #available(iOS 18.0, *) {
             let selectedControllers = materializedControllers(from: tabBar)
-            #expect(selectedControllers.count == 4)
+            #expect(selectedControllers.count == 5)
 
             let navControllers = try selectedControllers.map { controller in
                 try #require(controller as? UINavigationController)
@@ -94,8 +95,8 @@ struct TabBarControllerTests {
         }
     }
 
-    @Test("Navigation bars have correct accessibility identifiers")
-    func navAccessibilityIDs() throws {
+    @Test
+    func `Navigation bars have correct accessibility identifiers`() throws {
         let sandbox = TestLibrarySandbox()
         let tabBar = TabBarController(environment: sandbox.makeEnvironment())
         tabBar.loadViewIfNeeded()
@@ -111,11 +112,11 @@ struct TabBarControllerTests {
 
         let vcs = try #require(tabBar.viewControllers)
         let navIDs = vcs.compactMap { ($0 as? UINavigationController)?.navigationBar.accessibilityIdentifier }
-        #expect(navIDs == ["nav.library", "nav.playlist", "nav.search", "nav.settings"])
+        #expect(navIDs == ["nav.albums", "nav.songs", "nav.playlist", "nav.search", "nav.settings"])
     }
 
-    @Test("Tab bar configures native popup progress")
-    func configuresNativePopupBar() {
+    @Test
+    func `Tab bar configures native popup progress`() {
         let sandbox = TestLibrarySandbox()
         let tabBar = TabBarController(environment: sandbox.makeEnvironment())
         tabBar.loadViewIfNeeded()
@@ -125,10 +126,10 @@ struct TabBarControllerTests {
         #expect(tabBar.popupBar.progressViewStyle == .bottom)
     }
 
-    @Test("Now playing controller hosts the page container")
-    func nowPlayingControllerHostsPageContainer() {
+    @Test
+    func `Now playing controller hosts the page container`() {
         let sandbox = TestLibrarySandbox()
-        let controller = NowPlayingViewController(environment: sandbox.makeEnvironment())
+        let controller = NowPlayingCompactController(environment: sandbox.makeEnvironment())
         controller.loadViewIfNeeded()
 
         #expect(controller.pageViewController.parent === controller)
@@ -136,9 +137,9 @@ struct TabBarControllerTests {
         #expect(pagesView != nil)
     }
 
-    @Test("Now playing page container centers its initial page")
-    func nowPlayingPageContainerCentersInitialPage() throws {
-        let controller = NowPlayingPageViewController()
+    @Test
+    func `Now playing page container centers its initial page`() throws {
+        let controller = NowPlayingCompactPageController()
         controller.loadViewIfNeeded()
         controller.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
         controller.view.layoutIfNeeded()
@@ -149,8 +150,8 @@ struct TabBarControllerTests {
         #expect(scrollView.contentOffset.x == scrollView.bounds.width)
     }
 
-    @Test("Tab bar preloads the now playing popup controller view")
-    func preloadsNowPlayingPopupControllerView() throws {
+    @Test
+    func `Tab bar preloads the now playing popup controller view`() throws {
         let sandbox = TestLibrarySandbox()
         let tabBar = TabBarController(environment: sandbox.makeEnvironment())
         tabBar.loadViewIfNeeded()
@@ -160,8 +161,8 @@ struct TabBarControllerTests {
         #expect(controller.pageViewController.parent === controller)
     }
 
-    @Test("Tab bar starts on the library tab")
-    func startsOnLibraryTab() {
+    @Test
+    func `Tab bar starts on the library tab`() {
         let sandbox = TestLibrarySandbox()
         let tabBar = TabBarController(environment: sandbox.makeEnvironment())
         tabBar.loadViewIfNeeded()
@@ -169,10 +170,10 @@ struct TabBarControllerTests {
         #expect(tabBar.selectedIndex == 0)
     }
 
-    @Test("Now playing prefers a hidden status bar")
-    func nowPlayingPrefersHiddenStatusBar() {
+    @Test
+    func `Now playing prefers a hidden status bar`() {
         let sandbox = TestLibrarySandbox()
-        let controller = NowPlayingViewController(environment: sandbox.makeEnvironment())
+        let controller = NowPlayingCompactController(environment: sandbox.makeEnvironment())
 
         #expect(controller.prefersStatusBarHidden)
     }
@@ -189,25 +190,25 @@ struct TabBarControllerTests {
     @available(iOS 18.0, *)
     private func expectedTabIdentifiersForUITab() -> [String] {
         if #available(iOS 26.0, *) {
-            return ["library", "playlist", "settings", "com.apple.UIKit.Search"]
+            return ["albums", "songs", "playlist", "settings", "com.apple.UIKit.Search"]
         }
-        return ["library", "playlist", "com.apple.UIKit.Search", "settings"]
+        return ["albums", "songs", "playlist", "com.apple.UIKit.Search", "settings"]
     }
 
     @available(iOS 18.0, *)
     private func expectedLargeTitlePreferencesForUITab() -> [Bool] {
         if #available(iOS 26.0, *) {
-            return [true, true, true, false]
+            return [true, true, true, true, false]
         }
-        return [true, true, false, true]
+        return [true, true, true, false, true]
     }
 
     @available(iOS 18.0, *)
     private func expectedNavigationIDsForUITab() -> [String] {
         if #available(iOS 26.0, *) {
-            return ["nav.library", "nav.playlist", "nav.settings", "nav.search"]
+            return ["nav.albums", "nav.songs", "nav.playlist", "nav.settings", "nav.search"]
         }
-        return ["nav.library", "nav.playlist", "nav.search", "nav.settings"]
+        return ["nav.albums", "nav.songs", "nav.playlist", "nav.search", "nav.settings"]
     }
 
     private func findScrollView(in view: UIView) -> UIScrollView? {

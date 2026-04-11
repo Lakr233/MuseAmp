@@ -1,3 +1,10 @@
+//
+//  NowPlayingArtworkBackgroundView.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import ColorfulX
 import SnapKit
 import Then
@@ -22,6 +29,8 @@ final class NowPlayingArtworkBackgroundView: UIView {
         $0.transitionSpeed = Appearance.transitionSpeed
         $0.renderScale = Appearance.renderScale
         $0.frameLimit = 30
+        let gray = UIColor.gray
+        $0.setColors([gray, gray, gray, gray], animated: false, repeats: false)
     }
 
     private let overlayView = UIView().then {

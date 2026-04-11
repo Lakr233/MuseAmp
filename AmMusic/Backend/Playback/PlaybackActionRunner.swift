@@ -1,3 +1,10 @@
+//
+//  PlaybackActionRunner.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 @MainActor
@@ -9,19 +16,19 @@ struct PlaybackActionRunner {
         tracks: [PlaybackTrack],
         startAt startIndex: Int = 0,
         source: PlaybackSource,
-        shuffle: Bool = false
+        shuffle: Bool = false,
     ) async -> Bool {
         let didPlay = await playbackController.play(
             tracks: tracks,
             startAt: startIndex,
             source: source,
-            shuffle: shuffle
+            shuffle: shuffle,
         )
         if didPlay {
             PlaybackFeedbackPresenter.presentPlaySuccess(
                 tracks: tracks,
                 startIndex: shuffle ? nil : startIndex,
-                shuffle: shuffle
+                shuffle: shuffle,
             )
         } else {
             let title = shuffle ? String(localized: "Shuffle Play") : String(localized: "Play")
@@ -34,17 +41,17 @@ struct PlaybackActionRunner {
     func play(
         track: PlaybackTrack,
         in tracks: [PlaybackTrack],
-        source: PlaybackSource
+        source: PlaybackSource,
     ) async -> Bool {
         let startIndex = tracks.firstIndex(of: track) ?? 0
         return await play(tracks: tracks, startAt: startIndex, source: source)
     }
 
     @discardableResult
-    func playNext(_ tracks: [PlaybackTrack]) async -> Int {
-        let count = await playbackController.playNext(tracks)
-        PlaybackFeedbackPresenter.presentPlayNextSuccess(count: count, tracks: tracks)
-        return count
+    func playNext(_ tracks: [PlaybackTrack]) async -> PlayNextResult {
+        let result = await playbackController.playNext(tracks)
+        PlaybackFeedbackPresenter.presentPlayNextResult(result, tracks: tracks)
+        return result
     }
 
     @discardableResult

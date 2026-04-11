@@ -1,3 +1,10 @@
+//
+//  AlbumDetailViewController+Playback.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import UIKit
 
 // MARK: - Playback Actions
@@ -33,17 +40,23 @@ extension AlbumDetailViewController {
         let playbackTracks = downloadedAlbumPlaybackTracks()
         guard !playbackTracks.isEmpty,
               let startIndex = playbackTracks.firstIndex(of: track)
-        else {
-            PlaybackFeedbackPresenter.presentFailure(title: String(localized: "Play"))
-            return
-        }
-        playTracks(playbackTracks, startIndex: startIndex)
+        else { return }
+        playTracks(playbackTracks, startIndex: startIndex, showFeedback: false)
+    }
+
+    func playAlbumStarting(trackID: String) {
+        let playbackTracks = albumPlaybackTracks()
+        guard !playbackTracks.isEmpty,
+              let startIndex = playbackTracks.firstIndex(where: { $0.id == trackID })
+        else { return }
+        playTracks(playbackTracks, startIndex: startIndex, showFeedback: false)
     }
 
     func playTracks(
         _ playbackTracks: [PlaybackTrack],
         startIndex: Int? = nil,
-        shuffle: Bool = false
+        shuffle: Bool = false,
+        showFeedback: Bool = true,
     ) {
         Task { @MainActor [weak self] in
             guard let self else { return }
@@ -51,15 +64,16 @@ extension AlbumDetailViewController {
                 await environment.playbackController.play(
                     tracks: playbackTracks,
                     startAt: startIndex,
-                    source: .album(id: album.id)
+                    source: .album(id: album.id),
                 )
             } else {
                 await environment.playbackController.play(
                     tracks: playbackTracks,
                     source: .album(id: album.id),
-                    shuffle: shuffle
+                    shuffle: shuffle,
                 )
             }
+            guard showFeedback else { return }
             if didPlay {
                 if let startIndex {
                     PlaybackFeedbackPresenter.presentPlaySuccess(tracks: playbackTracks, startIndex: startIndex)
@@ -89,20 +103,13 @@ extension AlbumDetailViewController {
     func enqueueTracks(_ tracks: [PlaybackTrack], playNext: Bool) {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            let count = if playNext {
-                await environment.playbackController.playNext(tracks)
+            if playNext {
+                let result = await environment.playbackController.playNext(tracks)
+                PlaybackFeedbackPresenter.presentPlayNextResult(result, tracks: tracks)
             } else {
-                await environment.playbackController.addToQueue(tracks)
+                let count = await environment.playbackController.addToQueue(tracks)
+                PlaybackFeedbackPresenter.presentAddToQueueSuccess(count: count, tracks: tracks)
             }
-            presentQueueFeedback(count: count, tracks: tracks, playNext: playNext)
-        }
-    }
-
-    func presentQueueFeedback(count: Int, tracks: [PlaybackTrack], playNext: Bool) {
-        if playNext {
-            PlaybackFeedbackPresenter.presentPlayNextSuccess(count: count, tracks: tracks)
-        } else {
-            PlaybackFeedbackPresenter.presentAddToQueueSuccess(count: count, tracks: tracks)
         }
     }
 
@@ -127,7 +134,7 @@ extension AlbumDetailViewController {
             on: self,
             title: String(localized: "Download All Songs"),
             message: message,
-            confirmTitle: String(localized: "Download All")
+            confirmTitle: String(localized: "Download All"),
         ) { [weak self] in
             self?.saveToLibrary()
         }
@@ -140,7 +147,7 @@ extension AlbumDetailViewController {
             on: self,
             title: String(localized: "Download"),
             message: String(localized: "Download this song before playing."),
-            confirmTitle: String(localized: "Download")
+            confirmTitle: String(localized: "Download"),
         ) { [weak self] in
             self?.saveTrackToLibrary(track)
         }

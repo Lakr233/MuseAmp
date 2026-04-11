@@ -1,3 +1,10 @@
+//
+//  DownloadCoordinator.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 struct DownloadCoordinator {
@@ -22,7 +29,7 @@ struct DownloadCoordinator {
                 title: request.title,
                 artistName: request.artistName,
                 albumTitle: request.albumTitle,
-                artworkURL: request.artworkURL
+                artworkURL: request.artworkURL,
             )
             try stateStore.upsertDownload(job)
             queued += 1
@@ -59,7 +66,7 @@ struct DownloadCoordinator {
             retryCount: existing.retryCount + 1,
             errorMessage: nil,
             createdAt: existing.createdAt,
-            updatedAt: .init()
+            updatedAt: .init(),
         )
         try stateStore.upsertDownload(updated)
     }

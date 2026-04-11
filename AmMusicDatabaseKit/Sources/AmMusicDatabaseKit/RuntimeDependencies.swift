@@ -1,3 +1,10 @@
+//
+//  RuntimeDependencies.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public struct AudioFileInspection: Sendable {
@@ -24,7 +31,7 @@ public struct RuntimeDependencies: Sendable {
         fetchLyrics: @escaping @Sendable (String) async throws -> String?,
         fetchArtworkData: @escaping @Sendable (URL) async throws -> Data?,
         inspectAudioFile: @escaping @Sendable (URL) async throws -> AudioFileInspection,
-        setScreenAwake: @escaping @Sendable (Bool) -> Void
+        setScreenAwake: @escaping @Sendable (Bool) -> Void,
     ) {
         self.resolveDownloadURL = resolveDownloadURL
         self.requestHeaders = requestHeaders

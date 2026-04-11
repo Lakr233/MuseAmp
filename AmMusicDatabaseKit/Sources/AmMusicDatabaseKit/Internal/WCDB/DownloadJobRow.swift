@@ -1,3 +1,10 @@
+//
+//  DownloadJobRow.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 @preconcurrency import WCDBSwift
 
@@ -54,7 +61,7 @@ struct DownloadJobRow: Codable, TableCodable {
             retryCount: retryCount,
             errorMessage: errorMessage,
             createdAt: createdAt,
-            updatedAt: updatedAt
+            updatedAt: updatedAt,
         )
     }
 

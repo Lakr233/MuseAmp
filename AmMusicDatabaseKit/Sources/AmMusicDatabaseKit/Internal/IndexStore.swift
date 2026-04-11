@@ -1,3 +1,10 @@
+//
+//  IndexStore.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 @preconcurrency import WCDBSwift
 
@@ -50,7 +57,7 @@ struct IndexStore {
     func allTracks() throws -> [AudioTrackRecord] {
         let rows: [TrackRow] = try database.getObjects(
             fromTable: TrackRow.tableName,
-            orderBy: [TrackRow.Properties.artistName.order(.ascending), TrackRow.Properties.title.order(.ascending)]
+            orderBy: [TrackRow.Properties.artistName.order(.ascending), TrackRow.Properties.title.order(.ascending)],
         )
         return rows.map { $0.toModel() }
     }
@@ -58,7 +65,7 @@ struct IndexStore {
     func track(byID trackID: String) throws -> AudioTrackRecord? {
         let row: TrackRow? = try database.getObject(
             fromTable: TrackRow.tableName,
-            where: TrackRow.Properties.trackID == trackID
+            where: TrackRow.Properties.trackID == trackID,
         )
         return row?.toModel()
     }
@@ -71,7 +78,7 @@ struct IndexStore {
                 TrackRow.Properties.discNumber.order(.ascending),
                 TrackRow.Properties.trackNumber.order(.ascending),
                 TrackRow.Properties.title.order(.ascending),
-            ]
+            ],
         )
         return rows.map { $0.toModel() }
     }
@@ -80,7 +87,7 @@ struct IndexStore {
         let rows: [TrackRow] = try database.getObjects(
             fromTable: TrackRow.tableName,
             orderBy: [TrackRow.Properties.updatedAt.order(.descending)],
-            limit: limit
+            limit: limit,
         )
         return rows.map { $0.toModel() }
     }
@@ -98,7 +105,7 @@ struct IndexStore {
                 || TrackRow.Properties.artistName.like(pattern)
                 || TrackRow.Properties.albumTitle.like(pattern),
             orderBy: [TrackRow.Properties.title.order(.ascending)],
-            limit: limit
+            limit: limit,
         )
         return rows.map { $0.toModel() }
     }
@@ -116,7 +123,7 @@ struct IndexStore {
                 albumArtistName: first.albumArtistName,
                 trackCount: tracks.count,
                 artworkTrackID: tracks.first(where: \.hasEmbeddedArtwork)?.trackID,
-                totalDurationSeconds: tracks.reduce(0) { $0 + $1.durationSeconds }
+                totalDurationSeconds: tracks.reduce(0) { $0 + $1.durationSeconds },
             )
         }
         .sorted {
@@ -133,7 +140,7 @@ struct IndexStore {
             trackCount: tracks.count,
             albumCount: Set(tracks.map(\.albumID)).count,
             totalSizeBytes: tracks.reduce(0) { $0 + $1.fileSizeBytes },
-            totalDurationSeconds: tracks.reduce(0) { $0 + $1.durationSeconds }
+            totalDurationSeconds: tracks.reduce(0) { $0 + $1.durationSeconds },
         )
     }
 
@@ -171,7 +178,7 @@ struct IndexStore {
             for relativePath in relativePaths {
                 try database.delete(
                     fromTable: TrackRow.tableName,
-                    where: TrackRow.Properties.relativePath == relativePath
+                    where: TrackRow.Properties.relativePath == relativePath,
                 )
             }
         })
@@ -181,14 +188,14 @@ struct IndexStore {
     func deleteTrack(trackID: String) throws {
         try database.delete(
             fromTable: TrackRow.tableName,
-            where: TrackRow.Properties.trackID == trackID
+            where: TrackRow.Properties.trackID == trackID,
         )
     }
 
     func deleteAlbum(albumID: String) throws {
         try database.delete(
             fromTable: TrackRow.tableName,
-            where: TrackRow.Properties.albumID == albumID
+            where: TrackRow.Properties.albumID == albumID,
         )
     }
 
@@ -199,7 +206,7 @@ struct IndexStore {
     private func metaString(for key: String) throws -> String? {
         let row: IndexMetaRow? = try database.getObject(
             fromTable: IndexMetaRow.tableName,
-            where: IndexMetaRow.Properties.key == key
+            where: IndexMetaRow.Properties.key == key,
         )
         return row?.value
     }
@@ -214,7 +221,7 @@ struct IndexStore {
     private func setMetaValue(_ value: String, for key: String) throws {
         try database.insertOrReplace(
             IndexMetaRow(key: key, value: value),
-            intoTable: IndexMetaRow.tableName
+            intoTable: IndexMetaRow.tableName,
         )
     }
 }

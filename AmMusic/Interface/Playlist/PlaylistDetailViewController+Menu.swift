@@ -1,3 +1,10 @@
+//
+//  PlaylistDetailViewController+Menu.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AlertController
 import AmMusicDatabaseKit
 import UIKit
@@ -6,7 +13,7 @@ extension PlaylistDetailViewController {
     func updateOptionsMenu() {
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             image: UIImage(systemName: "ellipsis.circle"),
-            menu: buildOptionsMenu()
+            menu: buildOptionsMenu(),
         )
     }
 
@@ -21,8 +28,8 @@ extension PlaylistDetailViewController {
                    },
                    sourceProvider: { [weak self] in
                        .playlist(self?.playlistID ?? UUID())
-                   }
-               )
+                   },
+               ),
            )
         {
             sections.append(playbackSection)
@@ -31,7 +38,7 @@ extension PlaylistDetailViewController {
         if let renameSection = MenuSectionProvider.inline([
             UIAction(
                 title: String(localized: "Rename"),
-                image: UIImage(systemName: "pencil")
+                image: UIImage(systemName: "pencil"),
             ) { [weak self] _ in
                 self?.showRenameAlert()
             },
@@ -50,7 +57,7 @@ extension PlaylistDetailViewController {
         if environment != nil, let refreshSection = MenuSectionProvider.inline([
             UIAction(
                 title: String(localized: "Refresh"),
-                image: UIImage(systemName: "arrow.clockwise")
+                image: UIImage(systemName: "arrow.clockwise"),
             ) { [weak self] _ in
                 self?.refreshPlaylistSongs()
             },
@@ -61,7 +68,7 @@ extension PlaylistDetailViewController {
         if let organizeSection = MenuSectionProvider.inline([
             UIAction(
                 title: isEditing ? String(localized: "Done") : String(localized: "Reorder Songs"),
-                image: UIImage(systemName: isEditing ? "checkmark" : "arrow.up.arrow.down")
+                image: UIImage(systemName: isEditing ? "checkmark" : "arrow.up.arrow.down"),
             ) { [weak self] _ in
                 guard let self else { return }
                 setEditing(!isEditing, animated: true)
@@ -78,22 +85,34 @@ extension PlaylistDetailViewController {
         let showCoverAction = UIAction(
             title: String(localized: "Show Cover"),
             image: UIImage(systemName: "photo.on.rectangle"),
-            attributes: canPreviewCover ? [] : .disabled
+            attributes: canPreviewCover ? [] : .disabled,
         ) { [weak self] _ in
             self?.showCoverPreview()
         }
 
         let changeCoverAction = UIAction(
             title: String(localized: "Change Cover"),
-            image: UIImage(systemName: "photo")
+            image: UIImage(systemName: "photo"),
         ) { [weak self] _ in
             self?.showImagePicker()
+        }
+
+        var children: [UIMenuElement] = [showCoverAction, changeCoverAction]
+
+        if canRegenerateCover {
+            let regenerateAction = UIAction(
+                title: String(localized: "Regenerate Cover"),
+                image: UIImage(systemName: "arrow.triangle.2.circlepath"),
+            ) { [weak self] _ in
+                self?.regenerateCover()
+            }
+            children.append(regenerateAction)
         }
 
         return UIMenu(
             title: String(localized: "Cover"),
             image: UIImage(systemName: "photo.stack"),
-            children: [showCoverAction, changeCoverAction]
+            children: children,
         )
     }
 
@@ -104,7 +123,7 @@ extension PlaylistDetailViewController {
 
         let allDownloaded = playlist.songs.allSatisfy { environment.downloadStore.isDownloaded(trackID: $0.trackID) }
         let action = DownloadMenuProvider.downloadAllAction(
-            allDownloaded: allDownloaded
+            allDownloaded: allDownloaded,
         ) { [weak self] in
             Task { await self?.downloadAllSongs() }
         }
@@ -117,6 +136,41 @@ extension PlaylistDetailViewController {
             return false
         }
         return playlist.coverImageData != nil || !playlist.songs.isEmpty
+    }
+
+    var canRegenerateCover: Bool {
+        guard let playlist, environment != nil else {
+            return false
+        }
+        return playlist.coverImageData == nil && !playlist.songs.isEmpty
+    }
+
+    func regenerateCover() {
+        guard let environment, let playlist, !playlist.songs.isEmpty else {
+            return
+        }
+
+        headerCoverTask?.cancel()
+        headerArtworkImage = nil
+        reloadHeaderCell()
+
+        headerCoverTask = Task { @MainActor [weak self, playlist] in
+            guard let self else { return }
+
+            await environment.playlistCoverArtworkCache.invalidateCache(for: playlist)
+
+            guard let image = await generatedCoverImage(for: playlist, sideLength: 200, shuffled: true) else {
+                return
+            }
+
+            guard !Task.isCancelled, playlistID == playlist.id else {
+                return
+            }
+
+            headerArtworkImage = image
+            reloadHeaderCell()
+            AppLog.info(self, "regenerateCover completed playlistID=\(playlist.id)")
+        }
     }
 
     func showCoverPreview() {

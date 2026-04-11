@@ -1,3 +1,10 @@
+//
+//  DatabaseManager+Queries.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public extension DatabaseManager {
@@ -83,7 +90,7 @@ public extension DatabaseManager {
         try requireInitialized()
         guard let indexStore else {
             return LibrarySummary(
-                trackCount: 0, albumCount: 0, totalSizeBytes: 0, totalDurationSeconds: 0
+                trackCount: 0, albumCount: 0, totalSizeBytes: 0, totalDurationSeconds: 0,
             )
         }
         return try indexStore.librarySummary()

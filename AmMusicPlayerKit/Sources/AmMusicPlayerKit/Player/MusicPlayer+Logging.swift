@@ -1,8 +1,15 @@
+//
+//  MusicPlayer+Logging.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 extension MusicPlayer {
     func log(
         _ level: MusicPlayerLogLevel,
         component: String = "MusicPlayer",
-        _ message: @autoclosure () -> String
+        _ message: @autoclosure () -> String,
     ) {
         logger.log(level: level, component: component, message: message())
     }

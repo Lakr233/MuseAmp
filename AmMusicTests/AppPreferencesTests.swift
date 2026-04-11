@@ -5,15 +5,15 @@ import Testing
 
 @Suite(.serialized)
 struct AppPreferencesTests {
-    @Test("Normalize host strips scheme path and query")
-    func normalizeHost() {
+    @Test
+    func `Normalize host strips scheme path and query`() {
         #expect(AppPreferences.normalizeHost("https://example.com/search?q=test") == "example.com")
         #expect(AppPreferences.normalizeHost("example.com:8443") == "example.com:8443")
         #expect(AppPreferences.normalizeHost("   ") == nil)
     }
 
-    @Test("Authorization token trims surrounding whitespace")
-    func authorizationTokenTrimming() {
+    @Test
+    func `Authorization token trims surrounding whitespace`() {
         clearPreferences()
         defer { clearPreferences() }
 
@@ -22,8 +22,8 @@ struct AppPreferencesTests {
         #expect(AppPreferences.configuredAPIAuthorizationToken == "test-token")
     }
 
-    @Test("APIClient picks up updated configured host")
-    func apiClientUsesConfiguredHost() throws {
+    @Test
+    func `APIClient picks up updated configured host`() throws {
         clearPreferences()
         defer { clearPreferences() }
 

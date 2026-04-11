@@ -1,17 +1,39 @@
+//
+//  DownloadManager+Network.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import Combine
+import ConfigurableKit
 import Digger
 import Foundation
 
 // MARK: - Network Observation
 
 extension DownloadManager {
+    func observeConcurrencyChanges() {
+        ConfigurableKit.publisher(forKey: AppPreferences.maxConcurrentDownloadsKey, type: Int.self)
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                guard let self else { return }
+                let limit = maxConcurrent
+                DiggerManager.shared.maxConcurrentTasksCount = limit
+                AppLog.info(self, "Max concurrent downloads changed to \(limit)")
+                processNextIfNeeded()
+            }
+            .store(in: &cancellables)
+    }
+
     func observeNetworkChanges() {
-        networkCancellable = networkMonitor.connectionTypePublisher
+        networkMonitor.connectionTypePublisher
             .removeDuplicates()
             .sink { [weak self] connectionType in
                 self?.handleNetworkChange(connectionType)
             }
+            .store(in: &cancellables)
     }
 
     func handleNetworkChange(_ connectionType: NetworkMonitor.ConnectionType) {

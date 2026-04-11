@@ -1,3 +1,10 @@
+//
+//  TabBarController+Reselection.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import UIKit
 
 protocol TabBarReselectScrollable: AnyObject {
@@ -51,7 +58,7 @@ extension TabBarController {
 
         let targetOffset = CGPoint(
             x: scrollView.contentOffset.x,
-            y: -scrollView.adjustedContentInset.top
+            y: -scrollView.adjustedContentInset.top,
         )
 
         guard abs(scrollView.contentOffset.y - targetOffset.y) > 0.5 else {

@@ -1,3 +1,10 @@
+//
+//  DownloadJob.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public struct DownloadJob: Sendable, Codable, Hashable, Identifiable {
@@ -36,7 +43,7 @@ public struct DownloadJob: Sendable, Codable, Hashable, Identifiable {
         retryCount: Int = 0,
         errorMessage: String? = nil,
         createdAt: Date = .init(),
-        updatedAt: Date = .init()
+        updatedAt: Date = .init(),
     ) {
         self.jobID = jobID
         self.trackID = trackID

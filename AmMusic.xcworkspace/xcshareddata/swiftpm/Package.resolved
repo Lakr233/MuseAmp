@@ -1,5 +1,5 @@
 {
-  "originHash" : "4651e9adbb7c058752f52b39f4818eea800c0162dd54e3573495c1bdde9b9c04",
+  "originHash" : "7f0b74ef97101b715d27245b94451028d5342d99eeae2013f9c5ad1afec9b867",
   "pins" : [
     {
       "identity" : "alertcontroller",
@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Lakr233/Digger",
       "state" : {
-        "revision" : "265c84aa4a447564628d2788e63efc3ab7779d7e",
-        "version" : "0.0.5"
+        "revision" : "6bd5c7dfb07b0be8635241fe60508636de83cd43",
+        "version" : "0.1.0"
       }
     },
     {

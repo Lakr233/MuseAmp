@@ -1,3 +1,10 @@
+//
+//  DownloadManager.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import Combine
 import Digger
@@ -62,7 +69,10 @@ final class DownloadManager {
     var isPausedAll = false
     var isPausedForNetwork = false
 
-    let maxConcurrent = 1
+    var maxConcurrent: Int {
+        AppPreferences.maxConcurrentDownloads
+    }
+
     var tasks: [String: ActiveDownloadTask] = [:]
     var nextQueueOrder = 0
     var hasMarkedDownloading: Set<URL> = []
@@ -70,7 +80,7 @@ final class DownloadManager {
 
     var intentionallyPaused: Set<String> = []
     var cellularAllowedTrackIDs: Set<String> = []
-    var networkCancellable: AnyCancellable?
+    var cancellables: Set<AnyCancellable> = []
     var isKeepingScreenAwake = false
 
     var lastProgressPublishDate: Date = .distantPast
@@ -83,7 +93,7 @@ final class DownloadManager {
         apiClient: APIClient,
         lyricsCacheStore: LyricsCacheStore,
         networkMonitor: NetworkMonitor,
-        screenAwakeHandler: @escaping @MainActor (Bool) -> Void
+        screenAwakeHandler: @escaping @MainActor (Bool) -> Void,
     ) {
         self.paths = paths
         self.databaseManager = databaseManager
@@ -94,10 +104,14 @@ final class DownloadManager {
         self.screenAwakeHandler = screenAwakeHandler
 
         DiggerManager.shared.logLevel = .none
-        DiggerManager.shared.maxConcurrentTasksCount = 1
+        DiggerLogging.handler = { message, _, _, _ in
+            AppLog.verbose("Digger", message)
+        }
+        DiggerManager.shared.maxConcurrentTasksCount = maxConcurrent
         syncDiggerHTTPHeadersIfNeeded()
 
         observeNetworkChanges()
+        observeConcurrencyChanges()
     }
 
     func reconcileOnLaunch() {
@@ -109,7 +123,7 @@ final class DownloadManager {
             if record.status == .downloading || record.status == .resolving {
                 AppLog.info(
                     self,
-                    "Record \(record.trackID) was in status \(record.status), rehydrating as waiting (interrupted)"
+                    "Record \(record.trackID) was in status \(record.status), rehydrating as waiting (interrupted)",
                 )
                 let queuedRecord = DownloadJob(
                     jobID: record.jobID,
@@ -125,7 +139,7 @@ final class DownloadManager {
                     retryCount: record.retryCount,
                     errorMessage: record.errorMessage,
                     createdAt: record.createdAt,
-                    updatedAt: Date()
+                    updatedAt: Date(),
                 )
                 downloadStore.upsert(queuedRecord)
                 rehydrateQueuedRecord(queuedRecord)
@@ -197,7 +211,7 @@ final class DownloadManager {
                 albumTitle: request.albumName,
                 artworkURL: request.artworkURL?.absoluteString,
                 status: .queued,
-                progress: 0
+                progress: 0,
             )
             downloadStore.upsert(job)
 
@@ -214,7 +228,7 @@ final class DownloadManager {
                 speed: 0,
                 retryCount: 0,
                 state: .waiting,
-                queueOrder: allocateQueueOrder()
+                queueOrder: allocateQueueOrder(),
             )
             tasks[request.trackID] = task
             updateDeferredState(for: request.trackID)
@@ -279,7 +293,7 @@ final class DownloadManager {
                 state: .finalizing,
                 progress: 1,
                 localRelativePath: task.destinationRelativePath,
-                retryCount: task.retryCount
+                retryCount: task.retryCount,
             )
             publishSnapshot()
             startFinalizing(trackID: trackID, fileURL: finalizationURL)
@@ -319,6 +333,13 @@ final class DownloadManager {
         downloadStore.deleteRecords(trackIDs: [trackID])
         publishSnapshot()
         processNextIfNeeded()
+    }
+
+    func cancelAllTasks() {
+        let trackIDs = Array(tasks.keys)
+        for trackID in trackIDs {
+            cancelTask(trackID: trackID)
+        }
     }
 
     func allowCellularDownload(trackID: String) {

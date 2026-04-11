@@ -1,3 +1,10 @@
+//
+//  MusicPlayer+Restoration.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AVFoundation
 import CoreMedia
 
@@ -9,7 +16,7 @@ public extension MusicPlayer {
         shuffled: Bool,
         repeatMode: RepeatMode,
         currentTime: TimeInterval,
-        autoPlay: Bool
+        autoPlay: Bool,
     ) async -> Bool {
         guard !items.isEmpty else {
             log(.warning, "restorePlayback ignored because items are empty")
@@ -19,14 +26,14 @@ public extension MusicPlayer {
         let clampedCurrentIndex = min(max(currentIndex, 0), items.count - 1)
         log(
             .info,
-            "restorePlayback count=\(items.count) currentIndex=\(clampedCurrentIndex) shuffled=\(shuffled) repeatMode=\(repeatMode) currentTime=\(currentTime) autoPlay=\(autoPlay)"
+            "restorePlayback count=\(items.count) currentIndex=\(clampedCurrentIndex) shuffled=\(shuffled) repeatMode=\(repeatMode) currentTime=\(currentTime) autoPlay=\(autoPlay)",
         )
 
         playbackQueue.restore(
             items: items,
             currentIndex: clampedCurrentIndex,
             shuffled: shuffled,
-            repeatMode: repeatMode
+            repeatMode: repeatMode,
         )
 
         sessionManager.activate()
@@ -75,7 +82,7 @@ public extension MusicPlayer {
             isEnabled: canHandleLikeCommand,
             isActive: currentItemLiked,
             localizedTitle: likeCommandLocalizedTitle,
-            localizedShortTitle: likeCommandLocalizedShortTitle
+            localizedShortTitle: likeCommandLocalizedShortTitle,
         )
         delegate?.musicPlayer(self, didTransitionTo: item, reason: .natural)
         delegate?.musicPlayer(self, didChangeQueue: snap)

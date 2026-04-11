@@ -1,3 +1,10 @@
+//
+//  LibraryPaths.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public struct LibraryPaths: Sendable {
@@ -107,7 +114,7 @@ public struct LibraryPaths: Sendable {
                 try FileManager.default.createDirectory(
                     at: directory,
                     withIntermediateDirectories: true,
-                    attributes: nil
+                    attributes: nil,
                 )
             } catch {
                 DBLog.error(logger, "LibraryPaths", "createDirectory failed path=\(directory.path) error=\(error.localizedDescription)")
@@ -119,7 +126,7 @@ public struct LibraryPaths: Sendable {
     private static func migrateFromApplicationSupportIfNeeded(to newBase: URL, logger: DatabaseLogger) {
         guard let appSupport = FileManager.default.urls(
             for: .applicationSupportDirectory,
-            in: .userDomainMask
+            in: .userDomainMask,
         ).first else {
             return
         }
@@ -139,7 +146,7 @@ public struct LibraryPaths: Sendable {
             try FileManager.default.createDirectory(
                 at: newBase.deletingLastPathComponent(),
                 withIntermediateDirectories: true,
-                attributes: nil
+                attributes: nil,
             )
             try FileManager.default.moveItem(at: oldBase, to: newBase)
             DBLog.info(logger, "LibraryPaths", "Migrated OfflineLibrary from Application Support")
@@ -152,11 +159,11 @@ public struct LibraryPaths: Sendable {
         let migrations: [(from: URL, to: URL)] = [
             (
                 baseDirectory.appendingPathComponent("ArtworkCache", isDirectory: true),
-                artworkCacheDirectory
+                artworkCacheDirectory,
             ),
             (
                 baseDirectory.appendingPathComponent("LyricsCache", isDirectory: true),
-                lyricsCacheDirectory
+                lyricsCacheDirectory,
             ),
         ]
 
@@ -172,7 +179,7 @@ public struct LibraryPaths: Sendable {
                 try FileManager.default.createDirectory(
                     at: migration.to.deletingLastPathComponent(),
                     withIntermediateDirectories: true,
-                    attributes: nil
+                    attributes: nil,
                 )
                 try FileManager.default.moveItem(at: migration.from, to: migration.to)
                 DBLog.info(logger, "LibraryPaths", "Migrated legacy directory from \(migration.from.lastPathComponent)")

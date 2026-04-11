@@ -1,3 +1,10 @@
+//
+//  StateStore.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 @preconcurrency import WCDBSwift
 
@@ -39,7 +46,7 @@ struct StateStore {
     func allDownloads() throws -> [DownloadJob] {
         let rows: [DownloadJobRow] = try database.getObjects(
             fromTable: DownloadJobRow.tableName,
-            orderBy: [DownloadJobRow.Properties.updatedAt.order(.descending)]
+            orderBy: [DownloadJobRow.Properties.updatedAt.order(.descending)],
         )
         return rows.map { $0.toModel() }
     }
@@ -52,7 +59,7 @@ struct StateStore {
                 || DownloadJobRow.Properties.status == DownloadJobStatus.resolving.rawValue
                 || DownloadJobRow.Properties.status == DownloadJobStatus.downloading.rawValue
                 || DownloadJobRow.Properties.status == DownloadJobStatus.finalizing.rawValue,
-            orderBy: [DownloadJobRow.Properties.updatedAt.order(.descending)]
+            orderBy: [DownloadJobRow.Properties.updatedAt.order(.descending)],
         )
         return rows.map { $0.toModel() }
     }
@@ -61,7 +68,7 @@ struct StateStore {
         let rows: [DownloadJobRow] = try database.getObjects(
             fromTable: DownloadJobRow.tableName,
             where: DownloadJobRow.Properties.status == DownloadJobStatus.failed.rawValue,
-            orderBy: [DownloadJobRow.Properties.updatedAt.order(.descending)]
+            orderBy: [DownloadJobRow.Properties.updatedAt.order(.descending)],
         )
         return rows.map { $0.toModel() }
     }
@@ -70,7 +77,7 @@ struct StateStore {
         let row: DownloadJobRow? = try database.getObject(
             fromTable: DownloadJobRow.tableName,
             where: DownloadJobRow.Properties.trackID == trackID,
-            orderBy: [DownloadJobRow.Properties.updatedAt.order(.descending)]
+            orderBy: [DownloadJobRow.Properties.updatedAt.order(.descending)],
         )
         return row?.toModel()
     }
@@ -82,7 +89,7 @@ struct StateStore {
     func deleteDownload(trackID: String) throws {
         try database.delete(
             fromTable: DownloadJobRow.tableName,
-            where: DownloadJobRow.Properties.trackID == trackID
+            where: DownloadJobRow.Properties.trackID == trackID,
         )
     }
 
@@ -94,7 +101,7 @@ struct StateStore {
             for trackID in trackIDs {
                 try database.delete(
                     fromTable: DownloadJobRow.tableName,
-                    where: DownloadJobRow.Properties.trackID == trackID
+                    where: DownloadJobRow.Properties.trackID == trackID,
                 )
             }
         })
@@ -103,7 +110,7 @@ struct StateStore {
     func fetchPlaylists() throws -> [Playlist] {
         let rows: [PlaylistRow] = try database.getObjects(
             fromTable: PlaylistRow.tableName,
-            orderBy: [PlaylistRow.Properties.updatedAt.order(.descending)]
+            orderBy: [PlaylistRow.Properties.updatedAt.order(.descending)],
         )
         return try rows.map(makePlaylist(from:))
     }
@@ -111,7 +118,7 @@ struct StateStore {
     func fetchPlaylist(id: UUID) throws -> Playlist? {
         guard let row: PlaylistRow = try database.getObject(
             fromTable: PlaylistRow.tableName,
-            where: PlaylistRow.Properties.playlistID == id.uuidString
+            where: PlaylistRow.Properties.playlistID == id.uuidString,
         ) else {
             return nil
         }
@@ -127,7 +134,7 @@ struct StateStore {
     func renamePlaylist(id: UUID, name: String) throws {
         guard var row: PlaylistRow = try database.getObject(
             fromTable: PlaylistRow.tableName,
-            where: PlaylistRow.Properties.playlistID == id.uuidString
+            where: PlaylistRow.Properties.playlistID == id.uuidString,
         ) else {
             return
         }
@@ -140,11 +147,11 @@ struct StateStore {
         try database.run(transaction: { _ in
             try database.delete(
                 fromTable: PlaylistEntryRow.tableName,
-                where: PlaylistEntryRow.Properties.playlistID == id.uuidString
+                where: PlaylistEntryRow.Properties.playlistID == id.uuidString,
             )
             try database.delete(
                 fromTable: PlaylistRow.tableName,
-                where: PlaylistRow.Properties.playlistID == id.uuidString
+                where: PlaylistRow.Properties.playlistID == id.uuidString,
             )
         })
     }
@@ -152,7 +159,7 @@ struct StateStore {
     func updatePlaylistCover(id: UUID, imageData: Data?) throws {
         guard var row: PlaylistRow = try database.getObject(
             fromTable: PlaylistRow.tableName,
-            where: PlaylistRow.Properties.playlistID == id.uuidString
+            where: PlaylistRow.Properties.playlistID == id.uuidString,
         ) else {
             return
         }
@@ -208,12 +215,12 @@ struct StateStore {
                 try database.insertOrReplace(PlaylistRow(from: playlist), intoTable: PlaylistRow.tableName)
                 try database.delete(
                     fromTable: PlaylistEntryRow.tableName,
-                    where: PlaylistEntryRow.Properties.playlistID == playlist.id.uuidString
+                    where: PlaylistEntryRow.Properties.playlistID == playlist.id.uuidString,
                 )
                 for (index, entry) in playlist.entries.enumerated() {
                     try database.insert(
                         PlaylistEntryRow(entry: entry, playlistID: playlist.id, position: index, createdAt: playlist.updatedAt),
-                        intoTable: PlaylistEntryRow.tableName
+                        intoTable: PlaylistEntryRow.tableName,
                     )
                 }
             }
@@ -234,7 +241,7 @@ struct StateStore {
                 artworkURL: $0.artworkURL,
                 durationMillis: $0.durationMillis,
                 trackNumber: $0.trackNumber,
-                lyrics: $0.lyrics
+                lyrics: $0.lyrics,
             )
         }
         playlist = Playlist(
@@ -242,12 +249,12 @@ struct StateStore {
             name: String(
                 format: String(localized: "%@ Copy", bundle: .module),
                 locale: .current,
-                playlist.name
+                playlist.name,
             ),
             coverImageData: playlist.coverImageData,
             entries: duplicatedEntries,
             createdAt: .init(),
-            updatedAt: .init()
+            updatedAt: .init(),
         )
         try importLegacyPlaylists([playlist])
         return playlist
@@ -256,14 +263,14 @@ struct StateStore {
     func playlistCount() throws -> Int {
         try database.getValue(
             on: PlaylistRow.Properties.playlistID.count(),
-            fromTable: PlaylistRow.tableName
+            fromTable: PlaylistRow.tableName,
         ).intValue
     }
 
     func playlistEntryCount() throws -> Int {
         try database.getValue(
             on: PlaylistEntryRow.Properties.entryID.count(),
-            fromTable: PlaylistEntryRow.tableName
+            fromTable: PlaylistEntryRow.tableName,
         ).intValue
     }
 
@@ -280,7 +287,7 @@ struct StateStore {
         try database.getObjects(
             fromTable: PlaylistEntryRow.tableName,
             where: PlaylistEntryRow.Properties.playlistID == playlistID.uuidString,
-            orderBy: [PlaylistEntryRow.Properties.position.order(.ascending)]
+            orderBy: [PlaylistEntryRow.Properties.position.order(.ascending)],
         )
     }
 
@@ -288,7 +295,7 @@ struct StateStore {
         try database.run(transaction: { _ in
             try database.delete(
                 fromTable: PlaylistEntryRow.tableName,
-                where: PlaylistEntryRow.Properties.playlistID == playlistID.uuidString
+                where: PlaylistEntryRow.Properties.playlistID == playlistID.uuidString,
             )
             for (index, var row) in rows.enumerated() {
                 row.position = index
@@ -296,7 +303,7 @@ struct StateStore {
             }
             guard var playlist: PlaylistRow = try database.getObject(
                 fromTable: PlaylistRow.tableName,
-                where: PlaylistRow.Properties.playlistID == playlistID.uuidString
+                where: PlaylistRow.Properties.playlistID == playlistID.uuidString,
             ) else {
                 return
             }
@@ -309,7 +316,7 @@ struct StateStore {
         let entryRows: [PlaylistEntryRow] = try database.getObjects(
             fromTable: PlaylistEntryRow.tableName,
             where: PlaylistEntryRow.Properties.playlistID == row.playlistID,
-            orderBy: [PlaylistEntryRow.Properties.position.order(.ascending)]
+            orderBy: [PlaylistEntryRow.Properties.position.order(.ascending)],
         )
         return row.toModel(entries: entryRows.map { $0.toModel() })
     }
@@ -317,7 +324,7 @@ struct StateStore {
     private func metaString(for key: String) throws -> String? {
         let row: StateMetaRow? = try database.getObject(
             fromTable: StateMetaRow.tableName,
-            where: StateMetaRow.Properties.key == key
+            where: StateMetaRow.Properties.key == key,
         )
         return row?.value
     }
@@ -332,7 +339,7 @@ struct StateStore {
     private func setMetaValue(_ value: String, for key: String) throws {
         try database.insertOrReplace(
             StateMetaRow(key: key, value: value),
-            intoTable: StateMetaRow.tableName
+            intoTable: StateMetaRow.tableName,
         )
     }
 }

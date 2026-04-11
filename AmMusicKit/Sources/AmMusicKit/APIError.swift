@@ -1,3 +1,10 @@
+//
+//  APIError.swift
+//  AmMusicKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public enum APIError: LocalizedError, Sendable {
@@ -17,7 +24,7 @@ public enum APIError: LocalizedError, Sendable {
             String(
                 format: String(localized: "The server returned HTTP %ld.", bundle: .module),
                 locale: .current,
-                statusCode
+                statusCode,
             )
         case let .decodingFailed(message):
             message

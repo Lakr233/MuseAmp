@@ -1,3 +1,10 @@
+//
+//  RemoteMusicService.swift
+//  AmMusicKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public final class RemoteMusicService: MusicService, Sendable {
@@ -22,7 +29,7 @@ public final class RemoteMusicService: MusicService, Sendable {
         session: URLSession = .shared,
         cacheStorageProvider: (any CacheStorageProvider)? = nil,
         authorizationToken: String? = nil,
-        cacheVersion: Int = 1
+        cacheVersion: Int = 1,
     ) {
         self.baseURL = baseURL
         self.session = session
@@ -37,7 +44,7 @@ public final class RemoteMusicService: MusicService, Sendable {
         limit: Int = 20,
         offset: Int = 0,
         cacheSearchResponses: Bool = true,
-        prefetchSongMetadata: Bool = true
+        prefetchSongMetadata: Bool = true,
     ) async throws -> SearchResponse {
         let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmedQuery.isEmpty == false else {
@@ -48,7 +55,7 @@ public final class RemoteMusicService: MusicService, Sendable {
         let response = try await perform(
             .search(query: trimmedQuery, type: type, limit: limit, offset: offset),
             as: SearchResponse.self,
-            cache: cache
+            cache: cache,
         )
 
         guard type == .song, prefetchSongMetadata else {
@@ -60,13 +67,13 @@ public final class RemoteMusicService: MusicService, Sendable {
 
     public func album(id: String, storefront: String? = nil) async throws -> AlbumResponse {
         try await perform(
-            .album(id: id, storefront: storefront), as: AlbumResponse.self, cache: albumCache
+            .album(id: id, storefront: storefront), as: AlbumResponse.self, cache: albumCache,
         )
     }
 
     public func song(id: String, storefront: String? = nil) async throws -> SongResponse {
         try await perform(
-            .song(id: id, storefront: storefront), as: SongResponse.self, cache: songCache
+            .song(id: id, storefront: storefront), as: SongResponse.self, cache: songCache,
         )
     }
 
@@ -75,13 +82,13 @@ public final class RemoteMusicService: MusicService, Sendable {
     {
         try await perform(
             .playback(id: id, storefront: storefront, redirect: redirect), as: PlaybackInfo.self,
-            cache: playbackCache
+            cache: playbackCache,
         )
     }
 
     public func lyrics(id: String, storefront: String? = nil) async throws -> LyricsResponse {
         try await perform(
-            .lyrics(id: id, storefront: storefront), as: LyricsResponse.self, cache: lyricsCache
+            .lyrics(id: id, storefront: storefront), as: LyricsResponse.self, cache: lyricsCache,
         )
     }
 
@@ -90,11 +97,11 @@ public final class RemoteMusicService: MusicService, Sendable {
     private func perform<Response: Decodable & Sendable>(
         _ endpoint: APIEndpoint,
         as responseType: Response.Type,
-        cache: ResponseCache<Response>? = nil
+        cache: ResponseCache<Response>? = nil,
     ) async throws -> Response {
         let request = try endpoint.urlRequest(
             baseURL: baseURL,
-            authorizationToken: authorizationToken
+            authorizationToken: authorizationToken,
         )
         let cacheKey = request.url?.absoluteString ?? UUID().uuidString
 
@@ -147,7 +154,7 @@ public final class RemoteMusicService: MusicService, Sendable {
                 forKey: cacheKey,
                 responseType: responseType,
                 cache: cache,
-                originalError: error
+                originalError: error,
             )
         }
     }
@@ -170,8 +177,8 @@ public final class RemoteMusicService: MusicService, Sendable {
                     format: String(localized: "Request to %@ failed: %@", bundle: .module),
                     locale: .current,
                     host,
-                    error.localizedDescription
-                )
+                    error.localizedDescription,
+                ),
             )
         }
 
@@ -191,7 +198,7 @@ public final class RemoteMusicService: MusicService, Sendable {
     private func decodeResponse<Response: Decodable>(
         _ responseType: Response.Type,
         from data: Data,
-        request: URLRequest
+        request: URLRequest,
     ) throws -> Response {
         do {
             return try decoder.decode(responseType, from: data)
@@ -203,7 +210,7 @@ public final class RemoteMusicService: MusicService, Sendable {
                 locale: .current,
                 String(describing: responseType),
                 host,
-                context
+                context,
             )
             throw APIError.decodingFailed(message: message)
         }
@@ -213,7 +220,7 @@ public final class RemoteMusicService: MusicService, Sendable {
 
     private func loadFreshFromDisk<Response: Decodable & Sendable>(
         forKey key: String,
-        cache: ResponseCache<Response>?
+        cache: ResponseCache<Response>?,
     ) async -> Response? {
         guard let provider = cacheStorageProvider,
               let envelope = await provider.load(forKey: key)
@@ -244,7 +251,7 @@ public final class RemoteMusicService: MusicService, Sendable {
     }
 
     private func loadStaleFromDisk<Response: Decodable & Sendable>(
-        forKey key: String
+        forKey key: String,
     ) async -> Response? {
         guard let provider = cacheStorageProvider,
               let envelope = await provider.load(forKey: key)
@@ -280,7 +287,7 @@ public final class RemoteMusicService: MusicService, Sendable {
         forKey key: String,
         responseType _: Response.Type,
         cache: ResponseCache<Response>?,
-        originalError: Error
+        originalError: Error,
     ) async throws -> Response {
         if let cache, let stale = await cache.staleValue(forKey: key) {
             try Task.checkCancellation()
@@ -305,7 +312,7 @@ public final class RemoteMusicService: MusicService, Sendable {
         let indexed = Array(songs.data.enumerated())
         let enrichedSongs = await withTaskGroup(
             of: (Int, CatalogSong).self,
-            returning: [CatalogSong].self
+            returning: [CatalogSong].self,
         ) { group in
             for (index, song) in indexed {
                 group.addTask {
@@ -329,11 +336,11 @@ public final class RemoteMusicService: MusicService, Sendable {
                 songs: ResourceList(
                     href: songs.href,
                     next: songs.next,
-                    data: enrichedSongs
+                    data: enrichedSongs,
                 ),
                 albums: response.results.albums,
-                artists: response.results.artists
-            )
+                artists: response.results.artists,
+            ),
         )
     }
 
@@ -346,28 +353,28 @@ public final class RemoteMusicService: MusicService, Sendable {
                 format: String(localized: "missing key '%@' at %@", bundle: .module),
                 locale: .current,
                 key.stringValue,
-                codingPath(from: context.codingPath)
+                codingPath(from: context.codingPath),
             )
         case let DecodingError.typeMismatch(type, context):
             String(
                 format: String(localized: "type mismatch for %@ at %@", bundle: .module),
                 locale: .current,
                 String(describing: type),
-                codingPath(from: context.codingPath)
+                codingPath(from: context.codingPath),
             )
         case let DecodingError.valueNotFound(type, context):
             String(
                 format: String(localized: "missing value for %@ at %@", bundle: .module),
                 locale: .current,
                 String(describing: type),
-                codingPath(from: context.codingPath)
+                codingPath(from: context.codingPath),
             )
         case let DecodingError.dataCorrupted(context):
             String(
                 format: String(localized: "data corrupted at %@: %@", bundle: .module),
                 locale: .current,
                 codingPath(from: context.codingPath),
-                context.debugDescription
+                context.debugDescription,
             )
         default:
             error.localizedDescription

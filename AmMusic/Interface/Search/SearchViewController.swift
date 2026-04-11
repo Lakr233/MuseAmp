@@ -1,4 +1,13 @@
+//
+//  SearchViewController.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
+import Combine
+import ConfigurableKit
 import Kingfisher
 import SnapKit
 import Then
@@ -34,20 +43,21 @@ class SearchViewController: UIViewController {
     var searchState = SearchResultsState()
     var searchTask: Task<Void, Never>?
     var debounceTask: Task<Void, Never>?
+    private var cancellables: Set<AnyCancellable> = []
 
     lazy var playlistMenuProvider = AddToPlaylistMenuProvider(
         playlistStore: environment.playlistStore,
-        viewController: self
+        viewController: self,
     )
     lazy var playbackMenuProvider = PlaybackMenuProvider(
-        playbackController: environment.playbackController
+        playbackController: environment.playbackController,
     )
     lazy var songContextMenuProvider = SongContextMenuProvider(
-        playlistMenuProvider: playlistMenuProvider
+        playlistMenuProvider: playlistMenuProvider,
     )
     lazy var albumNavigationHelper = AlbumNavigationHelper(
         environment: environment,
-        viewController: self
+        viewController: self,
     )
 
     let historyStore = SearchHistoryStore()
@@ -83,6 +93,21 @@ class SearchViewController: UIViewController {
         configureTableView()
         configureHistoryTableView()
         loadHistory()
+
+        ConfigurableKit.publisher(
+            forKey: AppPreferences.cleanSongTitleKey, type: Bool.self,
+        )
+        .dropFirst()
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] _ in self?.tableView.reloadData() }
+        .store(in: &cancellables)
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        if !searchController.isActive, searchController.searchBar.text?.isEmpty != false {
+            searchController.searchBar.becomeFirstResponder()
+        }
     }
 
     private func configureSearchController() {
@@ -101,6 +126,7 @@ class SearchViewController: UIViewController {
         tableView.register(AmMediaCell.self, forCellReuseIdentifier: AmMediaCell.reuseID)
         tableView.register(ShowMoreCell.self, forCellReuseIdentifier: ShowMoreCell.reuseID)
         tableView.register(SearchLoadingCell.self, forCellReuseIdentifier: SearchLoadingCell.reuseID)
+        tableView.register(SearchSectionHeaderView.self, forHeaderFooterViewReuseIdentifier: SearchSectionHeaderView.reuseID)
         tableView.accessibilityIdentifier = "search.results"
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 64
@@ -118,6 +144,7 @@ class SearchViewController: UIViewController {
         historyTableView.separatorStyle = .none
         historyTableView.sectionHeaderTopPadding = 0
         historyTableView.keyboardDismissMode = .onDrag
+        historyTableView.register(SearchSectionHeaderView.self, forHeaderFooterViewReuseIdentifier: SearchSectionHeaderView.reuseID)
         historyTableView.clipsToBounds = true
         view.addSubview(historyTableView)
         historyTableView.snp.makeConstraints { $0.edges.equalTo(view.safeAreaLayoutGuide) }
@@ -130,7 +157,7 @@ class SearchViewController: UIViewController {
             if let song = searchState.songs.items.first(where: { $0.id == id }) {
                 cell.configure(
                     with: song,
-                    artworkURL: apiClient.mediaURL(from: song.attributes.artwork?.url, width: 88, height: 88)
+                    artworkURL: apiClient.mediaURL(from: song.attributes.artwork?.url, width: 88, height: 88),
                 )
             }
             cell.accessibilityIdentifier = "search.result.songs.\(indexPath.row)"
@@ -143,7 +170,7 @@ class SearchViewController: UIViewController {
                     subtitle: album.attributes.artistName,
                     artworkURL: apiClient.mediaURL(from: album.attributes.artwork?.url, width: 88, height: 88),
                     placeholderIcon: "square.stack.fill",
-                    roundArtwork: false
+                    roundArtwork: false,
                 )
             }
             cell.accessibilityIdentifier = "search.result.albums.\(indexPath.row)"

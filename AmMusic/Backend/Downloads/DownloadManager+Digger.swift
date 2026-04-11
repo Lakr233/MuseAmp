@@ -1,3 +1,10 @@
+//
+//  DownloadManager+Digger.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import Digger
 import Foundation
@@ -18,16 +25,17 @@ extension DownloadManager {
             AppLog.error(self, "startDiggerDownload missing URL for trackID=\(task.trackID)")
             return
         }
+        let trackID = task.trackID
         diggerStartedURLs.insert(url)
         DiggerManager.shared.download(with: url)
             .progress { [weak self] progress in
-                self?.handleProgress(trackID: task.trackID, progress: progress)
+                DispatchQueue.main.async { self?.handleProgress(trackID: trackID, progress: progress) }
             }
             .speed { [weak self] speed in
-                self?.handleSpeed(trackID: task.trackID, speed: speed)
+                DispatchQueue.main.async { self?.handleSpeed(trackID: trackID, speed: speed) }
             }
             .completion { [weak self] result in
-                self?.handleCompletion(trackID: task.trackID, result: result)
+                DispatchQueue.main.async { self?.handleCompletion(trackID: trackID, result: result) }
             }
     }
 
@@ -82,7 +90,7 @@ extension DownloadManager {
         }
     }
 
-    func handleCompletion(trackID: String, result: Digger.Result<URL>) {
+    func handleCompletion(trackID: String, result: DiggerResult) {
         guard let task = tasks[trackID] else {
             AppLog.warning(self, "handleCompletion ignored: task not found for trackID=\(trackID)")
             return
@@ -97,7 +105,7 @@ extension DownloadManager {
                 let destDir = tmpURL.deletingLastPathComponent()
                 try FileManager.default.createDirectory(
                     at: destDir,
-                    withIntermediateDirectories: true
+                    withIntermediateDirectories: true,
                 )
                 if FileManager.default.fileExists(atPath: tmpURL.path) {
                     try FileManager.default.removeItem(at: tmpURL)
@@ -127,7 +135,7 @@ extension DownloadManager {
                 if currentRetry < 3 {
                     AppLog.warning(
                         self,
-                        "Download cancelled unexpectedly for trackID=\(trackID), requeuing (retry \(currentRetry + 1)/3)"
+                        "Download cancelled unexpectedly for trackID=\(trackID), requeuing (retry \(currentRetry + 1)/3)",
                     )
                     tasks[trackID]?.retryCount = currentRetry + 1
                     tasks[trackID]?.state = .waiting
@@ -143,7 +151,7 @@ extension DownloadManager {
                 }
                 AppLog.error(
                     self,
-                    "Download cancelled repeatedly for trackID=\(trackID), marking failed after \(currentRetry) retries"
+                    "Download cancelled repeatedly for trackID=\(trackID), marking failed after \(currentRetry) retries",
                 )
             }
             AppLog.error(self, "Download failed trackID=\(trackID): \(error.localizedDescription)")
@@ -179,7 +187,7 @@ extension DownloadManager {
             } catch {
                 AppLog.error(
                     self,
-                    "startFinalizing staging move failed trackID=\(trackID) error=\(error.localizedDescription)"
+                    "startFinalizing staging move failed trackID=\(trackID) error=\(error.localizedDescription)",
                 )
                 tasks[trackID]?.markFailed()
                 persistRecord(trackID: trackID, state: .failed, lastError: error.localizedDescription)
@@ -198,10 +206,10 @@ extension DownloadManager {
             trackID: trackID,
             state: .finalizing,
             progress: 1,
-            localRelativePath: task.destinationRelativePath
+            localRelativePath: task.destinationRelativePath,
         )
         AppLog.info(
-            self, "Download finalizing trackID=\(trackID) relativePath=\(task.destinationRelativePath)"
+            self, "Download finalizing trackID=\(trackID) relativePath=\(task.destinationRelativePath)",
         )
         publishSnapshot()
 
@@ -220,12 +228,12 @@ extension DownloadManager {
                 fileURL: ingestURL,
                 artworkURL: artworkURL,
                 apiClient: apiClient,
-                locations: paths
+                locations: paths,
             )
             async let lyricsDone: Void = DownloadLyricsProcessor.cacheLyrics(
                 trackID: trackID,
                 apiClient: apiClient,
-                lyricsStore: lyricsCacheStore
+                lyricsStore: lyricsCacheStore,
             )
             _ = await (artworkDone, lyricsDone)
 
@@ -242,7 +250,7 @@ extension DownloadManager {
             } catch {
                 AppLog.warning(
                     "DownloadManager",
-                    "Metadata embed failed trackID=\(trackID): \(error.localizedDescription)"
+                    "Metadata embed failed trackID=\(trackID): \(error.localizedDescription)",
                 )
             }
 
@@ -260,7 +268,7 @@ extension DownloadManager {
                 composerName: nil,
                 releaseDate: nil,
                 lyrics: lyrics,
-                sourceKind: .downloaded
+                sourceKind: .downloaded,
             )
 
             do {

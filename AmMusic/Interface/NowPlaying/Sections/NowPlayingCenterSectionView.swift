@@ -1,3 +1,10 @@
+//
+//  NowPlayingCenterSectionView.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AVKit
 import SnapKit
 import Then
@@ -15,10 +22,11 @@ enum NowPlayingArtworkLayout {
 
 final class NowPlayingCenterSectionView: UIView {
     let avatarSectionView = NowPlayingAvatarSectionView()
-    let transportView = NowPlayingTransportView()
+    let transportView: NowPlayingTransportView
 
-    override init(frame: CGRect) {
-        super.init(frame: frame)
+    init(transportView: NowPlayingTransportView = NowPlayingTransportView()) {
+        self.transportView = transportView
+        super.init(frame: .zero)
         backgroundColor = .clear
         setupViewHierarchy()
         setupLayout()
@@ -29,7 +37,7 @@ final class NowPlayingCenterSectionView: UIView {
         fatalError()
     }
 
-    var onArtworkLoaded: ((URL, UIImage) -> Void)? {
+    var onArtworkLoaded: (URL, UIImage) -> Void = { _, _ in } {
         didSet {
             avatarSectionView.onArtworkLoaded = onArtworkLoaded
         }
@@ -45,17 +53,13 @@ final class NowPlayingCenterSectionView: UIView {
 
     func configureTransport(
         with content: NowPlayingControlIslandViewModel.Content,
-        animated: Bool
+        animated: Bool,
     ) {
         transportView.configure(with: content, animated: animated)
     }
 
     func installRoutePickerView(_ routePickerView: AVRoutePickerView) {
         transportView.installRoutePickerView(routePickerView)
-    }
-
-    func updateCurrentLyricLine(_ line: String?) {
-        transportView.updateCurrentLyricLine(line)
     }
 
     func setAnimationsSuspended(_ suspended: Bool) {
@@ -98,15 +102,20 @@ final class NowPlayingCenterSectionView: UIView {
             make.trailing.lessThanOrEqualTo(scrollView.frameLayoutGuide).offset(-NowPlayingArtworkLayout.horizontalInset).priority(.high)
             make.top.greaterThanOrEqualTo(scrollView.contentLayoutGuide).priority(.required)
             make.bottom.lessThanOrEqualTo(scrollView.contentLayoutGuide).priority(.required)
+            make.top.greaterThanOrEqualTo(scrollView.frameLayoutGuide).offset(NowPlayingArtworkLayout.topInset).priority(.required)
+            make.bottom.lessThanOrEqualTo(scrollView.frameLayoutGuide).offset(-NowPlayingArtworkLayout.bottomInset).priority(.required)
         }
 
         avatarSectionView.snp.makeConstraints { make in
             make.width.equalTo(scrollView.frameLayoutGuide).multipliedBy(0.9).priority(.high)
             make.width.lessThanOrEqualTo(scrollView.frameLayoutGuide).multipliedBy(0.9)
             make.width.lessThanOrEqualTo(NowPlayingArtworkLayout.artworkMaxSize)
-            make.height.equalTo(avatarSectionView.snp.width)
+            make.height.lessThanOrEqualTo(avatarSectionView.snp.width)
+            make.height.equalTo(avatarSectionView.snp.width).priority(.low)
         }
+        avatarSectionView.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
 
+        transportView.setContentCompressionResistancePriority(.required, for: .vertical)
         transportView.snp.makeConstraints { make in
             make.leading.trailing.equalTo(scrollView.frameLayoutGuide).priority(.high)
         }

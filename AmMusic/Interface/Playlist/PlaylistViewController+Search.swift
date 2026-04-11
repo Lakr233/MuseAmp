@@ -1,3 +1,10 @@
+//
+//  PlaylistViewController+Search.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import UIKit
 
@@ -54,7 +61,7 @@ extension PlaylistViewController {
 
     static func filterPlaylists(
         _ playlists: [Playlist],
-        query: String
+        query: String,
     ) async -> [(playlist: Playlist, matchingSongNames: [String])] {
         await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {

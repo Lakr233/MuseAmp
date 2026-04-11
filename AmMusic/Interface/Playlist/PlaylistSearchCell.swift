@@ -1,3 +1,10 @@
+//
+//  PlaylistSearchCell.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import UIKit
 
@@ -10,19 +17,20 @@ final class PlaylistSearchCell: PlaylistCell {
         matchingSongNames: [String],
         fallbackSubtitle: String? = nil,
         apiClient: APIClient?,
-        artworkCache: PlaylistCoverArtworkCache?
+        artworkCache: PlaylistCoverArtworkCache?,
+        paths: LibraryPaths? = nil,
     ) {
         let artworkKey = artworkKey(for: playlist, sideLength: 44, scale: UIScreen.main.scale)
         super.configure(
             title: playlist.name,
             subtitle: nil,
             placeholderIcon: "music.note.list",
-            roundArtwork: false
+            roundArtwork: false,
         )
 
         if playlist.name.localizedCaseInsensitiveContains(query) {
             setAttributedTitle(SearchHighlightHelper.attributedString(
-                text: playlist.name, query: query, font: .systemFont(ofSize: 16), color: .label
+                text: playlist.name, query: query, font: .systemFont(ofSize: 16), color: .label,
             ))
         }
 
@@ -32,12 +40,12 @@ final class PlaylistSearchCell: PlaylistCell {
                 ? "\(songText) + \(matchingSongNames.count - 3)"
                 : songText
             setAttributedSubtitle(SearchHighlightHelper.attributedString(
-                text: subtitle, query: query, font: .systemFont(ofSize: 13), color: .secondaryLabel
+                text: subtitle, query: query, font: .systemFont(ofSize: 13), color: .secondaryLabel,
             ))
         } else if let fallbackSubtitle {
             setAttributedSubtitle(NSAttributedString(
                 string: fallbackSubtitle,
-                attributes: [.font: UIFont.systemFont(ofSize: 13), .foregroundColor: UIColor.secondaryLabel]
+                attributes: [.font: UIFont.systemFont(ofSize: 13), .foregroundColor: UIColor.secondaryLabel],
             ))
         }
 
@@ -46,7 +54,8 @@ final class PlaylistSearchCell: PlaylistCell {
             artworkKey: artworkKey,
             shouldPreserve: false,
             apiClient: apiClient,
-            artworkCache: artworkCache
+            artworkCache: artworkCache,
+            paths: paths,
         )
     }
 }

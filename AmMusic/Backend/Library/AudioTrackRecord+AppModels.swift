@@ -1,3 +1,10 @@
+//
+//  AudioTrackRecord+AppModels.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import AmMusicKit
 import Foundation
@@ -14,14 +21,14 @@ nonisolated extension AudioTrackRecord {
             releaseDate: releaseDate,
             composerName: composerName,
             hasLyrics: hasEmbeddedLyrics,
-            artwork: artwork
+            artwork: artwork,
         )
         return CatalogSong(
             id: trackID,
             type: "songs",
             href: nil,
             attributes: attributes,
-            relationships: nil
+            relationships: nil,
         )
     }
 
@@ -36,7 +43,7 @@ nonisolated extension AudioTrackRecord {
             albumID: albumID,
             artworkURL: artworkURL,
             durationInSeconds: durationSeconds > 0 ? durationSeconds : nil,
-            localFileURL: paths.absoluteAudioURL(for: relativePath)
+            localFileURL: paths.absoluteAudioURL(for: relativePath),
         )
     }
 
@@ -45,7 +52,7 @@ nonisolated extension AudioTrackRecord {
         displayArtist: String? = nil,
         displayTitle: String? = nil,
         displayAlbumName: String? = nil,
-        artworkURL: URL? = nil
+        artworkURL: URL? = nil,
     ) -> SongExportItem {
         SongExportItem(
             sourceURL: paths.absoluteAudioURL(for: relativePath),
@@ -54,7 +61,7 @@ nonisolated extension AudioTrackRecord {
             trackID: trackID,
             albumID: albumID,
             albumName: displayAlbumName ?? albumTitle,
-            artworkURL: artworkURL
+            artworkURL: artworkURL,
         )
     }
 
@@ -73,7 +80,7 @@ nonisolated extension AudioTrackRecord {
             composerName: composerName,
             releaseDate: releaseDate,
             lyrics: nil,
-            sourceKind: sourceKind
+            sourceKind: sourceKind,
         )
     }
 }

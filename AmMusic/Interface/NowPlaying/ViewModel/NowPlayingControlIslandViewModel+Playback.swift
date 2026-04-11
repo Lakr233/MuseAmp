@@ -1,3 +1,10 @@
+//
+//  NowPlayingControlIslandViewModel+Playback.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicPlayerKit
 import UIKit
 
@@ -18,7 +25,7 @@ extension NowPlayingControlIslandViewModel {
     func apply(snapshot: PlaybackSnapshot) -> Presentation {
         let previousTrackID = currentTrackID
         let previousContent = content
-        let nextTrackID = snapshot.currentTrack?.id
+        let nextTrackID = snapshot.currentTrack?.id ?? ""
         currentTrackID = nextTrackID
 
         let content = makeContent(from: snapshot)
@@ -28,7 +35,7 @@ extension NowPlayingControlIslandViewModel {
             content: content,
             backgroundSource: makeBackgroundSource(from: snapshot),
             shouldAnimatePlaybackStateChange: previousContent.isPlaying != content.isPlaying,
-            shouldAnimateTransition: previousTrackID != nextTrackID
+            shouldAnimateTransition: previousTrackID != nextTrackID,
         )
     }
 
@@ -41,13 +48,15 @@ extension NowPlayingControlIslandViewModel {
         onPrevious: @escaping () -> Void,
         onTogglePlayPause: @escaping () -> Void,
         onNext: @escaping () -> Void,
-        onSeek: @escaping (TimeInterval) -> Void
+        onSeek: @escaping (TimeInterval) -> Void,
+        onTitleTapped: @escaping () -> Void,
     ) {
         self.onFavorite = onFavorite
         self.onPrevious = onPrevious
         self.onTogglePlayPause = onTogglePlayPause
         self.onNext = onNext
         self.onSeek = onSeek
+        self.onTitleTapped = onTitleTapped
     }
 }
 
@@ -64,14 +73,14 @@ private extension NowPlayingControlIslandViewModel {
                 isPlaying: false,
                 isFavorite: false,
                 routeName: routeName(for: snapshot.outputDevice),
-                routeSymbolName: routeSymbolName(for: snapshot.outputDevice)
+                routeSymbolName: routeSymbolName(for: snapshot.outputDevice),
             )
         }
 
         let duration = max(snapshot.duration, track.durationInSeconds ?? 0)
 
         return Content(
-            title: track.title,
+            title: track.title.sanitizedTrackTitle,
             artist: track.artistName,
             currentTime: snapshot.currentTime,
             duration: duration,
@@ -80,7 +89,7 @@ private extension NowPlayingControlIslandViewModel {
             isPlaying: isPlaying(for: snapshot.state),
             isFavorite: snapshot.isCurrentTrackLiked,
             routeName: routeName(for: snapshot.outputDevice),
-            routeSymbolName: routeSymbolName(for: snapshot.outputDevice)
+            routeSymbolName: routeSymbolName(for: snapshot.outputDevice),
         )
     }
 

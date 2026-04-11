@@ -1,3 +1,10 @@
+//
+//  SearchViewController+Search.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicKit
 import UIKit
 
@@ -25,7 +32,7 @@ extension SearchViewController {
             searchTask?.cancel()
             let hadResults = resetSearchState()
             if hadResults {
-                UIView.transition(with: tableView, duration: 0.2, options: .transitionCrossDissolve) {
+                InterfaceAnimate.transition(with: tableView, duration: 0.2) {
                     self.applySnapshot(animating: false)
                 }
             } else {
@@ -66,7 +73,7 @@ extension SearchViewController {
                     self.updateInitialResults(query: trimmed, songs: newSongs, albums: newAlbums)
 
                     if hadPreviousResults {
-                        UIView.transition(with: self.tableView, duration: 0.2, options: .transitionCrossDissolve) {
+                        InterfaceAnimate.transition(with: self.tableView, duration: 0.2) {
                             self.applySnapshot(animating: false)
                         }
                     } else {
@@ -96,7 +103,7 @@ extension SearchViewController {
     func updateInitialResults(
         query: String,
         songs: [CatalogSong],
-        albums: [CatalogAlbum]
+        albums: [CatalogAlbum],
     ) {
         searchState.songs.items = deduplicated(songs, label: "song", source: "initial")
         searchState.songs.offset = songs.count

@@ -1,3 +1,10 @@
+//
+//  AudioFileImporter.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import AVFoundation
 import Foundation
@@ -24,7 +31,7 @@ final class AudioFileImporter: @unchecked Sendable {
         paths: LibraryPaths,
         database: MusicLibraryDatabase,
         metadataReader: EmbeddedMetadataReader,
-        apiClient: APIClient
+        apiClient: APIClient,
     ) {
         self.paths = paths
         self.database = database
@@ -34,7 +41,7 @@ final class AudioFileImporter: @unchecked Sendable {
 
     func importFiles(
         urls: [URL],
-        progressCallback: (@MainActor (_ current: Int, _ total: Int) -> Void)? = nil
+        progressCallback: (@MainActor (_ current: Int, _ total: Int) -> Void)? = nil,
     ) async -> AudioImportResult {
         // Hold security-scoped access on the original picker URLs for the
         // entire import. Folder picks grant access to descendants through the
@@ -47,7 +54,7 @@ final class AudioFileImporter: @unchecked Sendable {
 
         let audioFiles = discoverAudioFiles(from: urls)
         AppLog.info(
-            self, "importFiles starting with \(audioFiles.count) audio file(s) from \(urls.count) URL(s)"
+            self, "importFiles starting with \(audioFiles.count) audio file(s) from \(urls.count) URL(s)",
         )
 
         var succeeded = 0
@@ -76,7 +83,7 @@ final class AudioFileImporter: @unchecked Sendable {
                 let result = try await importSingleFile(
                     fileURL: fileURL,
                     existingTracks: existingTracks,
-                    batchImported: &batchImported
+                    batchImported: &batchImported,
                 )
                 switch result {
                 case let .success(importedTrack):
@@ -98,11 +105,11 @@ final class AudioFileImporter: @unchecked Sendable {
         }
 
         let result = AudioImportResult(
-            succeeded: succeeded, duplicates: duplicates, noMetadata: noMetadata, errors: errors
+            succeeded: succeeded, duplicates: duplicates, noMetadata: noMetadata, errors: errors,
         )
         AppLog.info(
             self,
-            "importFiles finished succeeded=\(succeeded) duplicates=\(duplicates) noMetadata=\(noMetadata) errors=\(errors)"
+            "importFiles finished succeeded=\(succeeded) duplicates=\(duplicates) noMetadata=\(noMetadata) errors=\(errors)",
         )
         return result
     }
@@ -145,7 +152,7 @@ private extension AudioFileImporter {
     func importSingleFile(
         fileURL: URL,
         existingTracks: [AudioTrackRecord],
-        batchImported: inout Set<DuplicateKey>
+        batchImported: inout Set<DuplicateKey>,
     ) async throws -> SingleImportResult {
         let ext = fileURL.pathExtension.lowercased()
         let fileName = fileURL.deletingPathExtension().lastPathComponent
@@ -164,7 +171,7 @@ private extension AudioFileImporter {
         let albumID = catalogIDs.albumID
         AppLog.info(
             self,
-            "importSingleFile extracted catalog metadata file='\(fileName)' trackID=\(trackID) albumID=\(albumID) hasArtworkURL=\(catalogIDs.artworkURL != nil)"
+            "importSingleFile extracted catalog metadata file='\(fileName)' trackID=\(trackID) albumID=\(albumID) hasArtworkURL=\(catalogIDs.artworkURL != nil)",
         )
 
         let title = await extractString(in: metadataItems, matching: ["title", "songName"])
@@ -178,18 +185,18 @@ private extension AudioFileImporter {
 
         let albumName = album ?? String(localized: "Unknown Album")
         let dupKey = DuplicateKey(
-            title: title, artist: artist, album: albumName, duration: durationSeconds
+            title: title, artist: artist, album: albumName, duration: durationSeconds,
         )
 
         if batchImported.contains(dupKey) {
             AppLog.verbose(
-                self, "importSingleFile intra-batch duplicate title='\(title)' artist='\(artist)'"
+                self, "importSingleFile intra-batch duplicate title='\(title)' artist='\(artist)'",
             )
             return .duplicate
         }
 
         if isDuplicate(
-            title: title, artist: artist, album: albumName, duration: durationSeconds, in: existingTracks
+            title: title, artist: artist, album: albumName, duration: durationSeconds, in: existingTracks,
         ) {
             AppLog.verbose(self, "importSingleFile duplicate title='\(title)' artist='\(artist)'")
             return .duplicate
@@ -200,7 +207,7 @@ private extension AudioFileImporter {
         let destURL = paths.absoluteAudioURL(for: destinationRelativePath)
         if FileManager.default.fileExists(atPath: destURL.path) {
             AppLog.verbose(
-                self, "importSingleFile file already exists trackID=\(trackID) albumID=\(albumID)"
+                self, "importSingleFile file already exists trackID=\(trackID) albumID=\(albumID)",
             )
             return .duplicate
         }
@@ -214,7 +221,7 @@ private extension AudioFileImporter {
             trackID: trackID,
             albumID: albumID,
             fileSize: fileSize,
-            modifiedAt: modifiedAt
+            modifiedAt: modifiedAt,
         )
 
         let stagingURL = paths.incomingDirectory
@@ -222,7 +229,7 @@ private extension AudioFileImporter {
             .appendingPathExtension(ext.isEmpty ? "m4a" : ext)
         try FileManager.default.createDirectory(
             at: paths.incomingDirectory,
-            withIntermediateDirectories: true
+            withIntermediateDirectories: true,
         )
         try FileManager.default.copyItem(at: fileURL, to: stagingURL)
 
@@ -240,7 +247,7 @@ private extension AudioFileImporter {
             composerName: inspectedRecord.composerName,
             releaseDate: inspectedRecord.releaseDate,
             lyrics: nil,
-            sourceKind: .imported
+            sourceKind: .imported,
         )
 
         let ingestedRecord: AudioTrackRecord
@@ -258,8 +265,8 @@ private extension AudioFileImporter {
             ImportedTrack(
                 trackID: trackID,
                 artworkURL: catalogIDs.artworkURL,
-                hasEmbeddedArtwork: ingestedRecord.hasEmbeddedArtwork
-            )
+                hasEmbeddedArtwork: ingestedRecord.hasEmbeddedArtwork,
+            ),
         )
     }
 
@@ -285,7 +292,7 @@ private extension AudioFileImporter {
                 }
                 guard let artworkURL = URL(string: artworkURLString) else {
                     AppLog.warning(
-                        self, "extractCatalogIDs invalid artworkURL='\(artworkURLString)' trackID=\(trackID)"
+                        self, "extractCatalogIDs invalid artworkURL='\(artworkURLString)' trackID=\(trackID)",
                     )
                     return nil
                 }
@@ -297,7 +304,7 @@ private extension AudioFileImporter {
     }
 
     func isDuplicate(
-        title: String, artist: String, album: String, duration: Double, in tracks: [AudioTrackRecord]
+        title: String, artist: String, album: String, duration: Double, in tracks: [AudioTrackRecord],
     ) -> Bool {
         tracks.contains { track in
             track.title.caseInsensitiveCompare(title) == .orderedSame
@@ -320,7 +327,7 @@ private extension AudioFileImporter {
                     let enumerator = fm.enumerator(
                         at: url,
                         includingPropertiesForKeys: [.isRegularFileKey, .contentTypeKey],
-                        options: [.skipsHiddenFiles]
+                        options: [.skipsHiddenFiles],
                     )
                 else { continue }
 
@@ -358,7 +365,7 @@ private extension AudioFileImporter {
         for item in items {
             guard AVMetadataHelper.matches(item, tokens: loweredTokens) else { continue }
             if let value = try? await item.load(.stringValue)?.trimmingCharacters(
-                in: .whitespacesAndNewlines
+                in: .whitespacesAndNewlines,
             ),
                 !value.isEmpty
             {
@@ -389,30 +396,30 @@ private extension AudioFileImporter {
                         artworkURL: artworkURL,
                         apiClient: apiClient,
                         locations: paths,
-                        session: .shared
+                        session: .shared,
                     )
                     guard !artworkData.isEmpty else {
                         AppLog.warning(
                             "AudioFileImporter",
-                            "background artwork fetch returned empty data trackID=\(candidate.trackID)"
+                            "background artwork fetch returned empty data trackID=\(candidate.trackID)",
                         )
                         continue
                     }
 
                     AppLog.info(
-                        "AudioFileImporter", "background artwork fetch succeeded trackID=\(candidate.trackID)"
+                        "AudioFileImporter", "background artwork fetch succeeded trackID=\(candidate.trackID)",
                     )
                     await MainActor.run {
                         NotificationCenter.default.post(
                             name: .artworkDidUpdate,
                             object: nil,
-                            userInfo: [AppNotificationUserInfoKey.trackIDs: [candidate.trackID]]
+                            userInfo: [AppNotificationUserInfoKey.trackIDs: [candidate.trackID]],
                         )
                     }
                 } catch {
                     AppLog.warning(
                         "AudioFileImporter",
-                        "background artwork fetch failed trackID=\(candidate.trackID) error=\(error.localizedDescription)"
+                        "background artwork fetch failed trackID=\(candidate.trackID) error=\(error.localizedDescription)",
                     )
                 }
             }

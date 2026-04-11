@@ -1,3 +1,10 @@
+//
+//  AudioSessionManager.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AVFoundation
 
 @MainActor
@@ -16,7 +23,7 @@ final class AudioSessionManager {
     func configure(
         onInterruptionBegan: @escaping @Sendable () -> Void,
         onInterruptionEndedShouldResume: @escaping @Sendable () -> Void,
-        onRouteOldDeviceUnavailable: @escaping @Sendable () -> Void
+        onRouteOldDeviceUnavailable: @escaping @Sendable () -> Void,
     ) {
         self.onInterruptionBegan = onInterruptionBegan
         self.onInterruptionEndedShouldResume = onInterruptionEndedShouldResume
@@ -29,21 +36,21 @@ final class AudioSessionManager {
                     .playback,
                     mode: .default,
                     policy: .longFormAudio,
-                    options: []
+                    options: [],
                 )
                 log(
                     .info,
-                    "configured audio session category=\(session.category.rawValue) mode=\(session.mode.rawValue) routeSharingPolicy=\(session.routeSharingPolicy.rawValue)"
+                    "configured audio session category=\(session.category.rawValue) mode=\(session.mode.rawValue) routeSharingPolicy=\(session.routeSharingPolicy.rawValue)",
                 )
             } catch {
                 log(
                     .warning,
-                    "failed to configure long-form audio route sharing policy error=\(describe(error: error))"
+                    "failed to configure long-form audio route sharing policy error=\(describe(error: error))",
                 )
                 try? session.setCategory(.playback, mode: .default)
                 log(
                     .info,
-                    "fell back to audio session category=\(session.category.rawValue) mode=\(session.mode.rawValue) routeSharingPolicy=\(session.routeSharingPolicy.rawValue)"
+                    "fell back to audio session category=\(session.category.rawValue) mode=\(session.mode.rawValue) routeSharingPolicy=\(session.routeSharingPolicy.rawValue)",
                 )
             }
 
@@ -54,7 +61,7 @@ final class AudioSessionManager {
             interruptionObserver = NotificationCenter.default.addObserver(
                 forName: AVAudioSession.interruptionNotification,
                 object: session,
-                queue: .main
+                queue: .main,
             ) { notification in
                 guard let info = notification.userInfo,
                       let typeValue = info[AVAudioSessionInterruptionTypeKey] as? UInt,
@@ -79,7 +86,7 @@ final class AudioSessionManager {
             routeChangeObserver = NotificationCenter.default.addObserver(
                 forName: AVAudioSession.routeChangeNotification,
                 object: session,
-                queue: .main
+                queue: .main,
             ) { notification in
                 guard let info = notification.userInfo,
                       let reasonValue = info[AVAudioSessionRouteChangeReasonKey] as? UInt,
@@ -103,7 +110,7 @@ final class AudioSessionManager {
         #if os(iOS) || os(tvOS) || os(watchOS)
             try? AVAudioSession.sharedInstance().setActive(
                 false,
-                options: .notifyOthersOnDeactivation
+                options: .notifyOthersOnDeactivation,
             )
         #endif
     }

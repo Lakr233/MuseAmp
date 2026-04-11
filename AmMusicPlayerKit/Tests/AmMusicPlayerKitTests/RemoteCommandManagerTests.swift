@@ -1,3 +1,10 @@
+//
+//  RemoteCommandManagerTests.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 @testable import AmMusicPlayerKit
 import MediaPlayer
 import Testing
@@ -9,7 +16,7 @@ struct RemoteCommandManagerTests {
         let commandCenter = MPRemoteCommandCenter.shared()
     }
 
-    @Test func register_enablesCoreCommands() {
+    @Test func `register enables core commands`() {
         let provider = CommandProvider()
         let manager = RemoteCommandManager(provider: provider)
         let player = MusicPlayer(engine: MockAudioPlaybackEngine())
@@ -31,7 +38,7 @@ struct RemoteCommandManagerTests {
         resetCommandCenter()
     }
 
-    @Test func updateEnabledCommands_togglesNextAndPreviousFromQueueState() throws {
+    @Test func `update enabled commands toggles next and previous from queue state`() throws {
         let provider = CommandProvider()
         let manager = RemoteCommandManager(provider: provider)
         let player = MusicPlayer(engine: MockAudioPlaybackEngine())
@@ -43,7 +50,7 @@ struct RemoteCommandManagerTests {
             url: #require(URL(string: "https://example.com/track-1.mp3")),
             title: "Track 1",
             artist: "Artist 1",
-            album: "Album 1"
+            album: "Album 1",
         )
 
         manager.updateEnabledCommands(
@@ -52,8 +59,8 @@ struct RemoteCommandManagerTests {
                 nowPlaying: current,
                 upcoming: [],
                 shuffled: false,
-                repeatMode: .off
-            )
+                repeatMode: .off,
+            ),
         )
 
         #expect(provider.commandCenter.previousTrackCommand.isEnabled)
@@ -65,8 +72,8 @@ struct RemoteCommandManagerTests {
                 nowPlaying: current,
                 upcoming: [current],
                 shuffled: false,
-                repeatMode: .off
-            )
+                repeatMode: .off,
+            ),
         )
 
         #expect(provider.commandCenter.nextTrackCommand.isEnabled)
@@ -75,7 +82,7 @@ struct RemoteCommandManagerTests {
         resetCommandCenter()
     }
 
-    @Test func unregister_disablesCommands() {
+    @Test func `unregister disables commands`() {
         let provider = CommandProvider()
         let manager = RemoteCommandManager(provider: provider)
         let player = MusicPlayer(engine: MockAudioPlaybackEngine())

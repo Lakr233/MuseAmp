@@ -1,3 +1,10 @@
+//
+//  NowPlayingInfoManagerTests.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 @testable import AmMusicPlayerKit
 import Foundation
 import MediaPlayer
@@ -11,7 +18,7 @@ final class MockNowPlayingStatePublisher: NowPlayingStatePublishing {
 
 @MainActor
 struct NowPlayingInfoManagerTests {
-    @Test func setTrack_seedsExpectedMetadata() throws {
+    @Test func `set track seeds expected metadata`() throws {
         let publisher = MockNowPlayingStatePublisher()
         let manager = NowPlayingInfoManager(publisher: publisher)
         let item = try PlayerItem(
@@ -20,7 +27,7 @@ struct NowPlayingInfoManagerTests {
             title: "Track 1",
             artist: "Artist 1",
             album: "Album 1",
-            durationInSeconds: 245
+            durationInSeconds: 245,
         )
 
         manager.setTrack(item)
@@ -35,7 +42,7 @@ struct NowPlayingInfoManagerTests {
         #expect(info[MPNowPlayingInfoPropertyPlaybackProgress] as? TimeInterval == 0)
     }
 
-    @Test func updateElapsedTime_republishesTrackMetadataWhenSinkWasCleared() throws {
+    @Test func `update elapsed time republishes track metadata when sink was cleared`() throws {
         let publisher = MockNowPlayingStatePublisher()
         let manager = NowPlayingInfoManager(publisher: publisher)
         let item = try PlayerItem(
@@ -44,7 +51,7 @@ struct NowPlayingInfoManagerTests {
             title: "Track 1",
             artist: "Artist 1",
             album: "Album 1",
-            durationInSeconds: 245
+            durationInSeconds: 245,
         )
 
         manager.setTrack(item)
@@ -61,25 +68,7 @@ struct NowPlayingInfoManagerTests {
         #expect(info[MPNowPlayingInfoPropertyPlaybackProgress] as? TimeInterval == (42.0 / 245.0))
     }
 
-    @Test func updateElapsedTime_omitsPlaybackProgressWhenDurationIsMissing() throws {
-        let publisher = MockNowPlayingStatePublisher()
-        let manager = NowPlayingInfoManager(publisher: publisher)
-        let item = try PlayerItem(
-            id: "track-1",
-            url: #require(URL(string: "https://example.com/track-1.mp3")),
-            title: "Track 1",
-            artist: "Artist 1",
-            album: "Album 1"
-        )
-
-        manager.setTrack(item)
-        manager.updateElapsedTime(42)
-
-        let info = try #require(publisher.nowPlayingInfo)
-        #expect(info[MPNowPlayingInfoPropertyPlaybackProgress] == nil)
-    }
-
-    @Test func updateElapsedTime_omitsPlaybackProgressWhenDurationIsZero() throws {
+    @Test func `update elapsed time omits playback progress when duration is missing`() throws {
         let publisher = MockNowPlayingStatePublisher()
         let manager = NowPlayingInfoManager(publisher: publisher)
         let item = try PlayerItem(
@@ -88,7 +77,6 @@ struct NowPlayingInfoManagerTests {
             title: "Track 1",
             artist: "Artist 1",
             album: "Album 1",
-            durationInSeconds: 0
         )
 
         manager.setTrack(item)
@@ -98,7 +86,26 @@ struct NowPlayingInfoManagerTests {
         #expect(info[MPNowPlayingInfoPropertyPlaybackProgress] == nil)
     }
 
-    @Test func updatePlaybackState_mapsStatesForSystemMediaCenter() {
+    @Test func `update elapsed time omits playback progress when duration is zero`() throws {
+        let publisher = MockNowPlayingStatePublisher()
+        let manager = NowPlayingInfoManager(publisher: publisher)
+        let item = try PlayerItem(
+            id: "track-1",
+            url: #require(URL(string: "https://example.com/track-1.mp3")),
+            title: "Track 1",
+            artist: "Artist 1",
+            album: "Album 1",
+            durationInSeconds: 0,
+        )
+
+        manager.setTrack(item)
+        manager.updateElapsedTime(42)
+
+        let info = try #require(publisher.nowPlayingInfo)
+        #expect(info[MPNowPlayingInfoPropertyPlaybackProgress] == nil)
+    }
+
+    @Test func `update playback state maps states for system media center`() {
         let publisher = MockNowPlayingStatePublisher()
         let manager = NowPlayingInfoManager(publisher: publisher)
 
@@ -112,7 +119,7 @@ struct NowPlayingInfoManagerTests {
         #expect(publisher.playbackState == .stopped)
     }
 
-    @Test func clear_clearsPublishedInfoAndStopsPlayback() throws {
+    @Test func `clear clears published info and stops playback`() throws {
         let publisher = MockNowPlayingStatePublisher()
         let manager = NowPlayingInfoManager(publisher: publisher)
         let item = try PlayerItem(
@@ -121,7 +128,7 @@ struct NowPlayingInfoManagerTests {
             title: "Track 1",
             artist: "Artist 1",
             album: "Album 1",
-            durationInSeconds: 245
+            durationInSeconds: 245,
         )
 
         manager.setTrack(item)

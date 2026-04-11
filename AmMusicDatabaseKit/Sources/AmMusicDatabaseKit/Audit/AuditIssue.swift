@@ -1,3 +1,10 @@
+//
+//  AuditIssue.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public struct AuditIssue: Sendable, Codable, Hashable, Identifiable {
@@ -17,7 +24,7 @@ public struct AuditIssue: Sendable, Codable, Hashable, Identifiable {
         id: String = UUID().uuidString,
         severity: Severity,
         code: String,
-        message: String
+        message: String,
     ) {
         self.id = id
         self.severity = severity

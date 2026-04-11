@@ -1,3 +1,10 @@
+//
+//  PlaybackQueueShuffleTests.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 @testable import AmMusicPlayerKit
 import Foundation
 import Testing
@@ -11,12 +18,12 @@ struct PlaybackQueueShuffleTests {
                 title: "Track \(i)",
                 artist: "Artist",
                 album: "Album",
-                durationInSeconds: 200
+                durationInSeconds: 200,
             )
         }
     }
 
-    @Test func shuffle_preservesNowPlaying() {
+    @Test func `shuffle preserves now playing`() {
         var queue = PlaybackQueue()
         let items = Self.makeItems(10)
         queue.load(items: items, startIndex: 3, shuffle: false)
@@ -25,7 +32,7 @@ struct PlaybackQueueShuffleTests {
         #expect(queue.nowPlaying == items[3])
     }
 
-    @Test func shuffle_changesUpcomingOrder() {
+    @Test func `shuffle changes upcoming order`() {
         // With 10 items it's extremely unlikely the shuffle preserves order
         var queue = PlaybackQueue()
         let items = Self.makeItems(10)
@@ -40,7 +47,7 @@ struct PlaybackQueueShuffleTests {
         // We can't guarantee order is different (astronomically unlikely to be same though)
     }
 
-    @Test func unshuffle_restoresCanonicalOrder() {
+    @Test func `unshuffle restores canonical order`() {
         var queue = PlaybackQueue()
         let items = Self.makeItems(5)
         queue.load(items: items, startIndex: 0, shuffle: false)
@@ -52,21 +59,21 @@ struct PlaybackQueueShuffleTests {
         #expect(queue.upcoming == Array(items[1...]))
     }
 
-    @Test func shuffle_thenAddItem_appearsInUpcoming() throws {
+    @Test func `shuffle then add item appears in upcoming`() throws {
         var queue = PlaybackQueue()
         let items = Self.makeItems(5)
         queue.load(items: items, startIndex: 0, shuffle: true)
 
         let newItem = try PlayerItem(
             id: "new", url: #require(URL(string: "https://example.com/new.mp3")),
-            title: "New", artist: "A", album: "B"
+            title: "New", artist: "A", album: "B",
         )
         queue.append(newItem)
 
         #expect(queue.upcoming.contains(newItem))
     }
 
-    @Test func shuffle_thenRemoveItem_removedFromUpcoming() {
+    @Test func `shuffle then remove item removed from upcoming`() {
         var queue = PlaybackQueue()
         let items = Self.makeItems(5)
         queue.load(items: items, startIndex: 0, shuffle: false)
@@ -77,7 +84,7 @@ struct PlaybackQueueShuffleTests {
         #expect(!queue.upcoming.contains(items[3]))
     }
 
-    @Test func shuffle_thenUnshuffle_indexPointsToSameItem() {
+    @Test func `shuffle then unshuffle index points to same item`() {
         var queue = PlaybackQueue()
         let items = Self.makeItems(10)
         queue.load(items: items, startIndex: 0, shuffle: false)
@@ -94,7 +101,7 @@ struct PlaybackQueueShuffleTests {
         #expect(queue.nowPlaying == currentBefore)
     }
 
-    @Test func loadWithShuffle_pinsStartIndexAtFront() {
+    @Test func `load with shuffle pins start index at front`() {
         var queue = PlaybackQueue()
         let items = Self.makeItems(5)
         queue.load(items: items, startIndex: 2, shuffle: true)
@@ -103,7 +110,7 @@ struct PlaybackQueueShuffleTests {
         #expect(queue.upcoming.count == 4) // All other items
     }
 
-    @Test func jump_keepsFullQueueAndUpdatesHistory() {
+    @Test func `jump keeps full queue and updates history`() {
         var queue = PlaybackQueue()
         let items = Self.makeItems(5)
         queue.load(items: items, startIndex: 0, shuffle: false)
@@ -115,7 +122,7 @@ struct PlaybackQueueShuffleTests {
         #expect(queue.upcoming == [items[4]])
     }
 
-    @Test func jump_backwards_restoresPlayedItemsIntoQueue() {
+    @Test func `jump backwards restores played items into queue`() {
         var queue = PlaybackQueue()
         let items = Self.makeItems(5)
         queue.load(items: items, startIndex: 0, shuffle: false)

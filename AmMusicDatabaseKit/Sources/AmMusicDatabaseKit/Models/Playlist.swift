@@ -1,3 +1,10 @@
+//
+//  Playlist.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public struct Playlist: Sendable, Codable, Hashable, Identifiable {
@@ -14,7 +21,7 @@ public struct Playlist: Sendable, Codable, Hashable, Identifiable {
         coverImageData: Data? = nil,
         entries: [PlaylistEntry] = [],
         createdAt: Date = .init(),
-        updatedAt: Date = .init()
+        updatedAt: Date = .init(),
     ) {
         self.id = id
         self.name = name

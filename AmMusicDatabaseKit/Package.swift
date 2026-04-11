@@ -1,3 +1,10 @@
+//
+//  Package.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 // swift-tools-version: 6.2
 
 import PackageDescription
@@ -12,7 +19,7 @@ let package = Package(
     products: [
         .library(
             name: "AmMusicDatabaseKit",
-            targets: ["AmMusicDatabaseKit"]
+            targets: ["AmMusicDatabaseKit"],
         ),
     ],
     dependencies: [
@@ -26,14 +33,14 @@ let package = Package(
             ],
             resources: [
                 .process("Resources"),
-            ]
+            ],
         ),
         .testTarget(
             name: "AmMusicDatabaseKitTests",
             dependencies: [
                 "AmMusicDatabaseKit",
-            ]
+            ],
         ),
     ],
-    swiftLanguageModes: [.v6]
+    swiftLanguageModes: [.v6],
 )

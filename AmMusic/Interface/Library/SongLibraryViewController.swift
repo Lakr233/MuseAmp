@@ -1,5 +1,14 @@
+//
+//  SongLibraryViewController.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AlertController
 import AmMusicDatabaseKit
+import Combine
+import ConfigurableKit
 import SnapKit
 import Then
 import UIKit
@@ -64,24 +73,25 @@ final class SongLibraryViewController: UIViewController {
     var sortOption: SortOption = .album
     var currentQuery = ""
     var searchTask: Task<Void, Never>?
+    private var cancellables: Set<AnyCancellable> = []
     private var hasAppliedInitialSnapshot = false
 
     private let emptyStateView = EmptyStateView(
         icon: "square.stack.fill",
         title: String(localized: "No Albums Yet"),
-        subtitle: String(localized: "Albums you save will appear here")
+        subtitle: String(localized: "Albums you save will appear here"),
     )
 
     private let noResultsView = EmptyStateView(
         icon: "magnifyingglass",
         title: String(localized: "No Results"),
-        subtitle: String(localized: "Try a different search term")
+        subtitle: String(localized: "Try a different search term"),
     ).then { $0.isHidden = true }
 
     lazy var searchController = UISearchController(searchResultsController: nil).then {
         $0.searchResultsUpdater = self
         $0.obscuresBackgroundDuringPresentation = false
-        $0.searchBar.placeholder = String(localized: "Songs")
+        $0.searchBar.placeholder = String(localized: "Search Local Library")
     }
 
     var isSearchActive: Bool {
@@ -92,28 +102,28 @@ final class SongLibraryViewController: UIViewController {
         image: UIImage(systemName: "checkmark.circle"),
         style: .plain,
         target: self,
-        action: #selector(finishSelectionTapped)
+        action: #selector(finishSelectionTapped),
     )
 
     lazy var importButton = UIBarButtonItem(
         image: UIImage(systemName: "plus"),
         style: .plain,
         target: self,
-        action: #selector(importTapped)
+        action: #selector(importTapped),
     )
 
     lazy var playbackMenuProvider = PlaybackMenuProvider(
-        playbackController: environment.playbackController
+        playbackController: environment.playbackController,
     )
     lazy var songExportPresenter = SongExportPresenter(
         viewController: self,
         lyricsStore: environment.lyricsCacheStore,
         locations: environment.paths,
-        apiClient: environment.apiClient
+        apiClient: environment.apiClient,
     )
     lazy var albumNavigationHelper = AlbumNavigationHelper(
         environment: environment,
-        viewController: self
+        viewController: self,
     )
 
     init(environment: AppEnvironment) {
@@ -144,14 +154,22 @@ final class SongLibraryViewController: UIViewController {
             self,
             selector: #selector(handleLibraryDidSync),
             name: .libraryDidSync,
-            object: nil
+            object: nil,
         )
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleArtworkDidUpdate(_:)),
             name: .artworkDidUpdate,
-            object: nil
+            object: nil,
         )
+
+        ConfigurableKit.publisher(
+            forKey: AppPreferences.cleanSongTitleKey, type: Bool.self,
+        )
+        .dropFirst()
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] _ in self?.tableView.reloadData() }
+        .store(in: &cancellables)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -224,22 +242,20 @@ final class SongLibraryViewController: UIViewController {
         view.addSubview(tableView)
         tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
 
-        tableView.addSubview(emptyStateView)
+        view.addSubview(emptyStateView)
         emptyStateView.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.top.equalToSuperview().offset(200)
+            make.center.equalTo(view.safeAreaLayoutGuide)
         }
 
-        tableView.addSubview(noResultsView)
+        view.addSubview(noResultsView)
         noResultsView.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.top.equalToSuperview().offset(200)
+            make.center.equalTo(view.safeAreaLayoutGuide)
         }
     }
 
     private func configureDataSource() {
         dataSource = UITableViewDiffableDataSource<LibrarySection, LibraryItem>(
-            tableView: tableView
+            tableView: tableView,
         ) { [weak self] (tableView: UITableView, indexPath: IndexPath, item: LibraryItem) -> UITableViewCell? in
             guard let self else { return UITableViewCell() }
             switch item {
@@ -253,7 +269,7 @@ final class SongLibraryViewController: UIViewController {
                     subtitle: albumSubtitle(for: album),
                     artworkURL: FileManager.default.fileExists(atPath: cacheURL.path) ? cacheURL : nil,
                     placeholderIcon: "square.stack.fill",
-                    roundArtwork: false
+                    roundArtwork: false,
                 )
                 return cell
 

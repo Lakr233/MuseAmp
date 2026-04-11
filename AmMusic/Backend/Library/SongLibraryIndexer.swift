@@ -1,3 +1,10 @@
+//
+//  SongLibraryIndexer.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import Foundation
 
@@ -20,22 +27,22 @@ final class SongLibraryIndexer: @unchecked Sendable {
     @discardableResult
     func syncLibrary(
         forceArtwork: Bool = false,
-        progressCallback: (@Sendable (Int, Int) -> Void)? = nil
+        progressCallback: (@Sendable (Int, Int) -> Void)? = nil,
     ) async throws -> SyncResult {
         let result = try await databaseManager.send(
             .rebuildIndex(pruneInvalidFiles: true, forceArtwork: forceArtwork),
-            progressCallback: progressCallback
+            progressCallback: progressCallback,
         )
         if case let .rebuild(scanned, upserted, deleted) = result {
             AppLog.info(
                 self,
-                "syncLibrary finished files=\(scanned) upserts=\(upserted) deletions=\(deleted)"
+                "syncLibrary finished files=\(scanned) upserts=\(upserted) deletions=\(deleted)",
             )
             return SyncResult(
                 filesScanned: scanned,
                 upserts: upserted,
                 deletions: deleted,
-                purged: 0
+                purged: 0,
             )
         }
 

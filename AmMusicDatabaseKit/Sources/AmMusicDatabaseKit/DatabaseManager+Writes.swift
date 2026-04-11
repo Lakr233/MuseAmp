@@ -1,3 +1,10 @@
+//
+//  DatabaseManager+Writes.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 extension DatabaseManager {
@@ -5,7 +12,7 @@ extension DatabaseManager {
     func rebuildIndex(
         pruneInvalidFiles: Bool,
         forceArtwork: Bool = false,
-        progressCallback: (@Sendable (Int, Int) -> Void)? = nil
+        progressCallback: (@Sendable (Int, Int) -> Void)? = nil,
     ) async throws -> LibraryCommandResult {
         guard let indexStore else {
             return .rebuild(scanned: 0, upserted: 0, deleted: 0)
@@ -15,12 +22,12 @@ extension DatabaseManager {
         let result = try await libraryScanner().rebuildIndexFromDisk(
             pruneInvalidFiles: pruneInvalidFiles,
             forceArtwork: forceArtwork,
-            progressCallback: progressCallback
+            progressCallback: progressCallback,
         )
         try indexStore.setLastRebuild(timestamp: .init(), succeeded: true)
         try indexStore.setSchemaVersions(
             schema: DatabaseFormat.indexSchemaVersion,
-            format: DatabaseFormat.indexFormatVersion
+            format: DatabaseFormat.indexFormatVersion,
         )
         if !result.invalidRelativePaths.isEmpty {
             eventSubject.send(.invalidFilesRemoved(relativePaths: result.invalidRelativePaths))
@@ -29,8 +36,8 @@ extension DatabaseManager {
             .indexRebuildFinished(
                 scanned: result.scanned,
                 upserted: result.upserted,
-                deleted: result.deleted
-            )
+                deleted: result.deleted,
+            ),
         )
         return .rebuild(scanned: result.scanned, upserted: result.upserted, deleted: result.deleted)
     }
@@ -46,9 +53,9 @@ extension DatabaseManager {
                 userInfo: [
                     NSLocalizedDescriptionKey: String(
                         localized: "DatabaseManager write runtime is unavailable",
-                        bundle: .module
+                        bundle: .module,
                     ),
-                ]
+                ],
             )
         }
 
@@ -57,7 +64,7 @@ extension DatabaseManager {
             from: url,
             trackID: metadata.trackID,
             albumID: metadata.albumID,
-            fileExtension: inputExtension
+            fileExtension: inputExtension,
         )
         let attributes = try FileManager.default.attributesOfItem(atPath: moved.finalURL.path)
         let fileSize = (attributes[.size] as? NSNumber)?.int64Value ?? 0
@@ -96,7 +103,7 @@ extension DatabaseManager {
             hasEmbeddedArtwork: inspection.embeddedArtwork != nil,
             sourceKind: metadata.sourceKind,
             createdAt: existing?.createdAt ?? .init(),
-            updatedAt: .init()
+            updatedAt: .init(),
         )
         try indexStore.upsertTracks([record])
         try stateStore?.deleteDownload(trackID: metadata.trackID)
@@ -104,8 +111,8 @@ extension DatabaseManager {
             .tracksChanged(
                 inserted: existing == nil ? [metadata.trackID] : [],
                 updated: existing == nil ? [] : [metadata.trackID],
-                deleted: []
-            )
+                deleted: [],
+            ),
         )
         eventSubject.send(.downloadsChanged(trackIDs: [metadata.trackID]))
         eventSubject.send(.metadataChanged(trackIDs: [metadata.trackID]))

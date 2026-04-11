@@ -1,3 +1,10 @@
+//
+//  DownloadLyricsProcessor.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import Foundation
 
@@ -7,7 +14,7 @@ enum DownloadLyricsProcessor {
     static func cacheLyrics(
         trackID: String,
         apiClient: APIClient?,
-        lyricsStore: LyricsCacheStore
+        lyricsStore: LyricsCacheStore,
     ) async {
         guard let apiClient else {
             return

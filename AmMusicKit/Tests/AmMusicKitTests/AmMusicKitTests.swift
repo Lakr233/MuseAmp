@@ -1,3 +1,10 @@
+//
+//  AmMusicKitTests.swift
+//  AmMusicKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 @testable import AmMusicKit
 import Foundation
 import Testing
@@ -75,9 +82,9 @@ private enum FixtureServer {
                 url: url,
                 statusCode: 200,
                 httpVersion: nil,
-                headerFields: ["Content-Type": "application/json"]
+                headerFields: ["Content-Type": "application/json"],
             )!,
-            data: data
+            data: data,
         )
     }
 
@@ -97,9 +104,9 @@ private enum FixtureServer {
                         "Content-Length": "\(partialData.count)",
                         "Content-Range": "bytes 0-1023/\(fullLength)",
                         "Content-Type": "audio/mp4",
-                    ]
+                    ],
                 )!,
-                data: partialData
+                data: partialData,
             )
         }
 
@@ -112,16 +119,16 @@ private enum FixtureServer {
                     "Accept-Ranges": "bytes",
                     "Content-Length": "\(audioData.count)",
                     "Content-Type": "audio/mp4",
-                ]
+                ],
             )!,
-            data: audioData
+            data: audioData,
         )
     }
 
     private static func emptyResponse(for url: URL, statusCode: Int) -> StubResponse {
         StubResponse(
             httpResponse: HTTPURLResponse(url: url, statusCode: statusCode, httpVersion: nil, headerFields: nil)!,
-            data: Data()
+            data: Data(),
         )
     }
 
@@ -136,7 +143,7 @@ private enum FixtureServer {
                 "albums": resourceList(
                     href: "/v1/catalog/jp/search?l=ja&limit=1&offset=0&term=IOSYS&types=albums",
                     next: "/v1/catalog/jp/search?l=ja&offset=1&term=IOSYS&types=albums",
-                    data: [albumResource(includeRelationships: false)]
+                    data: [albumResource(includeRelationships: false)],
                 ),
             ]
         case SearchType.artist.rawValue:
@@ -144,7 +151,7 @@ private enum FixtureServer {
                 "artists": resourceList(
                     href: "/v1/catalog/jp/search?l=ja&limit=1&offset=0&term=Aimer&types=artists",
                     next: "/v1/catalog/jp/search?l=ja&offset=1&term=Aimer&types=artists",
-                    data: [songArtistResource()]
+                    data: [songArtistResource()],
                 ),
             ]
         default:
@@ -152,7 +159,7 @@ private enum FixtureServer {
                 "songs": resourceList(
                     href: "/v1/catalog/jp/search?l=ja&limit=1&offset=0&term=Aimer&types=songs",
                     next: "/v1/catalog/jp/search?l=ja&offset=1&term=Aimer&types=songs",
-                    data: [searchSongResource()]
+                    data: [searchSongResource()],
                 ),
             ]
         }
@@ -198,7 +205,7 @@ private enum FixtureServer {
     private static func resourceList(
         href: String,
         next: String? = nil,
-        data: [[String: Any]]
+        data: [[String: Any]],
     ) -> [String: Any] {
         var payload: [String: Any] = [
             "href": href,
@@ -252,7 +259,7 @@ private enum FixtureServer {
         textColor1: String,
         textColor2: String,
         textColor3: String,
-        textColor4: String
+        textColor4: String,
     ) -> [String: Any] {
         [
             "width": width,
@@ -281,7 +288,7 @@ private enum FixtureServer {
                 textColor1: "090a0a",
                 textColor2: "2d302c",
                 textColor3: "393a3a",
-                textColor4: "565955"
+                textColor4: "565955",
             ),
             durationInMillis: 207_360,
             trackNumber: 7,
@@ -294,7 +301,7 @@ private enum FixtureServer {
             previewURL: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/5a/6e/f1/5a6ef1d9-a5c8-d687-6e38-e9b17f5dfd26/mzaf_5272219760502350661.plus.aac.ep.m4a",
             extendedAssetURL: "",
             url: "https://music.apple.com/jp/album/%E3%82%AB%E3%82%BF%E3%82%AA%E3%83%A2%E3%82%A4/\(testSongAlbumID)?i=\(testSongID)",
-            playParams: ["id": testSongID, "kind": "song"]
+            playParams: ["id": testSongID, "kind": "song"],
         )
         resource["relationships"] = [
             "artists": emptyRelationship(href: ""),
@@ -331,7 +338,7 @@ private enum FixtureServer {
                     textColor1: "dad6e0",
                     textColor2: "c8b9b9",
                     textColor3: "b3abb3",
-                    textColor4: "a49494"
+                    textColor4: "a49494",
                 ),
                 "playParams": [
                     "id": testAlbumID,
@@ -344,12 +351,12 @@ private enum FixtureServer {
             resource["relationships"] = [
                 "artists": resourceList(
                     href: "/v1/catalog/jp/albums/\(testAlbumID)/artists?l=ja",
-                    data: [albumArtistResource()]
+                    data: [albumArtistResource()],
                 ),
                 "tracks": resourceList(
                     href: "/v1/catalog/jp/albums/\(testAlbumID)/tracks?l=ja",
                     next: "",
-                    data: [albumTrackResource()]
+                    data: [albumTrackResource()],
                 ),
             ]
         }
@@ -372,7 +379,7 @@ private enum FixtureServer {
                 textColor1: "090a0a",
                 textColor2: "2d302c",
                 textColor3: "393a3a",
-                textColor4: "565955"
+                textColor4: "565955",
             ),
             durationInMillis: 207_360,
             trackNumber: 7,
@@ -385,16 +392,16 @@ private enum FixtureServer {
             previewURL: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/5a/6e/f1/5a6ef1d9-a5c8-d687-6e38-e9b17f5dfd26/mzaf_5272219760502350661.plus.aac.ep.m4a",
             extendedAssetURL: "https://aod.itunes.apple.com/itunes-assets/HLSMusic221/v4/61/7a/2a/617a2a67-687b-b597-f202-58b5875f992a/P1238506890_default.m3u8",
             url: "https://music.apple.com/jp/album/%E3%82%AB%E3%82%BF%E3%82%AA%E3%83%A2%E3%82%A4/\(testSongAlbumID)?i=\(testSongID)",
-            playParams: ["id": testSongID, "kind": "song"]
+            playParams: ["id": testSongID, "kind": "song"],
         )
         resource["relationships"] = [
             "artists": resourceList(
                 href: "/v1/catalog/jp/songs/\(testSongID)/artists?l=ja",
-                data: [songArtistResource()]
+                data: [songArtistResource()],
             ),
             "albums": resourceList(
                 href: "/v1/catalog/jp/songs/\(testSongID)/albums?l=ja",
-                data: [songAlbumResource()]
+                data: [songAlbumResource()],
             ),
         ]
         return resource
@@ -415,7 +422,7 @@ private enum FixtureServer {
                     textColor1: "090a0a",
                     textColor2: "2d302c",
                     textColor3: "393a3a",
-                    textColor4: "565955"
+                    textColor4: "565955",
                 ),
                 "genreNames": ["J-Pop", "ミュージック"],
                 "isCompilation": false,
@@ -451,7 +458,7 @@ private enum FixtureServer {
                 textColor1: "dad6e0",
                 textColor2: "c8b9b9",
                 textColor3: "b3abb3",
-                textColor4: "a49494"
+                textColor4: "a49494",
             ),
             durationInMillis: 242_274,
             trackNumber: 1,
@@ -464,12 +471,12 @@ private enum FixtureServer {
             previewURL: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/16/78/83/167883c9-98c7-e1e1-bc9d-779e55b3d5d7/mzaf_17080988409541719767.plus.aac.ep.m4a",
             extendedAssetURL: "https://aod.itunes.apple.com/itunes-assets/HLSMusic124/v4/c8/98/3a/c8983a53-7322-4c4c-f486-d73d8eecb349/P247941526_lossless.m3u8",
             url: "https://music.apple.com/jp/album/%E9%AD%94%E7%90%86%E6%B2%99%E3%81%AF%E5%A4%A7%E5%A4%89%E3%81%AA%E3%82%82%E3%81%AE%E3%82%92%E7%9B%97%E3%82%93%E3%81%A7%E3%81%84%E3%81%8D%E3%81%BE%E3%81%97%E3%81%9F/\(testAlbumID)?i=\(testAlbumTrackID)",
-            playParams: ["id": testAlbumTrackID, "kind": "song"]
+            playParams: ["id": testAlbumTrackID, "kind": "song"],
         )
         resource["relationships"] = [
             "artists": resourceList(
                 href: "/v1/catalog/jp/songs/\(testAlbumTrackID)/artists?l=ja",
-                data: [albumArtistResource()]
+                data: [albumArtistResource()],
             ),
             "albums": emptyRelationship(href: ""),
         ]
@@ -494,7 +501,7 @@ private enum FixtureServer {
         previewURL: String,
         extendedAssetURL: String,
         url: String,
-        playParams: [String: Any]
+        playParams: [String: Any],
     ) -> [String: Any] {
         [
             "id": id,
@@ -551,15 +558,15 @@ struct APIIntegrationTests {
 
     // MARK: - Search
 
-    @Test("Search songs returns results")
-    func searchSongs() async throws {
+    @Test
+    func `Search songs returns results`() async throws {
         let response = try await service.search(
             query: "Aimer",
             type: .song,
             limit: 2,
             offset: 0,
             cacheSearchResponses: false,
-            prefetchSongMetadata: false
+            prefetchSongMetadata: false,
         )
 
         let songs = try #require(response.results.songs)
@@ -574,15 +581,15 @@ struct APIIntegrationTests {
         #expect(first.relationships?.albums?.data.isEmpty == true)
     }
 
-    @Test("Search albums returns results")
-    func searchAlbums() async throws {
+    @Test
+    func `Search albums returns results`() async throws {
         let response = try await service.search(
             query: "IOSYS",
             type: .album,
             limit: 1,
             offset: 0,
             cacheSearchResponses: false,
-            prefetchSongMetadata: false
+            prefetchSongMetadata: false,
         )
 
         let albums = try #require(response.results.albums)
@@ -594,15 +601,15 @@ struct APIIntegrationTests {
         #expect(first.attributes.artistName == "IOSYS")
     }
 
-    @Test("Search artists returns results")
-    func searchArtists() async throws {
+    @Test
+    func `Search artists returns results`() async throws {
         let response = try await service.search(
             query: "Aimer",
             type: .artist,
             limit: 1,
             offset: 0,
             cacheSearchResponses: false,
-            prefetchSongMetadata: false
+            prefetchSongMetadata: false,
         )
 
         let artists = try #require(response.results.artists)
@@ -615,8 +622,8 @@ struct APIIntegrationTests {
 
     // MARK: - Album
 
-    @Test("Fetch album by ID")
-    func fetchAlbum() async throws {
+    @Test
+    func `Fetch album by ID`() async throws {
         let response = try await service.album(id: testAlbumID)
         let album = try #require(response.firstAlbum)
 
@@ -636,8 +643,8 @@ struct APIIntegrationTests {
 
     // MARK: - Song
 
-    @Test("Fetch song by ID")
-    func fetchSong() async throws {
+    @Test
+    func `Fetch song by ID`() async throws {
         let response = try await service.song(id: testSongID)
         let song = try #require(response.firstSong)
 
@@ -659,8 +666,8 @@ struct APIIntegrationTests {
 
     // MARK: - Lyrics
 
-    @Test("Fetch lyrics by song ID")
-    func fetchLyrics() async throws {
+    @Test
+    func `Fetch lyrics by song ID`() async throws {
         let response = try await service.lyrics(id: testSongID)
 
         #expect(response.lyrics.isEmpty == false)
@@ -669,8 +676,8 @@ struct APIIntegrationTests {
 
     // MARK: - Playback
 
-    @Test("Fetch playback info by song ID")
-    func fetchPlayback() async throws {
+    @Test
+    func `Fetch playback info by song ID`() async throws {
         let info = try await service.playback(id: testSongID)
 
         #expect(info.playbackURL.isEmpty == false)
@@ -687,8 +694,8 @@ struct APIIntegrationTests {
 
     // MARK: - Playback URL Content-Range
 
-    @Test("Playback URL supports HTTP Range requests")
-    func playbackURLContentRange() async throws {
+    @Test
+    func `Playback URL supports HTTP Range requests`() async throws {
         let info = try await service.playback(id: testSongID)
 
         let fileURL = FixtureServer.baseURL.appendingPathComponent(info.playbackURL)
@@ -710,8 +717,8 @@ struct APIIntegrationTests {
 
     // MARK: - Artwork URL Resolution
 
-    @Test("Artwork URL template resolves correctly")
-    func artworkURLResolution() async throws {
+    @Test
+    func `Artwork URL template resolves correctly`() async throws {
         let response = try await service.album(id: testAlbumID)
         let album = try #require(response.firstAlbum)
         let artwork = try #require(album.attributes.artwork)
@@ -726,8 +733,8 @@ struct APIIntegrationTests {
 
     // MARK: - Error Handling
 
-    @Test("Empty search query throws invalidRequest")
-    func emptySearchQuery() async throws {
+    @Test
+    func `Empty search query throws invalidRequest`() async throws {
         await #expect(throws: APIError.self) {
             try await service.search(
                 query: "   ",
@@ -735,15 +742,15 @@ struct APIIntegrationTests {
                 limit: 1,
                 offset: 0,
                 cacheSearchResponses: false,
-                prefetchSongMetadata: false
+                prefetchSongMetadata: false,
             )
         }
     }
 
     // MARK: - Storefront Parameter
 
-    @Test("Song fetch with storefront parameter")
-    func songWithStorefront() async throws {
+    @Test
+    func `Song fetch with storefront parameter`() async throws {
         let response = try await service.song(id: testSongID, storefront: "jp")
         let song = try #require(response.firstSong)
         #expect(song.id == testSongID)
@@ -751,46 +758,46 @@ struct APIIntegrationTests {
 }
 
 struct ModelTests {
-    @Test("SearchType raw values")
-    func searchTypeRawValues() {
+    @Test
+    func `SearchType raw values`() {
         #expect(SearchType.song.rawValue == "song")
         #expect(SearchType.album.rawValue == "album")
         #expect(SearchType.artist.rawValue == "artist")
     }
 
-    @Test("SearchType titles")
-    func searchTypeTitles() {
+    @Test
+    func `SearchType titles`() {
         #expect(SearchType.song.title == LocalizationTestSupport.currentLocalizedValue("Songs"))
         #expect(SearchType.album.title == LocalizationTestSupport.currentLocalizedValue("Albums"))
         #expect(SearchType.artist.title == LocalizationTestSupport.currentLocalizedValue("Artists"))
     }
 
-    @Test("SearchType is CaseIterable")
-    func searchTypeCaseIterable() {
+    @Test
+    func `SearchType is CaseIterable`() {
         #expect(SearchType.allCases.count == 3)
     }
 
-    @Test("Artwork imageURL with nil url returns nil")
-    func artworkNilURL() {
+    @Test
+    func `Artwork imageURL with nil url returns nil`() {
         let artwork = Artwork(width: 100, height: 100, url: nil)
         #expect(artwork.imageURL() == nil)
     }
 
-    @Test("Artwork imageURL with empty url returns nil")
-    func artworkEmptyURL() {
+    @Test
+    func `Artwork imageURL with empty url returns nil`() {
         let artwork = Artwork(width: 100, height: 100, url: "")
         #expect(artwork.imageURL() == nil)
     }
 
-    @Test("Artwork imageURL resolves template")
-    func artworkTemplate() {
+    @Test
+    func `Artwork imageURL resolves template`() {
         let artwork = Artwork(width: 3000, height: 3000, url: "https://example.com/{w}x{h}bb.jpg")
         let resolved = artwork.imageURL(width: 500, height: 500)
         #expect(resolved?.absoluteString == "https://example.com/500x500bb.jpg")
     }
 
-    @Test("PlaybackInfo decodes from snake_case JSON")
-    func playbackInfoDecoding() throws {
+    @Test
+    func `PlaybackInfo decodes from snake_case JSON`() throws {
         let json = """
         {
             "playbackUrl": "cache/albums/123/456.m4a",
@@ -814,8 +821,8 @@ struct ModelTests {
         #expect(info.codec == "ALAC")
     }
 
-    @Test("ResourceList decodes missing data as empty array")
-    func resourceListMissingData() throws {
+    @Test
+    func `ResourceList decodes missing data as empty array`() throws {
         let json = """
         {"href": "/test", "next": null}
         """
@@ -827,8 +834,8 @@ struct ModelTests {
         #expect(list.data.isEmpty)
     }
 
-    @Test("CatalogSong equality uses id and type only")
-    func songEquality() {
+    @Test
+    func `CatalogSong equality uses id and type only`() {
         let attrs = CatalogSongAttributes(name: "A", artistName: "B")
         let song1 = CatalogSong(id: "1", type: "songs", href: nil, attributes: attrs, relationships: nil)
         let song2 = CatalogSong(id: "1", type: "songs", href: "/different", attributes: attrs, relationships: nil)
@@ -838,8 +845,8 @@ struct ModelTests {
         #expect(song1 != song3)
     }
 
-    @Test("APIError descriptions")
-    func apiErrorDescriptions() {
+    @Test
+    func `APIError descriptions`() {
         #expect(APIError.invalidRequest.errorDescription != nil)
         #expect(APIError.invalidResponse.errorDescription != nil)
         #expect(APIError.requestFailed(statusCode: 404).errorDescription?.contains("404") == true)

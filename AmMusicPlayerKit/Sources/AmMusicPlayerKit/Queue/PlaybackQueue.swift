@@ -1,3 +1,10 @@
+//
+//  PlaybackQueue.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 enum RewindResult {
@@ -80,7 +87,7 @@ struct PlaybackQueue {
         items: [PlayerItem],
         currentIndex: Int,
         shuffled: Bool,
-        repeatMode: RepeatMode
+        repeatMode: RepeatMode,
     ) {
         guard !items.isEmpty else {
             clear()
@@ -409,7 +416,7 @@ struct PlaybackQueue {
             nowPlaying: nowPlaying,
             upcoming: upcoming,
             shuffled: shuffled,
-            repeatMode: repeatMode
+            repeatMode: repeatMode,
         )
     }
 

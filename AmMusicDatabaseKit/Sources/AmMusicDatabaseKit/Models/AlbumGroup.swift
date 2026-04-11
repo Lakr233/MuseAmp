@@ -1,3 +1,10 @@
+//
+//  AlbumGroup.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public struct AlbumGroup: Sendable, Codable, Hashable, Identifiable {
@@ -20,7 +27,7 @@ public struct AlbumGroup: Sendable, Codable, Hashable, Identifiable {
         albumArtistName: String? = nil,
         trackCount: Int,
         artworkTrackID: String? = nil,
-        totalDurationSeconds: Double
+        totalDurationSeconds: Double,
     ) {
         self.albumID = albumID
         self.albumTitle = albumTitle

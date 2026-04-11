@@ -1,3 +1,10 @@
+//
+//  PlaylistStore+LegacyDecoding.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import Foundation
 
@@ -34,7 +41,7 @@ struct LegacyPlaylist: Decodable {
             coverImageData: coverImageData,
             entries: songs,
             createdAt: createdAt,
-            updatedAt: updatedAt
+            updatedAt: updatedAt,
         )
     }
 }
@@ -62,7 +69,7 @@ struct LegacyPlaylistSong: Decodable {
             trackID: identifier,
             title: name,
             artistName: artistName,
-            artworkURL: artworkURL
+            artworkURL: artworkURL,
         )
     }
 }

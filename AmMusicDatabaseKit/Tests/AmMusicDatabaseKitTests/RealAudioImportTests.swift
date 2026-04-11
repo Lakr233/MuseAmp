@@ -1,3 +1,10 @@
+//
+//  RealAudioImportTests.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 @preconcurrency import AVFoundation
 import CoreMedia
@@ -6,8 +13,8 @@ import Testing
 
 @Suite(.serialized)
 struct RealAudioImportTests {
-    @Test("ingest stores metadata from real exported audio file")
-    func ingestStoresMetadataFromRealExportedAudioFile() async throws {
+    @Test
+    func `ingest stores metadata from real exported audio file`() async throws {
         let fixture = try DatabaseIntegrityFixture()
         defer { try? fixture.cleanup() }
 
@@ -27,7 +34,7 @@ struct RealAudioImportTests {
             artistName: "Real Import Artist",
             albumName: "Real Import Album",
             lyrics: lyrics,
-            artworkData: artworkData
+            artworkData: artworkData,
         )
 
         let result = try await manager.send(
@@ -39,9 +46,9 @@ struct RealAudioImportTests {
                     title: "Real Import Song",
                     artistName: "Real Import Artist",
                     albumTitle: "Real Import Album",
-                    sourceKind: .downloaded
-                )
-            )
+                    sourceKind: .downloaded,
+                ),
+            ),
         )
         guard case let .ingestedTrack(record) = result else {
             Issue.record("Expected ingestedTrack result")
@@ -65,7 +72,7 @@ struct RealAudioImportTests {
 
         let storedFileURL = fixture.paths.audioDirectory.appendingPathComponent(
             "real-import-album/real-import-track.m4a",
-            isDirectory: false
+            isDirectory: false,
         )
         #expect(FileManager.default.fileExists(atPath: storedFileURL.path))
 
@@ -103,7 +110,7 @@ private func makeSilentM4A(at url: URL) throws {
         forWriting: url,
         settings: settings,
         commonFormat: .pcmFormatFloat32,
-        interleaved: false
+        interleaved: false,
     )
     try audioFile.write(from: buffer)
 }
@@ -123,7 +130,7 @@ private func embedMetadata(
     artistName: String,
     albumName: String,
     lyrics: String,
-    artworkData: Data
+    artworkData: Data,
 ) async throws {
     guard FileManager.default.isReadableFile(atPath: fileURL.path) else {
         throw RealAudioImportTestError.fileUnreadable
@@ -135,7 +142,7 @@ private func embedMetadata(
     }
     guard let exportSession = AVAssetExportSession(
         asset: asset,
-        presetName: AVAssetExportPresetPassthrough
+        presetName: AVAssetExportPresetPassthrough,
     ) else {
         throw RealAudioImportTestError.exportSessionUnavailable
     }
@@ -188,9 +195,9 @@ private func makeRealAudioInspection(fileURL: URL) async throws -> AudioFileInsp
             albumTitle: albumName,
             durationSeconds: max(CMTimeGetSeconds(duration), 0),
             lyrics: lyrics,
-            sourceKind: .downloaded
+            sourceKind: .downloaded,
         ),
-        embeddedArtwork: artworkData
+        embeddedArtwork: artworkData,
     )
 }
 

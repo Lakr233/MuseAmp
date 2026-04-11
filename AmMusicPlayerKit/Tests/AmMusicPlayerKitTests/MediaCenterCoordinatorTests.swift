@@ -1,3 +1,10 @@
+//
+//  MediaCenterCoordinatorTests.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 @testable import AmMusicPlayerKit
 import MediaPlayer
 import Testing
@@ -16,7 +23,7 @@ final class MockMediaCenterBackend: MediaCenterBackend {
 
 @MainActor
 struct MediaCenterCoordinatorTests {
-    @Test func delegatesInfoStateAndActivationToInjectedBackend() {
+    @Test func `delegates info state and activation to injected backend`() {
         let backend = MockMediaCenterBackend()
         let coordinator = MediaCenterCoordinator(backend: backend, backendKind: .legacy)
 
@@ -30,7 +37,7 @@ struct MediaCenterCoordinatorTests {
         #expect(coordinator.commandCenter === backend.commandCenter)
     }
 
-    @Test func usesLegacyBackendForMockEngine() {
+    @Test func `uses legacy backend for mock engine`() {
         let engine = MockAudioPlaybackEngine()
         let coordinator = MediaCenterCoordinator(engine: engine)
 

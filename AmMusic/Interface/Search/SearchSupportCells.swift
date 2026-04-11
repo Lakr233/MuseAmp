@@ -1,3 +1,10 @@
+//
+//  SearchSupportCells.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import SnapKit
 import Then
 import UIKit

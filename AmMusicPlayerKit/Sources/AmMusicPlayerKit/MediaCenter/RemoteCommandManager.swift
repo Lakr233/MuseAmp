@@ -1,3 +1,10 @@
+//
+//  RemoteCommandManager.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import MediaPlayer
 
 @MainActor
@@ -97,7 +104,7 @@ final class RemoteCommandManager {
             isEnabled: player.canHandleLikeCommand,
             isActive: player.currentItemLiked,
             localizedTitle: player.likeCommandLocalizedTitle,
-            localizedShortTitle: player.likeCommandLocalizedShortTitle
+            localizedShortTitle: player.likeCommandLocalizedShortTitle,
         )
     }
 
@@ -111,7 +118,7 @@ final class RemoteCommandManager {
         isEnabled: Bool,
         isActive: Bool,
         localizedTitle: String,
-        localizedShortTitle: String?
+        localizedShortTitle: String?,
     ) {
         commandCenter.likeCommand.isEnabled = isEnabled
         commandCenter.likeCommand.isActive = isActive

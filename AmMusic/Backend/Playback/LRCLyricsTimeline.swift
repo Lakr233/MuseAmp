@@ -1,3 +1,10 @@
+//
+//  LRCLyricsTimeline.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 nonisolated struct LRCLyricsTimeline: Equatable {
@@ -47,7 +54,7 @@ nonisolated struct LRCLyricsTimeline: Equatable {
                 index: index,
                 elapsed: elapsed,
                 duration: duration,
-                progress: progress
+                progress: progress,
             )
         }
 
@@ -56,7 +63,7 @@ nonisolated struct LRCLyricsTimeline: Equatable {
             index: index,
             elapsed: elapsed,
             duration: nil,
-            progress: 1
+            progress: 1,
         )
     }
 }
@@ -64,14 +71,28 @@ nonisolated struct LRCLyricsTimeline: Equatable {
 private nonisolated extension LRCLyricsTimeline {
     static let timestampPattern = #/\[(\d+):(\d{1,2})(?:\.(\d{1,3}))?\]/#
     static let offsetPattern = #/\[offset:([+-]?\d+)\]/#
+    static let tagLinePattern = #/^\[.+\]$/#
 
     static func parse(lrc: String) -> [Line] {
         let offset = parseOffset(from: lrc)
         var parsedLines: [(order: Int, line: Line)] = []
+        var lastAdjustedTime: TimeInterval?
 
         for rawLine in lrc.components(separatedBy: .newlines) {
             let timestamps = rawLine.matches(of: timestampPattern)
-            guard !timestamps.isEmpty else {
+
+            if timestamps.isEmpty {
+                let text = rawLine.trimmingCharacters(in: .whitespaces)
+                guard !text.isEmpty,
+                      text.wholeMatch(of: tagLinePattern) == nil,
+                      let time = lastAdjustedTime
+                else {
+                    continue
+                }
+                parsedLines.append((
+                    order: parsedLines.count,
+                    line: Line(time: time, text: text),
+                ))
                 continue
             }
 
@@ -83,33 +104,47 @@ private nonisolated extension LRCLyricsTimeline {
                 guard let time = parseTime(
                     minutes: String(timestamp.output.1),
                     seconds: String(timestamp.output.2),
-                    fraction: String(timestamp.output.3 ?? "")
+                    fraction: String(timestamp.output.3 ?? ""),
                 ) else {
                     continue
                 }
 
                 let adjustedTime = time + offset
+                lastAdjustedTime = adjustedTime
                 parsedLines.append((
                     order: parsedLines.count,
-                    line: Line(time: adjustedTime, text: text)
+                    line: Line(time: adjustedTime, text: text),
                 ))
             }
         }
 
-        let sortedLines = parsedLines
-            .sorted {
-                if $0.line.time == $1.line.time {
-                    return $0.order < $1.order
+        let sortedLines = splitMultilineEntries(
+            parsedLines
+                .sorted {
+                    if $0.line.time == $1.line.time {
+                        return $0.order < $1.order
+                    }
+                    return $0.line.time < $1.line.time
                 }
-                return $0.line.time < $1.line.time
-            }
-            .map(\.line)
+                .map(\.line),
+        )
 
         guard let firstLine = sortedLines.first, firstLine.time > 0 else {
             return sortedLines
         }
 
         return [Line(time: 0, text: "")] + sortedLines
+    }
+
+    static func splitMultilineEntries(_ lines: [Line]) -> [Line] {
+        lines.flatMap { line -> [Line] in
+            let parts = line.text
+                .components(separatedBy: .newlines)
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+            guard parts.count > 1 else { return [line] }
+            return parts.map { Line(time: line.time, text: $0) }
+        }
     }
 
     static func parseOffset(from lrc: String) -> TimeInterval {
@@ -131,7 +166,7 @@ private nonisolated extension LRCLyricsTimeline {
     static func parseTime(
         minutes: String,
         seconds: String,
-        fraction: String
+        fraction: String,
     ) -> TimeInterval? {
         guard let minutesValue = TimeInterval(minutes),
               let secondsValue = TimeInterval(seconds)

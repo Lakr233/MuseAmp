@@ -1,3 +1,10 @@
+//
+//  TrackRow.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 @preconcurrency import WCDBSwift
 
@@ -72,7 +79,7 @@ struct TrackRow: Codable, TableCodable {
             hasEmbeddedArtwork: hasEmbeddedArtwork,
             sourceKind: TrackSourceKind(rawValue: sourceKind) ?? .unknown,
             createdAt: createdAt,
-            updatedAt: updatedAt
+            updatedAt: updatedAt,
         )
     }
 

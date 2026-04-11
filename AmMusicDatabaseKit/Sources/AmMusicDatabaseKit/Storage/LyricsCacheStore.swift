@@ -1,3 +1,10 @@
+//
+//  LyricsCacheStore.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public struct LyricsCacheStore: Sendable {
@@ -56,7 +63,7 @@ public struct LyricsCacheStore: Sendable {
             try FileManager.default.createDirectory(
                 at: paths.lyricsCacheDirectory,
                 withIntermediateDirectories: true,
-                attributes: nil
+                attributes: nil,
             )
             DBLog.info(logger, "LyricsCacheStore", "removeAllLyrics")
         } catch {

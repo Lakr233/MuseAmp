@@ -1,3 +1,10 @@
+//
+//  AlbumResponse.swift
+//  AmMusicKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public struct AlbumResponse: Decodable, Sendable {

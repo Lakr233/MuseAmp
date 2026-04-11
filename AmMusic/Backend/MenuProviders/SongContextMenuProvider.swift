@@ -1,3 +1,10 @@
+//
+//  SongContextMenuProvider.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import UIKit
 
@@ -30,7 +37,7 @@ final class SongContextMenuProvider {
 
     init(
         playlistMenuProvider: AddToPlaylistMenuProvider? = nil,
-        exportPresenter: SongExportPresenter? = nil
+        exportPresenter: SongExportPresenter? = nil,
     ) {
         self.playlistMenuProvider = playlistMenuProvider
         self.exportPresenter = exportPresenter
@@ -40,7 +47,7 @@ final class SongContextMenuProvider {
         title: String? = nil,
         for song: PlaylistEntry,
         context: Context,
-        configuration: Configuration = .init()
+        configuration: Configuration = .init(),
     ) -> UIMenu? {
         var sections: [UIMenuElement] = []
 
@@ -61,7 +68,7 @@ final class SongContextMenuProvider {
         if context.allowsShowInAlbum, let showInAlbum = configuration.showInAlbum {
             libraryActions.append(UIAction(
                 title: String(localized: "Show in Album"),
-                image: UIImage(systemName: "music.note.list")
+                image: UIImage(systemName: "music.note.list"),
             ) { _ in
                 showInAlbum()
             })
@@ -101,7 +108,7 @@ final class SongContextMenuProvider {
 private extension SongContextMenuProvider {
     func makeAddToPlaylistMenu(
         for song: PlaylistEntry,
-        configuration: Configuration
+        configuration: Configuration,
     ) -> UIMenu? {
         guard let playlistMenuProvider,
               let availablePlaylists = configuration.availablePlaylists,
@@ -113,7 +120,7 @@ private extension SongContextMenuProvider {
         return playlistMenuProvider.contextMenu(
             for: [song],
             playlistsProvider: availablePlaylists,
-            onAdd: configuration.onAddToPlaylist
+            onAdd: configuration.onAddToPlaylist,
         )
     }
 
@@ -126,7 +133,7 @@ private extension SongContextMenuProvider {
 
         return UIAction(
             title: String(localized: "Export"),
-            image: UIImage(systemName: "square.and.arrow.up")
+            image: UIImage(systemName: "square.and.arrow.up"),
         ) { _ in
             let items = exportItems()
             guard !items.isEmpty else { return }
@@ -141,34 +148,36 @@ private extension SongContextMenuProvider {
             children.append(UIAction(
                 title: "Album: \(albumID)",
                 image: UIImage(systemName: "square.stack"),
-                attributes: .disabled
+                attributes: .disabled,
             ) { _ in })
         }
 
         children.append(UIAction(
             title: "Song: \(song.trackID)",
             image: UIImage(systemName: "music.note"),
-            attributes: .disabled
+            attributes: .disabled,
         ) { _ in })
 
         return UIMenu(
             title: String(localized: "Info"),
             image: UIImage(systemName: "info.circle"),
-            children: children
+            children: children,
         )
     }
 
     func makeCopyMenu(for song: PlaylistEntry) -> UIMenu {
         let copyName = UIAction(
             title: String(localized: "Song Name"),
-            image: UIImage(systemName: "textformat")
+            subtitle: song.title,
+            image: UIImage(systemName: "textformat"),
         ) { _ in
             UIPasteboard.general.string = song.title
         }
 
         let copyArtist = UIAction(
             title: String(localized: "Artist Name"),
-            image: UIImage(systemName: "person.text.rectangle")
+            subtitle: song.artistName,
+            image: UIImage(systemName: "person.text.rectangle"),
         ) { _ in
             UIPasteboard.general.string = song.artistName
         }
@@ -177,7 +186,8 @@ private extension SongContextMenuProvider {
         if let albumName = song.albumTitle, !albumName.isEmpty {
             children.append(UIAction(
                 title: String(localized: "Album Name"),
-                image: UIImage(systemName: "square.stack")
+                subtitle: albumName,
+                image: UIImage(systemName: "square.stack"),
             ) { _ in
                 UIPasteboard.general.string = albumName
             })

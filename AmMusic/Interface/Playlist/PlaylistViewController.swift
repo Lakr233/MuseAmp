@@ -1,3 +1,10 @@
+//
+//  PlaylistViewController.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AlertController
 import AmMusicDatabaseKit
 import SnapKit
@@ -72,13 +79,20 @@ class PlaylistViewController: UIViewController {
     private var playlistsDidChangeObserver: NSObjectProtocol?
     lazy var playlistMenuProvider = PlaylistContextMenuProvider(
         playlistStore: store,
-        viewController: self
+        viewController: self,
     )
     lazy var addButton = UIBarButtonItem(
         image: UIImage(systemName: "plus"),
-        style: .plain,
-        target: self,
-        action: #selector(addTapped)
+        menu: UIMenu(children: [
+            UIAction(
+                title: String(localized: "Custom Playlist"),
+                image: UIImage(systemName: "text.badge.plus"),
+            ) { [weak self] _ in self?.createCustomPlaylist() },
+            UIAction(
+                title: String(localized: "Random Playlist"),
+                image: UIImage(systemName: "shuffle"),
+            ) { [weak self] _ in self?.createRandomPlaylist() },
+        ]),
     ).then {
         $0.accessibilityIdentifier = "playlist.add"
     }
@@ -87,7 +101,7 @@ class PlaylistViewController: UIViewController {
         image: UIImage(systemName: "checkmark.circle"),
         style: .plain,
         target: self,
-        action: #selector(finishSelectionTapped)
+        action: #selector(finishSelectionTapped),
     )
 
     var dataSource: PlaylistDiffableDataSource!
@@ -107,7 +121,7 @@ class PlaylistViewController: UIViewController {
     lazy var searchController = UISearchController(searchResultsController: nil).then {
         $0.searchResultsUpdater = self
         $0.obscuresBackgroundDuringPresentation = false
-        $0.searchBar.placeholder = String(localized: "Playlists, Songs")
+        $0.searchBar.placeholder = String(localized: "Search Local Playlists")
     }
 
     // MARK: - Empty States
@@ -115,13 +129,13 @@ class PlaylistViewController: UIViewController {
     private let emptyStateView = EmptyStateView(
         icon: "music.note.list",
         title: String(localized: "No Playlists Yet"),
-        subtitle: String(localized: "Tap + to create your first playlist")
+        subtitle: String(localized: "Tap + to create your first playlist"),
     )
 
     private let noResultsView = EmptyStateView(
         icon: "magnifyingglass",
         title: String(localized: "No Results"),
-        subtitle: String(localized: "Try a different search term")
+        subtitle: String(localized: "Try a different search term"),
     ).then { $0.isHidden = true }
 
     // MARK: - Lifecycle
@@ -184,29 +198,66 @@ class PlaylistViewController: UIViewController {
         playlistsDidChangeObserver = NotificationCenter.default.addObserver(
             forName: .playlistsDidChange,
             object: store,
-            queue: .main
+            queue: .main,
         ) { [weak self] _ in
             self?.reloadPlaylists()
         }
     }
 
-    @objc private func addTapped() {
+    private func createCustomPlaylist() {
         let alert = AlertInputViewController(
             title: String(localized: "New Playlist"),
             message: String(localized: "Enter a name for your playlist."),
             placeholder: String(localized: "Playlist Name"),
-            text: ""
+            text: "",
         ) { [weak self] name in
             guard let self else { return }
             let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else {
-                AppLog.warning(self, "addTapped empty name after trim, ignoring")
+                AppLog.warning(self, "createCustomPlaylist empty name after trim, ignoring")
                 return
             }
             store.createPlaylist(name: trimmed)
             reloadPlaylists()
         }
         present(alert, animated: true)
+    }
+
+    private func createRandomPlaylist() {
+        guard let environment else { return }
+        let allTracks: [AudioTrackRecord]
+        do {
+            allTracks = try environment.libraryDatabase.allTracks()
+        } catch {
+            AppLog.error(self, "createRandomPlaylist failed to fetch tracks error=\(error)")
+            return
+        }
+        guard !allTracks.isEmpty else {
+            AppLog.warning(self, "createRandomPlaylist no tracks in library")
+            return
+        }
+
+        let count = min(25, allTracks.count)
+        let selected = Array(allTracks.shuffled().prefix(count))
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyyMMdd"
+        let name = "Random \(dateFormatter.string(from: Date()))"
+        let playlist = store.createPlaylist(name: name)
+
+        for track in selected {
+            let entry = PlaylistEntry(
+                trackID: track.trackID,
+                title: track.title,
+                artistName: track.artistName,
+                albumID: track.albumID,
+                albumTitle: track.albumTitle,
+                durationMillis: track.durationSeconds > 0 ? Int((track.durationSeconds * 1000).rounded()) : nil,
+                trackNumber: track.trackNumber,
+            )
+            _ = store.addSong(entry, to: playlist.id)
+        }
+        reloadPlaylists()
     }
 
     // MARK: - Table View
@@ -228,7 +279,7 @@ class PlaylistViewController: UIViewController {
 
     private func configureDataSource() {
         dataSource = PlaylistDiffableDataSource(
-            tableView: tableView
+            tableView: tableView,
         ) { [weak self] (tableView: UITableView, indexPath: IndexPath, item: PlaylistItem) -> UITableViewCell? in
             guard let self else { return UITableViewCell() }
 
@@ -240,7 +291,8 @@ class PlaylistViewController: UIViewController {
                     with: playlist,
                     subtitle: playlistSubtitle(for: playlist),
                     apiClient: environment?.apiClient,
-                    artworkCache: environment?.playlistCoverArtworkCache
+                    artworkCache: environment?.playlistCoverArtworkCache,
+                    paths: environment?.paths,
                 )
                 cell.accessibilityIdentifier = "playlist.item.\(indexPath.row)"
                 return cell
@@ -254,7 +306,8 @@ class PlaylistViewController: UIViewController {
                     matchingSongNames: result.matchingSongNames,
                     fallbackSubtitle: playlistSubtitle(for: result.playlist),
                     apiClient: environment?.apiClient,
-                    artworkCache: environment?.playlistCoverArtworkCache
+                    artworkCache: environment?.playlistCoverArtworkCache,
+                    paths: environment?.paths,
                 )
                 return cell
             }
@@ -266,15 +319,13 @@ class PlaylistViewController: UIViewController {
     // MARK: - Empty State
 
     private func configureEmptyState() {
-        tableView.addSubview(emptyStateView)
+        view.addSubview(emptyStateView)
         emptyStateView.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.top.equalToSuperview().offset(200)
+            make.center.equalTo(view.safeAreaLayoutGuide)
         }
-        tableView.addSubview(noResultsView)
+        view.addSubview(noResultsView)
         noResultsView.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.top.equalToSuperview().offset(200)
+            make.center.equalTo(view.safeAreaLayoutGuide)
         }
     }
 
@@ -341,19 +392,29 @@ class PlaylistViewController: UIViewController {
     // MARK: - Snapshots
 
     func applyPlaylistsSnapshot(animated: Bool) {
+        let previousItems = Set(dataSource.snapshot().itemIdentifiers)
         var snapshot = NSDiffableDataSourceSnapshot<PlaylistSection, PlaylistItem>()
         snapshot.appendSections([PlaylistSection.playlists])
         let items: [PlaylistItem] = sortedPlaylists.map { PlaylistItem.playlist($0.id) }
         snapshot.appendItems(items, toSection: PlaylistSection.playlists)
+        let itemsToReconfigure = items.filter { previousItems.contains($0) }
+        if !itemsToReconfigure.isEmpty {
+            snapshot.reconfigureItems(itemsToReconfigure)
+        }
         dataSource.apply(snapshot, animatingDifferences: animated)
         updateEmptyState()
     }
 
     func applySearchSnapshot(animated: Bool) {
+        let previousItems = Set(dataSource.snapshot().itemIdentifiers)
         var snapshot = NSDiffableDataSourceSnapshot<PlaylistSection, PlaylistItem>()
         snapshot.appendSections([PlaylistSection.searchResults])
         let items: [PlaylistItem] = orderedSearchResultIDs.map { PlaylistItem.searchResult($0) }
         snapshot.appendItems(items, toSection: PlaylistSection.searchResults)
+        let itemsToReconfigure = items.filter { previousItems.contains($0) }
+        if !itemsToReconfigure.isEmpty {
+            snapshot.reconfigureItems(itemsToReconfigure)
+        }
         dataSource.apply(snapshot, animatingDifferences: animated)
         updateEmptyState()
     }

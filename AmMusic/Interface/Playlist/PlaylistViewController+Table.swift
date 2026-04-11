@@ -1,3 +1,10 @@
+//
+//  PlaylistViewController+Table.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import UIKit
 
@@ -39,7 +46,7 @@ extension PlaylistViewController: UITableViewDelegate {
 
     func tableView(
         _: UITableView,
-        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
+        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath,
     ) -> UISwipeActionsConfiguration? {
         guard !isEditing, !isSearchActive,
               let item = dataSource.itemIdentifier(for: indexPath),
@@ -60,7 +67,7 @@ extension PlaylistViewController: UITableViewDelegate {
     func tableView(
         _: UITableView,
         contextMenuConfigurationForRowAt indexPath: IndexPath,
-        point _: CGPoint
+        point _: CGPoint,
     ) -> UIContextMenuConfiguration? {
         guard !isEditing,
               let item = dataSource.itemIdentifier(for: indexPath)
@@ -77,7 +84,7 @@ extension PlaylistViewController: UITableViewDelegate {
             identifier: id.uuidString as NSString,
             previewProvider: { [weak self] in
                 self?.makePlaylistDetailViewController(for: id)
-            }
+            },
         ) { [weak self] _ in
             self?.contextMenu(for: id)
         }
@@ -85,14 +92,14 @@ extension PlaylistViewController: UITableViewDelegate {
 
     func tableView(
         _: UITableView,
-        previewForHighlightingContextMenuWithConfiguration configuration: UIContextMenuConfiguration
+        previewForHighlightingContextMenuWithConfiguration configuration: UIContextMenuConfiguration,
     ) -> UITargetedPreview? {
         targetedPreview(for: configuration)
     }
 
     func tableView(
         _: UITableView,
-        previewForDismissingContextMenuWithConfiguration configuration: UIContextMenuConfiguration
+        previewForDismissingContextMenuWithConfiguration configuration: UIContextMenuConfiguration,
     ) -> UITargetedPreview? {
         targetedPreview(for: configuration)
     }
@@ -100,7 +107,7 @@ extension PlaylistViewController: UITableViewDelegate {
     func tableView(
         _: UITableView,
         willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration,
-        animator: any UIContextMenuInteractionCommitAnimating
+        animator: any UIContextMenuInteractionCommitAnimating,
     ) {
         animator.addCompletion { [weak self] in
             if let detailViewController = animator.previewViewController as? PlaylistDetailViewController {
@@ -155,7 +162,7 @@ extension PlaylistViewController {
             },
             onDelete: { [weak self] _ in
                 self?.reloadPlaylists()
-            }
+            },
         )
     }
 

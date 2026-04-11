@@ -1,3 +1,10 @@
+//
+//  main.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import UIKit
 
 MainActor.assumeIsolated {
@@ -6,7 +13,7 @@ MainActor.assumeIsolated {
         CommandLine.argc,
         CommandLine.unsafeArgv,
         nil,
-        NSStringFromClass(AppDelegate.self)
+        NSStringFromClass(AppDelegate.self),
     )
 
     AppLog.error("main", "UIApplicationMain returned unexpectedly - fatalError imminent")

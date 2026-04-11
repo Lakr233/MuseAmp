@@ -1,3 +1,10 @@
+//
+//  CacheCoordinator.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 struct CacheCoordinator {
@@ -52,7 +59,7 @@ struct CacheCoordinator {
         try pruneOrphans(
             in: paths.artworkCacheDirectory,
             validTrackIDs: validTrackIDs,
-            expectedExtension: "jpg"
+            expectedExtension: "jpg",
         )
     }
 
@@ -60,7 +67,7 @@ struct CacheCoordinator {
         try pruneOrphans(
             in: paths.lyricsCacheDirectory,
             validTrackIDs: validTrackIDs,
-            expectedExtension: "lrc"
+            expectedExtension: "lrc",
         )
     }
 
@@ -68,7 +75,7 @@ struct CacheCoordinator {
         try orphanTrackIDs(
             in: paths.artworkCacheDirectory,
             validTrackIDs: validTrackIDs,
-            expectedExtension: "jpg"
+            expectedExtension: "jpg",
         )
     }
 
@@ -76,7 +83,7 @@ struct CacheCoordinator {
         try orphanTrackIDs(
             in: paths.lyricsCacheDirectory,
             validTrackIDs: validTrackIDs,
-            expectedExtension: "lrc"
+            expectedExtension: "lrc",
         )
     }
 

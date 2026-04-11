@@ -1,3 +1,10 @@
+//
+//  MusicService.swift
+//  AmMusicKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public protocol MusicService: AnyObject {
@@ -7,7 +14,7 @@ public protocol MusicService: AnyObject {
         limit: Int,
         offset: Int,
         cacheSearchResponses: Bool,
-        prefetchSongMetadata: Bool
+        prefetchSongMetadata: Bool,
     ) async throws -> SearchResponse
 
     func album(id: String, storefront: String?) async throws -> AlbumResponse

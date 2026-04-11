@@ -1,25 +1,50 @@
+//
+//  PlaylistDetailViewController.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AlertController
 import AmMusicDatabaseKit
+import Combine
+import ConfigurableKit
 import Then
 import UIKit
 
+nonisolated enum PlaylistDetailSection: Int, Hashable {
+    case header
+    case tracks
+    case footer
+}
+
+nonisolated enum PlaylistDetailItem: Hashable {
+    case header
+    case song(entryID: String, trackID: String)
+    case footer
+}
+
 @MainActor
-final class PlaylistDetailViewController: MediaDetailViewController, UITableViewDataSource, UITableViewDelegate, UITableViewDragDelegate {
+final class PlaylistDetailViewController: MediaDetailViewController, UITableViewDelegate, UITableViewDragDelegate {
     let playlistID: UUID
     let store: PlaylistStore
     let environment: AppEnvironment?
 
     private var playlistsDidChangeObserver: NSObjectProtocol?
+    private var cancellables: Set<AnyCancellable> = []
 
     var playlist: Playlist? {
         store.playlist(for: playlistID)
     }
 
+    var dataSource: PlaylistDetailDiffableDataSource!
     var headerCoverTask: Task<Void, Never>?
     var localArtworkPrefetchTask: Task<Void, Never>?
+    var headerArtworkImage: UIImage?
+
     lazy var playlistMenuProvider = AddToPlaylistMenuProvider(
         playlistStore: store,
-        viewController: self
+        viewController: self,
     )
     lazy var playbackMenuProvider = environment.map {
         PlaybackMenuProvider(playbackController: $0.playbackController)
@@ -29,11 +54,11 @@ final class PlaylistDetailViewController: MediaDetailViewController, UITableView
         viewController: self,
         lyricsStore: environment?.lyricsCacheStore,
         locations: environment?.paths,
-        apiClient: environment?.apiClient
+        apiClient: environment?.apiClient,
     )
     lazy var songContextMenuProvider = SongContextMenuProvider(
         playlistMenuProvider: playlistMenuProvider,
-        exportPresenter: songExportPresenter
+        exportPresenter: songExportPresenter,
     )
     lazy var coverPreviewPresenter = ImageQuickLookPreviewPresenter(viewController: self)
     lazy var albumNavigationHelper: AlbumNavigationHelper? = environment.map {
@@ -69,10 +94,9 @@ final class PlaylistDetailViewController: MediaDetailViewController, UITableView
         view.accessibilityIdentifier = "playlist.detail"
         title = playlist?.name ?? String(localized: "Playlist")
 
-        configureDetailArtwork(placeholder: "music.note.list")
         updateOptionsMenu()
-        configureHeader()
         configureTableView()
+        configureDataSource()
         populateHeader()
         observePlaylistChanges()
 
@@ -80,8 +104,16 @@ final class PlaylistDetailViewController: MediaDetailViewController, UITableView
             self,
             selector: #selector(handleLibraryDidSync),
             name: .libraryDidSync,
-            object: nil
+            object: nil,
         )
+
+        ConfigurableKit.publisher(
+            forKey: AppPreferences.cleanSongTitleKey, type: Bool.self,
+        )
+        .dropFirst()
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] _ in self?.tableView.reloadData() }
+        .store(in: &cancellables)
     }
 
     @MainActor deinit {
@@ -111,7 +143,7 @@ final class PlaylistDetailViewController: MediaDetailViewController, UITableView
         playlistsDidChangeObserver = NotificationCenter.default.addObserver(
             forName: .playlistsDidChange,
             object: store,
-            queue: .main
+            queue: .main,
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.handlePlaylistStoreDidChange()
@@ -132,46 +164,39 @@ final class PlaylistDetailViewController: MediaDetailViewController, UITableView
     func refreshDownloadStateUI() {
         store.reload()
         populateHeader()
-        tableView.reloadData()
+        applySnapshot()
         prefetchLocalArtworkIfNeeded()
         updateOptionsMenu()
     }
 
     // MARK: - Header
 
-    private func configureHeader() {
-        configureDetailHeader(
-            arrangedSubviews: [],
-            artworkSize: 200,
-            customSpacings: []
-        )
-    }
-
     func populateHeader() {
         guard let playlist else {
-            updateFooter()
-            invalidateHeaderLayout()
+            headerArtworkImage = nil
+            reloadHeaderCell()
             return
         }
         title = playlist.name
-        updateFooter()
-        invalidateHeaderLayout()
 
         headerCoverTask?.cancel()
         if let coverData = playlist.coverImageData, let image = UIImage(data: coverData) {
             AppLog.verbose(self, "populateHeader playlistID=\(playlist.id) using custom cover bytes=\(coverData.count)")
-            artworkImageView.setImage(image)
+            headerArtworkImage = image
+            reloadHeaderCell()
             return
         }
 
         guard !playlist.songs.isEmpty else {
             AppLog.verbose(self, "populateHeader playlistID=\(playlist.id) no songs reset artwork")
-            artworkImageView.reset()
+            headerArtworkImage = nil
+            reloadHeaderCell()
             return
         }
 
         AppLog.verbose(self, "populateHeader playlistID=\(playlist.id) generating artwork")
-        artworkImageView.reset()
+        headerArtworkImage = nil
+        reloadHeaderCell()
         headerCoverTask = Task { @MainActor [weak self, playlist] in
             guard let self,
                   let image = await generatedCoverImage(for: playlist, sideLength: 200)
@@ -184,135 +209,170 @@ final class PlaylistDetailViewController: MediaDetailViewController, UITableView
             guard playlistID == playlist.id else {
                 AppLog.verbose(
                     self,
-                    "header cover task dropped playlistID=\(playlist.id) current=\(playlistID.uuidString)"
+                    "header cover task dropped playlistID=\(playlist.id) current=\(playlistID.uuidString)",
                 )
                 return
             }
             AppLog.verbose(self, "header cover task applied playlistID=\(playlist.id)")
-            artworkImageView.setImage(image)
+            headerArtworkImage = image
+            reloadHeaderCell()
         }
+    }
+
+    func reloadHeaderCell() {
+        guard let dataSource, var snapshot = Optional(dataSource.snapshot()),
+              snapshot.indexOfSection(.header) != nil
+        else { return }
+        snapshot.reconfigureItems([.header])
+        dataSource.apply(snapshot, animatingDifferences: false)
     }
 
     // MARK: - Table View
 
     private func configureTableView() {
-        tableView.dataSource = self
         tableView.delegate = self
+        tableView.register(PlaylistHeaderCell.self, forCellReuseIdentifier: PlaylistHeaderCell.reuseID)
         tableView.register(AmSongCell.self, forCellReuseIdentifier: AmSongCell.reuseID)
+        tableView.register(DetailFooterCell.self, forCellReuseIdentifier: DetailFooterCell.reuseID)
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 64
-        tableView.separatorInset = .zero
-        tableView.layoutMargins = .zero
-        tableView.cellLayoutMarginsFollowReadableWidth = false
-        tableView.insetsContentViewsToSafeArea = false
         tableView.sectionHeaderTopPadding = 0
 
         tableView.dragInteractionEnabled = true
         tableView.dragDelegate = self
 
         configureDetailTableView(backgroundColor: .systemBackground)
-        configureDetailFooter(hidden: true)
     }
 
-    private func updateFooter() {
-        guard let playlist else {
-            updateFooterText(nil)
-            return
-        }
+    private func footerText() -> String? {
+        guard let playlist else { return nil }
 
         let songCount = playlist.songs.count
-        guard songCount > 0 else {
-            updateFooterText(nil)
-            return
-        }
+        guard songCount > 0 else { return nil }
 
         let totalMillis = playlist.songs.compactMap(\.durationMillis).reduce(0, +)
         let songCountText = songCount == 1 ? String(localized: "1 song") : String(localized: "\(songCount) songs")
 
         if totalMillis > 0 {
             let minutes = totalMillis / 1000 / 60
-            updateFooterText(String(localized: "\(songCountText), \(minutes) minutes"))
+            return String(localized: "\(songCountText), \(minutes) minutes")
         } else {
-            updateFooterText(songCountText)
+            return songCountText
         }
     }
 
-    // MARK: - UITableViewDataSource
+    // MARK: - Diffable Data Source
 
-    func tableView(_: UITableView, numberOfRowsInSection _: Int) -> Int {
-        playlist?.songs.count ?? 0
-    }
+    private func configureDataSource() {
+        dataSource = PlaylistDetailDiffableDataSource(
+            tableView: tableView,
+            playlistID: playlistID,
+            store: store,
+        ) { [weak self] tableView, indexPath, item -> UITableViewCell? in
+            guard let self else { return UITableViewCell() }
 
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(
-            withIdentifier: AmSongCell.reuseID,
-            for: indexPath
-        ) as! AmSongCell
-        guard let songs = playlist?.songs, songs.indices.contains(indexPath.row) else {
-            return cell
+            switch item {
+            case .header:
+                guard let cell = tableView.dequeueReusableCell(
+                    withIdentifier: PlaylistHeaderCell.reuseID, for: indexPath,
+                ) as? PlaylistHeaderCell else {
+                    return UITableViewCell()
+                }
+                if let image = headerArtworkImage {
+                    cell.artworkImageView.setImage(image)
+                } else {
+                    cell.artworkImageView.reset()
+                }
+                cell.selectionStyle = .none
+                return cell
+
+            case let .song(entryID, _):
+                let cell = tableView.dequeueReusableCell(
+                    withIdentifier: AmSongCell.reuseID,
+                    for: indexPath,
+                ) as! AmSongCell
+                guard let songs = playlist?.songs,
+                      let song = songs.first(where: { $0.entryID == entryID })
+                else {
+                    return cell
+                }
+                cell.configure(with: song, artworkURL: artworkURL(for: song))
+                cell.setDownloadedIndicatorVisible(isSongDownloaded(song))
+                return cell
+
+            case .footer:
+                guard let cell = tableView.dequeueReusableCell(
+                    withIdentifier: DetailFooterCell.reuseID, for: indexPath,
+                ) as? DetailFooterCell else {
+                    return UITableViewCell()
+                }
+                cell.configure(text: footerText())
+                cell.selectionStyle = .none
+                cell.isUserInteractionEnabled = false
+                return cell
+            }
         }
-        let song = songs[indexPath.row]
 
-        cell.configure(with: song, artworkURL: artworkURL(for: song))
-        cell.setDownloadedIndicatorVisible(isSongDownloaded(song))
-        cell.separatorInset = .zero
-        cell.layoutMargins = .zero
-
-        return cell
+        dataSource.defaultRowAnimation = .fade
+        applySnapshot()
     }
 
-    func tableView(
-        _: UITableView,
-        commit editingStyle: UITableViewCell.EditingStyle,
-        forRowAt indexPath: IndexPath
-    ) {
-        guard editingStyle == .delete else {
-            return
+    func applySnapshot() {
+        var snapshot = NSDiffableDataSourceSnapshot<PlaylistDetailSection, PlaylistDetailItem>()
+
+        snapshot.appendSections([.header])
+        snapshot.appendItems([.header], toSection: .header)
+
+        snapshot.appendSections([.tracks])
+        if let songs = playlist?.songs {
+            let songItems: [PlaylistDetailItem] = songs.map { .song(entryID: $0.entryID, trackID: $0.trackID) }
+            snapshot.appendItems(songItems, toSection: .tracks)
         }
-        guard let songs = playlist?.songs, songs.indices.contains(indexPath.row) else {
-            AppLog.warning(self, "commit delete missing song index=\(indexPath.row) playlistID=\(playlistID)")
-            return
+
+        let hasFooterContent = footerText() != nil
+        if hasFooterContent {
+            snapshot.appendSections([.footer])
+            snapshot.appendItems([.footer], toSection: .footer)
         }
-        let song = songs[indexPath.row]
-        AppLog.info(self, "removeSong index=\(indexPath.row) trackID=\(song.trackID) name=\(song.title) from playlistID=\(playlistID)")
-        store.removeSong(at: indexPath.row, from: playlistID)
-        tableView.deleteRows(at: [indexPath], with: .automatic)
-        populateHeader()
-    }
 
-    func tableView(_: UITableView, canMoveRowAt _: IndexPath) -> Bool {
-        true
-    }
-
-    func tableView(_: UITableView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
-        AppLog.info(self, "moveSong from=\(sourceIndexPath.row) to=\(destinationIndexPath.row) playlistID=\(playlistID)")
-        store.moveSong(in: playlistID, from: sourceIndexPath.row, to: destinationIndexPath.row)
+        dataSource.apply(snapshot, animatingDifferences: false)
     }
 
     // MARK: - UITableViewDelegate
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        guard environment != nil else {
-            return
-        }
-        playSong(at: indexPath.row)
+        guard environment != nil,
+              let item = dataSource.itemIdentifier(for: indexPath),
+              case let .song(entryID, _) = item,
+              let songs = playlist?.songs,
+              let songIndex = songs.firstIndex(where: { $0.entryID == entryID })
+        else { return }
+        playSong(at: songIndex)
+    }
+
+    func tableView(_: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
+        guard let item = dataSource.itemIdentifier(for: indexPath) else { return false }
+        if case .song = item { return true }
+        return false
     }
 
     func tableView(
         _: UITableView,
         contextMenuConfigurationForRowAt indexPath: IndexPath,
-        point _: CGPoint
+        point _: CGPoint,
     ) -> UIContextMenuConfiguration? {
-        guard let songs = playlist?.songs, songs.indices.contains(indexPath.row) else {
-            return nil
-        }
-        let song = songs[indexPath.row]
+        guard let item = dataSource.itemIdentifier(for: indexPath),
+              case let .song(entryID, _) = item,
+              let songs = playlist?.songs,
+              let song = songs.first(where: { $0.entryID == entryID })
+        else { return nil }
+
         return UIContextMenuConfiguration(identifier: indexPath as NSIndexPath, previewProvider: nil) { [weak self] _ in
             guard let self else { return nil }
             let removeAction = UIAction(
                 title: String(localized: "Remove"),
-                image: UIImage(systemName: "minus.circle")
+                image: UIImage(systemName: "minus.circle"),
             ) { [weak self] _ in
                 self?.confirmRemove(song: song)
             }
@@ -322,7 +382,7 @@ final class PlaylistDetailViewController: MediaDetailViewController, UITableView
                 destructiveActions.append(UIAction(
                     title: String(localized: "Delete Song"),
                     image: UIImage(systemName: "trash"),
-                    attributes: .destructive
+                    attributes: .destructive,
                 ) { [weak self] _ in
                     self?.confirmDeleteSong(song)
                 })
@@ -350,38 +410,55 @@ final class PlaylistDetailViewController: MediaDetailViewController, UITableView
                         },
                         sourceProvider: { [weak self] in
                             .playlist(self?.playlistID ?? UUID())
-                        }
+                        },
                     ) ?? [],
-                    destructiveActions: destructiveActions
-                )
+                    destructiveActions: destructiveActions,
+                ),
             )
         }
     }
 
     func tableView(
         _: UITableView,
-        previewForHighlightingContextMenuWithConfiguration configuration: UIContextMenuConfiguration
+        previewForHighlightingContextMenuWithConfiguration configuration: UIContextMenuConfiguration,
     ) -> UITargetedPreview? {
         CellContextMenuPreviewHelper.targetedPreview(for: configuration, in: tableView)
     }
 
     func tableView(
         _: UITableView,
-        previewForDismissingContextMenuWithConfiguration configuration: UIContextMenuConfiguration
+        previewForDismissingContextMenuWithConfiguration configuration: UIContextMenuConfiguration,
     ) -> UITargetedPreview? {
         CellContextMenuPreviewHelper.targetedPreview(for: configuration, in: tableView)
+    }
+
+    func tableView(
+        _: UITableView,
+        targetIndexPathForMoveFromRowAt sourceIndexPath: IndexPath,
+        toProposedIndexPath proposedDestinationIndexPath: IndexPath,
+    ) -> IndexPath {
+        guard let tracksSection = dataSource.snapshot().indexOfSection(.tracks) else {
+            return sourceIndexPath
+        }
+        if proposedDestinationIndexPath.section < tracksSection {
+            return IndexPath(row: 0, section: tracksSection)
+        }
+        if proposedDestinationIndexPath.section > tracksSection {
+            let trackCount = dataSource.snapshot().numberOfItems(inSection: .tracks)
+            return IndexPath(row: max(trackCount - 1, 0), section: tracksSection)
+        }
+        return proposedDestinationIndexPath
     }
 
     // MARK: - UITableViewDragDelegate
 
     func tableView(_: UITableView, itemsForBeginning _: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
-        guard let songs = playlist?.songs, songs.indices.contains(indexPath.row) else {
-            return []
-        }
-        let song = songs[indexPath.row]
-        guard let exportItem = exportItem(for: song) else {
-            return []
-        }
+        guard let item = dataSource.itemIdentifier(for: indexPath),
+              case let .song(entryID, _) = item,
+              let songs = playlist?.songs,
+              let song = songs.first(where: { $0.entryID == entryID }),
+              let exportItem = exportItem(for: song)
+        else { return [] }
 
         let fileExtension = exportItem.sourceURL.pathExtension
         let fileName = fileExtension.isEmpty
@@ -393,7 +470,7 @@ final class PlaylistDetailViewController: MediaDetailViewController, UITableView
         provider.registerFileRepresentation(
             forTypeIdentifier: "public.audio",
             fileOptions: [],
-            visibility: .all
+            visibility: .all,
         ) { completion in
             completion(exportItem.sourceURL, false, nil)
             return nil
@@ -405,12 +482,88 @@ final class PlaylistDetailViewController: MediaDetailViewController, UITableView
     }
 }
 
+// MARK: - PlaylistDetailDiffableDataSource
+
+@MainActor
+final class PlaylistDetailDiffableDataSource: UITableViewDiffableDataSource<PlaylistDetailSection, PlaylistDetailItem> {
+    let playlistID: UUID
+    let store: PlaylistStore
+
+    init(
+        tableView: UITableView,
+        playlistID: UUID,
+        store: PlaylistStore,
+        cellProvider: @escaping UITableViewDiffableDataSource<PlaylistDetailSection, PlaylistDetailItem>.CellProvider,
+    ) {
+        self.playlistID = playlistID
+        self.store = store
+        super.init(tableView: tableView, cellProvider: cellProvider)
+    }
+
+    override func tableView(_: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        guard let item = itemIdentifier(for: indexPath) else { return false }
+        if case .song = item { return true }
+        return false
+    }
+
+    override func tableView(_: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
+        guard let item = itemIdentifier(for: indexPath) else { return false }
+        if case .song = item { return true }
+        return false
+    }
+
+    override func tableView(
+        _: UITableView,
+        moveRowAt sourceIndexPath: IndexPath,
+        to destinationIndexPath: IndexPath,
+    ) {
+        guard let sourceItem = itemIdentifier(for: sourceIndexPath),
+              case .song = sourceItem
+        else { return }
+
+        let tracksSnapshot = snapshot().itemIdentifiers(inSection: .tracks)
+        guard let sourceTrackIndex = tracksSnapshot.firstIndex(of: sourceItem) else { return }
+
+        let destTrackIndex: Int = if let destItem = itemIdentifier(for: destinationIndexPath),
+                                     let idx = tracksSnapshot.firstIndex(of: destItem)
+        {
+            idx
+        } else {
+            max(tracksSnapshot.count - 1, 0)
+        }
+
+        AppLog.info("PlaylistDetailViewController", "moveSong from=\(sourceTrackIndex) to=\(destTrackIndex) playlistID=\(playlistID)")
+        store.moveSong(in: playlistID, from: sourceTrackIndex, to: destTrackIndex)
+    }
+
+    override func tableView(
+        _: UITableView,
+        commit editingStyle: UITableViewCell.EditingStyle,
+        forRowAt indexPath: IndexPath,
+    ) {
+        guard editingStyle == .delete,
+              let item = itemIdentifier(for: indexPath),
+              case let .song(entryID, _) = item,
+              let songs = store.playlist(for: playlistID)?.songs,
+              let songIndex = songs.firstIndex(where: { $0.entryID == entryID })
+        else { return }
+
+        let song = songs[songIndex]
+        AppLog.info("PlaylistDetailViewController", "removeSong index=\(songIndex) trackID=\(song.trackID) name=\(song.title) from playlistID=\(playlistID)")
+        store.removeSong(at: songIndex, from: playlistID)
+
+        var snapshot = snapshot()
+        snapshot.deleteItems([item])
+        apply(snapshot, animatingDifferences: true)
+    }
+}
+
 // MARK: - UIImagePickerControllerDelegate
 
 extension PlaylistDetailViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     func imagePickerController(
         _ picker: UIImagePickerController,
-        didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
+        didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any],
     ) {
         picker.dismiss(animated: true)
         let image = (info[.editedImage] as? UIImage) ?? (info[.originalImage] as? UIImage)

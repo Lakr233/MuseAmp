@@ -1,3 +1,10 @@
+//
+//  Package.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 // swift-tools-version: 6.3
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
@@ -10,7 +17,7 @@ let package = Package(
     products: [
         .library(
             name: "AmMusicPlayerKit",
-            targets: ["AmMusicPlayerKit"]
+            targets: ["AmMusicPlayerKit"],
         ),
     ],
     dependencies: [
@@ -22,12 +29,12 @@ let package = Package(
             dependencies: ["Kingfisher"],
             resources: [
                 .process("Resources"),
-            ]
+            ],
         ),
         .testTarget(
             name: "AmMusicPlayerKitTests",
-            dependencies: ["AmMusicPlayerKit"]
+            dependencies: ["AmMusicPlayerKit"],
         ),
     ],
-    swiftLanguageModes: [.v6]
+    swiftLanguageModes: [.v6],
 )

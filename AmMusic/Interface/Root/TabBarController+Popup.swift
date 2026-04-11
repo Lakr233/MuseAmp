@@ -1,5 +1,14 @@
+//
+//  TabBarController+Popup.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
+import AmMusicDatabaseKit
 import AmMusicPlayerKit
 import Combine
+import ConfigurableKit
 import Kingfisher
 import LNPopupController
 import UIKit
@@ -18,10 +27,12 @@ extension TabBarController {
         popupBar.usesContentControllersAsDataSource = false
         popupBar.dataSource = self
         popupBar.delegate = self
+
+        popupBar.addInteraction(UIContextMenuInteraction(delegate: self))
     }
 
     func bindPlaybackPopup() {
-        playbackPopupContentCancellable = environment.playbackController.$snapshot
+        environment.playbackController.$snapshot
             .removeDuplicates { lhs, rhs in
                 lhs.currentTrack == rhs.currentTrack
                     && lhs.state == rhs.state
@@ -31,8 +42,9 @@ extension TabBarController {
             .sink { [weak self] snapshot in
                 self?.syncPopupPresentation(with: snapshot)
             }
+            .store(in: &cancellables)
 
-        playbackPopupProgressCancellable = environment.playbackController.$snapshot
+        environment.playbackController.$snapshot
             .removeDuplicates { lhs, rhs in
                 lhs.currentTime == rhs.currentTime
                     && lhs.duration == rhs.duration
@@ -41,6 +53,28 @@ extension TabBarController {
             .sink { [weak self] snapshot in
                 self?.updatePopupProgress(using: snapshot)
             }
+            .store(in: &cancellables)
+
+        environment.playbackController.playbackTimeSubject
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] currentTime, duration in
+                guard let self else { return }
+                let snapshot = environment.playbackController.latestSnapshot
+                    .withTime(currentTime, duration: duration)
+                updatePopupProgress(using: snapshot)
+            }
+            .store(in: &cancellables)
+
+        ConfigurableKit.publisher(
+            forKey: AppPreferences.cleanSongTitleKey, type: Bool.self,
+        )
+        .dropFirst()
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] _ in
+            guard let self else { return }
+            updateNowPlayingPopupItem(using: environment.playbackController.snapshot)
+        }
+        .store(in: &cancellables)
     }
 
     private func syncPopupPresentation(with snapshot: PlaybackSnapshot) {
@@ -62,8 +96,7 @@ extension TabBarController {
     }
 
     private var isPagingCooldownActive: Bool {
-        guard let deadline = popupPagingCooldownDate else { return false }
-        return Date() < deadline
+        popupPagingHandler.isCooldownActive
     }
 
     private func ensureNowPlayingPopupPresented(openFullscreen: Bool, animated: Bool) {
@@ -81,18 +114,18 @@ extension TabBarController {
         openPopup(animated: animated)
     }
 
-    private func makeNowPlayingPopupContentViewController() -> NowPlayingViewController {
+    private func makeNowPlayingPopupContentViewController() -> NowPlayingCompactController {
         if let nowPlayingPopupContentViewController {
             return nowPlayingPopupContentViewController
         }
 
-        let controller = NowPlayingViewController(environment: environment)
+        let controller = NowPlayingCompactController(environment: environment)
         controller.title = String(localized: "Now Playing")
         nowPlayingPopupContentViewController = controller
         return controller
     }
 
-    private func updateNowPlayingPopupItem(using snapshot: PlaybackSnapshot) {
+    func updateNowPlayingPopupItem(using snapshot: PlaybackSnapshot) {
         _ = makeNowPlayingPopupContentViewController()
 
         let popupItem: LNPopupItem
@@ -103,14 +136,17 @@ extension TabBarController {
             popupBar.popupItem = popupItem
         }
 
+        popupItem.barButtonItems = [popupPlayPauseItem, popupNextItem]
+
         if let currentTrack = snapshot.currentTrack {
-            if popupItem.title != currentTrack.title {
-                popupItem.title = currentTrack.title
+            let sanitizedTitle = currentTrack.title.sanitizedTrackTitle
+            if popupItem.title != sanitizedTitle {
+                popupItem.title = sanitizedTitle
             }
             if popupItem.subtitle != currentTrack.artistName {
                 popupItem.subtitle = currentTrack.artistName
             }
-            updatePopupBarButtonItems(using: snapshot, popupItem: popupItem)
+            updatePopupBarButtonState(using: snapshot)
             popupItem.progress = Float(progress(for: snapshot))
             popupItem.accessibilityProgressLabel = String(localized: "Playback Progress")
             popupItem.accessibilityProgressValue = "\(formattedPlaybackTime(snapshot.currentTime)) / \(formattedPlaybackTime(snapshot.duration))"
@@ -122,7 +158,9 @@ extension TabBarController {
         } else {
             popupItem.title = String(localized: "Nothing Playing")
             popupItem.subtitle = nil
-            popupItem.barButtonItems = nil
+            popupPlayPauseItem.image = UIImage(systemName: "play.fill")
+            popupPlayPauseItem.isEnabled = false
+            popupNextItem.isEnabled = false
             popupItem.progress = 0
             popupItem.accessibilityProgressValue = nil
             popupItem.userInfo = nil
@@ -149,44 +187,13 @@ extension TabBarController {
         return min(max(snapshot.currentTime / snapshot.duration, 0), 1)
     }
 
-    private func updatePopupBarButtonItems(using snapshot: PlaybackSnapshot, popupItem: LNPopupItem) {
-        let playPauseImage = UIImage(systemName: snapshot.state == .playing ? "pause.fill" : "play.fill")
-        let canAdvance = !snapshot.upcoming.isEmpty || snapshot.repeatMode != .off
-
-        if popupButtonsOwner === popupItem,
-           let playPause = popupPlayPauseItem,
-           let next = popupNextItem
-        {
-            playPause.image = playPauseImage
-            next.isEnabled = canAdvance
-            return
-        }
-
-        let playPause = UIBarButtonItem(
-            image: playPauseImage,
-            primaryAction: UIAction { [weak self] _ in
-                self?.environment.playbackController.togglePlayPause()
-            }
-        )
-        playPause.accessibilityIdentifier = "popup.playPause"
-
-        let next = UIBarButtonItem(
-            image: UIImage(systemName: "forward.fill"),
-            primaryAction: UIAction { [weak self] _ in
-                self?.environment.playbackController.next()
-            }
-        )
-        next.accessibilityIdentifier = "popup.next"
-        next.isEnabled = canAdvance
-
-        popupPlayPauseItem = playPause
-        popupNextItem = next
-        popupButtonsOwner = popupItem
-        popupItem.barButtonItems = [playPause, next]
+    private func updatePopupBarButtonState(using snapshot: PlaybackSnapshot) {
+        popupPlayPauseItem.image = UIImage(systemName: snapshot.state == .playing ? "pause.fill" : "play.fill")
+        popupPlayPauseItem.isEnabled = true
+        popupNextItem.isEnabled = !snapshot.upcoming.isEmpty || snapshot.repeatMode != .off
     }
 
-    private static let placeholderArtwork: UIImage =
-        Bundle.appIcon ?? UIImage(systemName: "music.note")!
+    private static let placeholderArtwork: UIImage = Bundle.appIcon
 
     private func updatePopupArtwork(for artworkURL: URL?, popupItem: LNPopupItem) {
         if artworkURL == popupArtworkURL,
@@ -248,81 +255,17 @@ extension TabBarController {
 
 extension TabBarController: LNPopupBarDataSource {
     func popupBar(_: LNPopupBar, popupItemBefore popupItem: LNPopupItem) -> LNPopupItem? {
-        let snapshot = environment.playbackController.snapshot
-        guard let queueIndex = popupItem.userInfo?["queueIndex"] as? Int else {
-            return nil
-        }
-
-        let previousIndex = queueIndex - 1
-        guard snapshot.queue.indices.contains(previousIndex) else {
-            return nil
-        }
-
-        return makePopupItem(for: snapshot.queue[previousIndex], queueIndex: previousIndex)
+        popupPagingHandler.popupItemBefore(popupItem)
     }
 
     func popupBar(_: LNPopupBar, popupItemAfter popupItem: LNPopupItem) -> LNPopupItem? {
-        let snapshot = environment.playbackController.snapshot
-        guard let queueIndex = popupItem.userInfo?["queueIndex"] as? Int else {
-            return nil
-        }
-
-        let nextIndex = queueIndex + 1
-        guard snapshot.queue.indices.contains(nextIndex) else {
-            return nil
-        }
-
-        return makePopupItem(for: snapshot.queue[nextIndex], queueIndex: nextIndex)
-    }
-
-    private func makePopupItem(for track: PlaybackTrack, queueIndex: Int) -> LNPopupItem {
-        let item = LNPopupItem()
-        item.title = track.title
-        item.subtitle = track.artistName
-        item.image = Self.placeholderArtwork
-        item.progress = 0
-        item.userInfo = [
-            "trackID": track.id,
-            "queueIndex": queueIndex,
-        ]
-
-        if let artworkURL = track.artworkURL {
-            if artworkURL.isFileURL {
-                item.image = UIImage(contentsOfFile: artworkURL.path) ?? Self.placeholderArtwork
-            } else {
-                KingfisherManager.shared.retrieveImage(with: artworkURL) { result in
-                    if case let .success(value) = result {
-                        DispatchQueue.main.async {
-                            item.image = value.image
-                        }
-                    }
-                }
-            }
-        }
-
-        return item
+        popupPagingHandler.popupItemAfter(popupItem)
     }
 }
 
 extension TabBarController: LNPopupBarDelegate {
     func popupBar(_: LNPopupBar, didDisplay newPopupItem: LNPopupItem, previous previousPopupItem: LNPopupItem?) {
-        guard let previousPopupItem,
-              let newIndex = newPopupItem.userInfo?["queueIndex"] as? Int,
-              let previousIndex = previousPopupItem.userInfo?["queueIndex"] as? Int,
-              newIndex != previousIndex
-        else {
-            return
-        }
-
-        popupPagingCooldownDate = Date().addingTimeInterval(0.5)
-        environment.playbackController.skipToQueueTrack(at: newIndex)
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            guard let self else { return }
-            popupPagingCooldownDate = nil
-            let snapshot = environment.playbackController.snapshot
-            updateNowPlayingPopupItem(using: snapshot)
-        }
+        popupPagingHandler.didDisplay(newPopupItem, previous: previousPopupItem)
     }
 }
 
@@ -332,7 +275,7 @@ extension TabBarController: LNPopupPresentationDelegate {
     func popupPresentationController(
         _: UIViewController,
         willOpenPopupWithContentController _: UIViewController,
-        animated _: Bool
+        animated _: Bool,
     ) {
         isNowPlayingPopupOpen = true
         nowPlayingPopupContentViewController?.prepareForPopupOpen()
@@ -342,7 +285,7 @@ extension TabBarController: LNPopupPresentationDelegate {
     func popupPresentationController(
         _: UIViewController,
         willClosePopupWithContentController _: UIViewController,
-        animated _: Bool
+        animated _: Bool,
     ) {
         isNowPlayingPopupOpen = false
         setNeedsStatusBarAppearanceUpdate()
@@ -351,7 +294,7 @@ extension TabBarController: LNPopupPresentationDelegate {
     func popupPresentationController(
         _: UIViewController,
         didClosePopupWithContentController _: UIViewController,
-        animated _: Bool
+        animated _: Bool,
     ) {
         isNowPlayingPopupOpen = false
         setNeedsStatusBarAppearanceUpdate()
@@ -360,5 +303,57 @@ extension TabBarController: LNPopupPresentationDelegate {
             return
         }
         dismissPopupBar(animated: true)
+    }
+}
+
+// MARK: - Popup Bar Context Menu
+
+extension TabBarController: UIContextMenuInteractionDelegate {
+    func contextMenuInteraction(
+        _: UIContextMenuInteraction,
+        configurationForMenuAtLocation _: CGPoint,
+    ) -> UIContextMenuConfiguration? {
+        guard let track = environment.playbackController.snapshot.currentTrack else {
+            return nil
+        }
+
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
+            self?.buildPopupContextMenu(for: track)
+        }
+    }
+
+    private func buildPopupContextMenu(for track: PlaybackTrack) -> UIMenu? {
+        let entry = track.playlistEntry
+        let snapshot = environment.playbackController.snapshot
+
+        return popupSongContextMenuProvider.menu(
+            title: track.title.sanitizedTrackTitle,
+            for: entry,
+            context: .library,
+            configuration: .init(
+                availablePlaylists: { [weak self] in
+                    self?.environment.playlistStore.playlists ?? []
+                },
+                showInAlbum: { [weak self] in
+                    guard let self,
+                          let nav = selectedViewController as? UINavigationController
+                    else { return }
+                    let helper = AlbumNavigationHelper(
+                        environment: environment,
+                        viewController: nav.topViewController,
+                    )
+                    helper.pushAlbumDetail(songID: track.id, albumID: track.albumID, albumName: track.albumName ?? "", artistName: track.artistName)
+                },
+                primaryActions: popupPlaybackMenuProvider.songPrimaryActions(
+                    trackProvider: { [weak self] in
+                        self?.environment.playbackController.snapshot.currentTrack
+                    },
+                    queueProvider: { [weak self] in
+                        self?.environment.playbackController.snapshot.queue ?? []
+                    },
+                    sourceProvider: { snapshot.source ?? .library },
+                ),
+            ),
+        )
     }
 }

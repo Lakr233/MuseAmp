@@ -1,3 +1,10 @@
+//
+//  AudioTrackRecord.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public struct AudioTrackRecord: Sendable, Codable, Hashable, Identifiable {
@@ -48,7 +55,7 @@ public struct AudioTrackRecord: Sendable, Codable, Hashable, Identifiable {
         hasEmbeddedArtwork: Bool = false,
         sourceKind: TrackSourceKind = .unknown,
         createdAt: Date = .init(),
-        updatedAt: Date = .init()
+        updatedAt: Date = .init(),
     ) {
         self.trackID = trackID
         self.albumID = albumID

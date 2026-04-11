@@ -1,3 +1,10 @@
+//
+//  APIClient.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicKit
 import ConfigurableKit
 import Foundation
@@ -23,7 +30,7 @@ final class APIClient: @unchecked Sendable {
     init(
         baseURL: URL,
         session: URLSession = .shared,
-        cacheStorageProvider: (any CacheStorageProvider)? = nil
+        cacheStorageProvider: (any CacheStorageProvider)? = nil,
     ) {
         defaultBaseURL = baseURL
         self.session = session
@@ -35,7 +42,7 @@ final class APIClient: @unchecked Sendable {
             baseURL: configuration.baseURL,
             session: session,
             cacheStorageProvider: cacheStorageProvider,
-            authorizationToken: configuration.authorizationToken
+            authorizationToken: configuration.authorizationToken,
         )
     }
 
@@ -49,7 +56,7 @@ final class APIClient: @unchecked Sendable {
                 limit: limit,
                 offset: offset,
                 cacheSearchResponses: true,
-                prefetchSongMetadata: false
+                prefetchSongMetadata: false,
             )
             let songs = response.results.songs?.data ?? []
             AppLog.info(self, "searchSongs returned \(songs.count) results")
@@ -70,7 +77,7 @@ final class APIClient: @unchecked Sendable {
                 limit: limit,
                 offset: offset,
                 cacheSearchResponses: true,
-                prefetchSongMetadata: false
+                prefetchSongMetadata: false,
             )
             let albums = response.results.albums?.data ?? []
             AppLog.info(self, "searchAlbums returned \(albums.count) results")
@@ -132,7 +139,7 @@ final class APIClient: @unchecked Sendable {
                     artistID: info.artistID,
                     album: info.album,
                     albumID: info.albumID,
-                    codec: info.codec
+                    codec: info.codec,
                 )
             }
             AppLog.info(self, "playback id=\(id) codec=\(info.codec)")
@@ -157,7 +164,7 @@ final class APIClient: @unchecked Sendable {
         return Self.authorizationHeaders(
             for: url,
             baseURL: configuration.baseURL,
-            authorizationToken: configuration.authorizationToken
+            authorizationToken: configuration.authorizationToken,
         )
     }
 
@@ -166,7 +173,7 @@ final class APIClient: @unchecked Sendable {
         return Self.authorizedRequest(
             request,
             baseURL: configuration.baseURL,
-            authorizationToken: configuration.authorizationToken
+            authorizationToken: configuration.authorizationToken,
         )
     }
 
@@ -198,7 +205,7 @@ final class APIClient: @unchecked Sendable {
     nonisolated static func authorizationHeaders(
         for url: URL?,
         baseURL: URL,
-        authorizationToken: String?
+        authorizationToken: String?,
     ) -> [String: String] {
         guard let url, shouldAuthorize(url, baseURL: baseURL) else {
             return [:]
@@ -209,7 +216,7 @@ final class APIClient: @unchecked Sendable {
     nonisolated static func authorizedRequest(
         _ request: URLRequest,
         baseURL: URL,
-        authorizationToken: String?
+        authorizationToken: String?,
     ) -> URLRequest {
         guard let url = request.url else {
             return request
@@ -218,7 +225,7 @@ final class APIClient: @unchecked Sendable {
         let headers = authorizationHeaders(
             for: url,
             baseURL: baseURL,
-            authorizationToken: authorizationToken
+            authorizationToken: authorizationToken,
         )
         guard headers.isEmpty == false else {
             return request
@@ -289,7 +296,7 @@ private extension APIClient {
             baseURL: configuration.baseURL,
             session: session,
             cacheStorageProvider: cacheStorageProvider,
-            authorizationToken: configuration.authorizationToken
+            authorizationToken: configuration.authorizationToken,
         )
     }
 
@@ -305,7 +312,7 @@ private extension APIClient {
 
         return APIClientConfiguration(
             baseURL: baseURL,
-            authorizationToken: configuredAuthorizationToken()
+            authorizationToken: configuredAuthorizationToken(),
         )
     }
 
@@ -317,7 +324,7 @@ private extension APIClient {
     nonisolated static func configuredAuthorizationToken() -> String? {
         let value: String = ConfigurableKit.value(
             forKey: AppPreferences.apiAuthorizationKey,
-            defaultValue: ""
+            defaultValue: "",
         )
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed

@@ -1,3 +1,10 @@
+//
+//  NowPlayingQueueEmptyCell.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import SnapKit
 import Then
 import UIKit
@@ -9,7 +16,7 @@ final class NowPlayingQueueEmptyCell: TableBaseCell {
         $0.text = String(localized: "Queue is Empty")
         $0.textColor = UIColor.white.withAlphaComponent(0.72)
         $0.font = UIFontMetrics(forTextStyle: .body).scaledFont(
-            for: .systemFont(ofSize: 16, weight: .medium)
+            for: .systemFont(ofSize: 16, weight: .medium),
         )
         $0.textAlignment = .center
         $0.numberOfLines = 0

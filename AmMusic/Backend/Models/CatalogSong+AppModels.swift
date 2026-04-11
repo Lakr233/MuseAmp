@@ -1,3 +1,10 @@
+//
+//  CatalogSong+AppModels.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import AmMusicKit
 import Foundation
@@ -5,7 +12,7 @@ import Foundation
 extension CatalogSong {
     func playlistEntry(
         albumID: String? = nil,
-        albumName: String? = nil
+        albumName: String? = nil,
     ) -> PlaylistEntry {
         PlaylistEntry(
             trackID: id,
@@ -15,7 +22,7 @@ extension CatalogSong {
             albumTitle: albumName ?? attributes.albumName,
             artworkURL: attributes.artwork?.url,
             durationMillis: attributes.durationInMillis,
-            trackNumber: attributes.trackNumber
+            trackNumber: attributes.trackNumber,
         )
     }
 
@@ -23,7 +30,7 @@ extension CatalogSong {
         albumID: String,
         apiClient: APIClient,
         artworkWidth: Int = 600,
-        artworkHeight: Int = 600
+        artworkHeight: Int = 600,
     ) -> SongDownloadRequest {
         SongDownloadRequest(
             trackID: id,
@@ -34,8 +41,8 @@ extension CatalogSong {
             artworkURL: apiClient.mediaURL(
                 from: attributes.artwork?.url,
                 width: artworkWidth,
-                height: artworkHeight
-            )
+                height: artworkHeight,
+            ),
         )
     }
 }

@@ -1,3 +1,10 @@
+//
+//  PlaylistCell.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import UIKit
 
@@ -20,7 +27,7 @@ class PlaylistCell: AmMediaCell {
         fatalError()
     }
 
-    func configure(with playlist: Playlist, subtitle: String, apiClient: APIClient?, artworkCache: PlaylistCoverArtworkCache?) {
+    func configure(with playlist: Playlist, subtitle: String, apiClient: APIClient?, artworkCache: PlaylistCoverArtworkCache?, paths: LibraryPaths? = nil) {
         let artworkKey = artworkKey(for: playlist, sideLength: artworkSideLength, scale: UIScreen.main.scale)
         let shouldPreserveArtwork = representedPlaylistID == playlist.id
             && representedArtworkKey == artworkKey
@@ -32,10 +39,10 @@ class PlaylistCell: AmMediaCell {
             title: playlist.name,
             subtitle: subtitle,
             placeholderIcon: "music.note.list",
-            roundArtwork: false
+            roundArtwork: false,
         )
 
-        loadCoverArtwork(for: playlist, artworkKey: artworkKey, shouldPreserve: shouldPreserveArtwork, apiClient: apiClient, artworkCache: artworkCache)
+        loadCoverArtwork(for: playlist, artworkKey: artworkKey, shouldPreserve: shouldPreserveArtwork, apiClient: apiClient, artworkCache: artworkCache, paths: paths)
     }
 
     override func prepareForReuse() {
@@ -49,7 +56,7 @@ class PlaylistCell: AmMediaCell {
 
     // MARK: - Artwork
 
-    func loadCoverArtwork(for playlist: Playlist, artworkKey: String, shouldPreserve: Bool, apiClient: APIClient?, artworkCache: PlaylistCoverArtworkCache?) {
+    func loadCoverArtwork(for playlist: Playlist, artworkKey: String, shouldPreserve: Bool, apiClient: APIClient?, artworkCache: PlaylistCoverArtworkCache?, paths: LibraryPaths? = nil) {
         coverTask?.cancel()
         coverTask = nil
 
@@ -78,14 +85,20 @@ class PlaylistCell: AmMediaCell {
         hasLoadedArtwork = false
         resetArtwork()
         let apiBaseURL = apiClient?.baseURL
-        coverTask = Task { @MainActor [weak self, playlist, apiBaseURL, artworkKey] in
+        coverTask = Task { @MainActor [weak self, playlist, apiBaseURL, artworkKey, paths] in
             guard let artworkCache else { return }
             let image = await artworkCache.image(
                 for: playlist,
                 sideLength: self?.artworkSideLength ?? 44,
-                scale: UIScreen.main.scale
-            ) { rawURL, width, height in
-                APIClient.resolveMediaURL(rawURL, width: width, height: height, baseURL: apiBaseURL)
+                scale: UIScreen.main.scale,
+            ) { entry, width, height in
+                if let paths {
+                    let localURL = paths.artworkCacheURL(for: entry.trackID)
+                    if FileManager.default.fileExists(atPath: localURL.path) {
+                        return localURL
+                    }
+                }
+                return APIClient.resolveMediaURL(entry.artworkURL, width: width, height: height, baseURL: apiBaseURL)
             }
 
             guard !Task.isCancelled else { return }

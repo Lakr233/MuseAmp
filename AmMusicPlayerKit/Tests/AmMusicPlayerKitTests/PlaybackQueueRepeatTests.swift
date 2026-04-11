@@ -1,3 +1,10 @@
+//
+//  PlaybackQueueRepeatTests.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 @testable import AmMusicPlayerKit
 import Foundation
 import Testing
@@ -11,12 +18,12 @@ struct PlaybackQueueRepeatTests {
                 title: "Track \(i)",
                 artist: "Artist",
                 album: "Album",
-                durationInSeconds: 200
+                durationInSeconds: 200,
             )
         }
     }
 
-    @Test func repeatQueue_recyclesToStartWhenExhausted() {
+    @Test func `repeat queue recycles to start when exhausted`() {
         var queue = PlaybackQueue()
         let items = Self.makeItems(3)
         queue.load(items: items, startIndex: 0, shuffle: false)
@@ -30,7 +37,7 @@ struct PlaybackQueueRepeatTests {
         #expect(queue.history.isEmpty) // history cleared on recycle
     }
 
-    @Test func repeatOff_stopsAtEnd() {
+    @Test func `repeat off stops at end`() {
         var queue = PlaybackQueue()
         let items = Self.makeItems(2)
         queue.load(items: items, startIndex: 0, shuffle: false)
@@ -42,7 +49,7 @@ struct PlaybackQueueRepeatTests {
         #expect(result == nil)
     }
 
-    @Test func repeatQueue_canPlayThroughMultipleCycles() {
+    @Test func `repeat queue can play through multiple cycles`() {
         var queue = PlaybackQueue()
         let items = Self.makeItems(2)
         queue.load(items: items, startIndex: 0, shuffle: false)
@@ -57,7 +64,7 @@ struct PlaybackQueueRepeatTests {
         #expect(second == items[1])
     }
 
-    @Test func repeatQueue_withShuffle_reshufflesOnRecycle() {
+    @Test func `repeat queue with shuffle reshuffles on recycle`() {
         var queue = PlaybackQueue()
         let items = Self.makeItems(10)
         queue.load(items: items, startIndex: 0, shuffle: true)
@@ -74,7 +81,7 @@ struct PlaybackQueueRepeatTests {
         #expect(queue.history.isEmpty)
     }
 
-    @Test func setRepeatMode_changesMode() {
+    @Test func `set repeat mode changes mode`() {
         var queue = PlaybackQueue()
         queue.load(items: Self.makeItems(2), startIndex: 0, shuffle: false)
 

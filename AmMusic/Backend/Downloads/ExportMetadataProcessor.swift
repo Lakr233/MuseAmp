@@ -1,3 +1,10 @@
+//
+//  ExportMetadataProcessor.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 @preconcurrency import AVFoundation
 import Foundation
 
@@ -25,7 +32,7 @@ enum ExportMetadataProcessor {
             lyrics: String?,
             title: String?,
             artistName: String?,
-            albumName: String?
+            albumName: String?,
         ) {
             self.trackID = trackID
             self.albumID = albumID
@@ -43,13 +50,13 @@ enum ExportMetadataProcessor {
     static func embedExportMetadata(
         _ info: ExportInfo,
         into fileURL: URL,
-        timeout: TimeInterval = 30
+        timeout: TimeInterval = 30,
     ) async throws {
         try await DownloadArtworkProcessor.withOverallTimeout(seconds: timeout) {
             try await performEmbedExportMetadata(
                 info,
                 into: fileURL,
-                timeout: timeout
+                timeout: timeout,
             )
         }
     }
@@ -115,7 +122,7 @@ private extension ExportMetadataProcessor {
     static func performEmbedExportMetadata(
         _ info: ExportInfo,
         into fileURL: URL,
-        timeout: TimeInterval
+        timeout: TimeInterval,
     ) async throws {
         AppLog.verbose(logger, "start trackID=\(info.trackID) file=\(fileURL.lastPathComponent)")
         guard FileManager.default.isReadableFile(atPath: fileURL.path) else {
@@ -129,7 +136,7 @@ private extension ExportMetadataProcessor {
         }
         guard let exportSession = AVAssetExportSession(
             asset: asset,
-            presetName: AVAssetExportPresetPassthrough
+            presetName: AVAssetExportPresetPassthrough,
         ) else {
             AppLog.warning(logger, "export session unavailable trackID=\(info.trackID)")
             throw ExportError.exportSessionUnavailable
@@ -137,7 +144,7 @@ private extension ExportMetadataProcessor {
 
         let outputFileType = try DownloadArtworkProcessor.resolveOutputFileType(
             for: fileURL,
-            supportedTypes: exportSession.supportedFileTypes
+            supportedTypes: exportSession.supportedFileTypes,
         )
 
         AppLog.verbose(logger, "collecting metadata trackID=\(info.trackID)")

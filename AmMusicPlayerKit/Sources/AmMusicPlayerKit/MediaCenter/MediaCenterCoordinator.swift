@@ -1,3 +1,10 @@
+//
+//  MediaCenterCoordinator.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AVFoundation
 import MediaPlayer
 
@@ -30,7 +37,7 @@ final class MediaCenterCoordinator: NowPlayingStatePublishing, RemoteCommandCent
 
     init(
         engine: any AudioPlaybackEngine,
-        logger: any MusicPlayerLogger = NoopMusicPlayerLogger()
+        logger: any MusicPlayerLogger = NoopMusicPlayerLogger(),
     ) {
         #if os(iOS) || os(tvOS)
             if #available(iOS 16.0, tvOS 14.0, *),
@@ -53,7 +60,7 @@ final class MediaCenterCoordinator: NowPlayingStatePublishing, RemoteCommandCent
 
     init(
         backend: any MediaCenterBackend,
-        backendKind: BackendKind
+        backendKind: BackendKind,
     ) {
         self.backend = backend
         self.backendKind = backendKind
@@ -136,7 +143,7 @@ final class LegacyMediaCenterBackend: MediaCenterBackend {
                 logger.log(
                     level: changed ? .info : .verbose,
                     component: "MediaCenterCoordinator",
-                    message: "becomeActiveIfPossible changed=\(changed)"
+                    message: "becomeActiveIfPossible changed=\(changed)",
                 )
             }
         }

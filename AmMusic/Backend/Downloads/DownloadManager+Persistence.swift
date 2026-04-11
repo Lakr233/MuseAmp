@@ -1,3 +1,10 @@
+//
+//  DownloadManager+Persistence.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import Combine
 import Foundation
@@ -20,7 +27,7 @@ extension DownloadManager {
         sourceURL: String? = nil,
         localRelativePath: String? = nil,
         retryCount: Int? = nil,
-        lastError: String? = nil
+        lastError: String? = nil,
     ) {
         guard let task = tasks[trackID] else {
             return
@@ -39,7 +46,7 @@ extension DownloadManager {
             progress: progress,
             retryCount: retryCount ?? task.retryCount,
             errorMessage: lastError,
-            updatedAt: Date()
+            updatedAt: Date(),
         )
         downloadStore.upsert(job)
     }
@@ -53,13 +60,13 @@ extension DownloadManager {
         if ingestionError == nil {
             downloadStore.deleteRecords(trackIDs: [trackID])
             AppLog.info(
-                self, "Download completed trackID=\(trackID) relativePath=\(task.destinationRelativePath)"
+                self, "Download completed trackID=\(trackID) relativePath=\(task.destinationRelativePath)",
             )
             tasks.removeValue(forKey: trackID)
         } else if let ingestionError {
             AppLog.warning(
                 self,
-                "Library ingest failed after finalizing trackID=\(trackID): \(ingestionError.localizedDescription)"
+                "Library ingest failed after finalizing trackID=\(trackID): \(ingestionError.localizedDescription)",
             )
             tasks[trackID]?.markFailed()
             tasks[trackID]?.progress = 1
@@ -69,7 +76,7 @@ extension DownloadManager {
                 progress: 1,
                 localRelativePath: task.destinationRelativePath,
                 retryCount: task.retryCount,
-                lastError: ingestionError.localizedDescription
+                lastError: ingestionError.localizedDescription,
             )
         }
 
@@ -105,7 +112,7 @@ extension DownloadManager {
                 AppLog.verbose(self, "cleanupTmpFile removed trackID=\(task.trackID)")
             } catch {
                 AppLog.warning(
-                    self, "cleanupTmpFile failed trackID=\(task.trackID) error=\(error.localizedDescription)"
+                    self, "cleanupTmpFile failed trackID=\(task.trackID) error=\(error.localizedDescription)",
                 )
             }
         }

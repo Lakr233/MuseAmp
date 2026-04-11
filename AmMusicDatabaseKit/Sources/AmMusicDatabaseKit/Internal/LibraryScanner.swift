@@ -1,3 +1,10 @@
+//
+//  LibraryScanner.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 struct LibraryScanner {
@@ -18,7 +25,7 @@ struct LibraryScanner {
         guard let enumerator = FileManager.default.enumerator(
             at: paths.audioDirectory,
             includingPropertiesForKeys: [.isRegularFileKey],
-            options: [.skipsHiddenFiles]
+            options: [.skipsHiddenFiles],
         ) else {
             return []
         }
@@ -41,7 +48,7 @@ struct LibraryScanner {
     func rebuildIndexFromDisk(
         pruneInvalidFiles: Bool,
         forceArtwork: Bool = false,
-        progressCallback: (@Sendable (Int, Int) -> Void)? = nil
+        progressCallback: (@Sendable (Int, Int) -> Void)? = nil,
     ) async throws -> RebuildResult {
         if forceArtwork {
             cacheCoordinator.clearArtworkCache()
@@ -123,7 +130,7 @@ struct LibraryScanner {
                     hasEmbeddedArtwork: inspection.embeddedArtwork != nil,
                     sourceKind: metadata.sourceKind,
                     createdAt: snapshot[relativePath]?.createdAt ?? .init(),
-                    updatedAt: .init()
+                    updatedAt: .init(),
                 )
                 upserts.append(record)
                 if let artwork = inspection.embeddedArtwork {
@@ -154,7 +161,7 @@ struct LibraryScanner {
             scanned: audioFiles.count,
             upserted: upserts.count,
             deleted: deletedPaths.count,
-            invalidRelativePaths: invalidRelativePaths
+            invalidRelativePaths: invalidRelativePaths,
         )
     }
 
@@ -173,7 +180,7 @@ struct LibraryScanner {
         guard let directories = try? FileManager.default.contentsOfDirectory(
             at: paths.audioDirectory,
             includingPropertiesForKeys: [.isDirectoryKey],
-            options: [.skipsHiddenFiles]
+            options: [.skipsHiddenFiles],
         ) else {
             return
         }
@@ -184,7 +191,7 @@ struct LibraryScanner {
             }
             if let contents = try? FileManager.default.contentsOfDirectory(
                 at: directory,
-                includingPropertiesForKeys: nil
+                includingPropertiesForKeys: nil,
             ), contents.isEmpty {
                 try? FileManager.default.removeItem(at: directory)
             }

@@ -1,50 +1,24 @@
-import SnapKit
+//
+//  SearchSectionHeaderView.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Then
 import UIKit
 
-final class SearchSectionHeaderView: UIView {
-    private let blurView = UIVisualEffectView(effect: UIBlurEffect(style: .regular))
-    private let titleLabel = UILabel().then {
-        $0.font = .systemFont(ofSize: 20, weight: .bold)
-        $0.textColor = .label
-    }
+final class SearchSectionHeaderView: UITableViewHeaderFooterView {
+    static let reuseID = "SearchSectionHeaderView"
 
     private lazy var accessoryButton = UIButton(type: .system).then {
         $0.titleLabel?.font = .systemFont(ofSize: 15)
-        $0.isHidden = true
     }
 
-    init(title: String, accessoryTitle: String? = nil) {
-        super.init(frame: .zero)
+    private var hasAccessory = false
 
-        backgroundColor = .clear
-        if #available(iOS 26.0, *) {
-            // iOS 26 section headers already render with system material.
-        } else {
-            blurView.clipsToBounds = true
-            addSubview(blurView)
-            blurView.snp.makeConstraints { make in
-                make.edges.equalToSuperview()
-            }
-        }
-        addSubview(titleLabel)
-        addSubview(accessoryButton)
-
-        titleLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().inset(16)
-            make.top.bottom.equalToSuperview().inset(8)
-        }
-        accessoryButton.snp.makeConstraints { make in
-            make.leading.greaterThanOrEqualTo(titleLabel.snp.trailing).offset(12)
-            make.trailing.equalToSuperview().inset(16)
-            make.centerY.equalTo(titleLabel)
-        }
-
-        titleLabel.text = title
-        if let accessoryTitle {
-            accessoryButton.setTitle(accessoryTitle, for: .normal)
-            accessoryButton.isHidden = false
-        }
+    override init(reuseIdentifier: String?) {
+        super.init(reuseIdentifier: reuseIdentifier)
     }
 
     @available(*, unavailable)
@@ -52,9 +26,38 @@ final class SearchSectionHeaderView: UIView {
         fatalError()
     }
 
+    func configure(title: String, accessoryTitle: String? = nil) {
+        var config = defaultContentConfiguration()
+        config.text = title
+        config.textProperties.font = .systemFont(ofSize: 20, weight: .bold)
+        config.textProperties.color = .label
+        contentConfiguration = config
+
+        if let accessoryTitle {
+            if !hasAccessory {
+                hasAccessory = true
+                contentView.addSubview(accessoryButton)
+                accessoryButton.translatesAutoresizingMaskIntoConstraints = false
+                NSLayoutConstraint.activate([
+                    accessoryButton.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
+                    accessoryButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+                ])
+            }
+            accessoryButton.setTitle(accessoryTitle, for: .normal)
+            accessoryButton.isHidden = false
+        } else {
+            accessoryButton.isHidden = true
+        }
+    }
+
     func setAccessoryAction(_ action: UIAction) {
         accessoryButton.removeTarget(nil, action: nil, for: .allEvents)
         accessoryButton.addAction(action, for: .touchUpInside)
-        accessoryButton.isHidden = false
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        accessoryButton.removeTarget(nil, action: nil, for: .allEvents)
+        accessoryButton.isHidden = true
     }
 }

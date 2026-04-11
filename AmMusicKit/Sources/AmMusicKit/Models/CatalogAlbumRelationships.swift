@@ -1,3 +1,10 @@
+//
+//  CatalogAlbumRelationships.swift
+//  AmMusicKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public struct CatalogAlbumRelationships: Decodable, Sendable {
@@ -6,7 +13,7 @@ public struct CatalogAlbumRelationships: Decodable, Sendable {
 
     public init(
         artists: ResourceList<CatalogArtist>? = nil,
-        tracks: ResourceList<CatalogSong>? = nil
+        tracks: ResourceList<CatalogSong>? = nil,
     ) {
         self.artists = artists
         self.tracks = tracks

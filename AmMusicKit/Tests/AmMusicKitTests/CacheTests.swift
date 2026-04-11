@@ -1,3 +1,10 @@
+//
+//  CacheTests.swift
+//  AmMusicKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 @testable import AmMusicKit
 import Foundation
 import Testing
@@ -89,12 +96,12 @@ private func songJSON(id: String = "123") -> String {
 }
 
 private func makeSuccessHandler(json: String? = nil) -> (URLRequest) throws -> (
-    Data, HTTPURLResponse
+    Data, HTTPURLResponse,
 ) {
     { request in
         let body = json ?? songJSON()
         let response = HTTPURLResponse(
-            url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
+            url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil,
         )!
         return (Data(body.utf8), response)
     }
@@ -103,7 +110,7 @@ private func makeSuccessHandler(json: String? = nil) -> (URLRequest) throws -> (
 private func makeErrorHandler(statusCode: Int) -> (URLRequest) throws -> (Data, HTTPURLResponse) {
     { request in
         let response = HTTPURLResponse(
-            url: request.url!, statusCode: statusCode, httpVersion: nil, headerFields: nil
+            url: request.url!, statusCode: statusCode, httpVersion: nil, headerFields: nil,
         )!
         return (Data(), response)
     }
@@ -138,50 +145,50 @@ private final class AtomicInt: @unchecked Sendable {
 // MARK: - ResponseCache Tests
 
 struct ResponseCacheTests {
-    @Test("Fresh value returned within TTL")
-    func freshValueWithinTTL() async {
+    @Test
+    func `Fresh value returned within TTL`() async {
         let cache = ResponseCache<String>()
         await cache.setValue("hello", forKey: "k1")
         let result = await cache.freshValue(forKey: "k1", ttl: 3600)
         #expect(result == "hello")
     }
 
-    @Test("Fresh value nil after TTL expires")
-    func freshValueExpired() async {
+    @Test
+    func `Fresh value nil after TTL expires`() async {
         let cache = ResponseCache<String>()
         await cache.setValue("old", forKey: "k1", cachedAt: Date().addingTimeInterval(-7200))
         let result = await cache.freshValue(forKey: "k1", ttl: 3600)
         #expect(result == nil)
     }
 
-    @Test("Stale value returned for expired entry within maxAge")
-    func staleValueReturned() async {
+    @Test
+    func `Stale value returned for expired entry within maxAge`() async {
         let cache = ResponseCache<String>()
         await cache.setValue("old", forKey: "k1", cachedAt: Date().addingTimeInterval(-7200))
         let result = await cache.staleValue(forKey: "k1")
         #expect(result == "old")
     }
 
-    @Test("Stale value nil beyond maxAge")
-    func staleValueBeyondMaxAge() async {
+    @Test
+    func `Stale value nil beyond maxAge`() async {
         let cache = ResponseCache<String>()
         await cache.setValue(
-            "ancient", forKey: "k1", cachedAt: Date().addingTimeInterval(-8 * 24 * 3600)
+            "ancient", forKey: "k1", cachedAt: Date().addingTimeInterval(-8 * 24 * 3600),
         )
         let result = await cache.staleValue(forKey: "k1")
         #expect(result == nil)
     }
 
-    @Test("setValue with cachedAt preserves original timestamp")
-    func setValueWithCachedAt() async {
+    @Test
+    func `setValue with cachedAt preserves original timestamp`() async {
         let cache = ResponseCache<String>()
         await cache.setValue("disk", forKey: "k1", cachedAt: Date().addingTimeInterval(-3000))
         #expect(await cache.freshValue(forKey: "k1", ttl: 3600) == "disk")
         #expect(await cache.freshValue(forKey: "k1", ttl: 2000) == nil)
     }
 
-    @Test("Missing key returns nil")
-    func missingKey() async {
+    @Test
+    func `Missing key returns nil`() async {
         let cache = ResponseCache<String>()
         #expect(await cache.freshValue(forKey: "x", ttl: 3600) == nil)
         #expect(await cache.staleValue(forKey: "x") == nil)
@@ -191,8 +198,8 @@ struct ResponseCacheTests {
 // MARK: - RequestCoalescer Tests
 
 struct RequestCoalescerTests {
-    @Test("Different keys run independently")
-    func differentKeys() async throws {
+    @Test
+    func `Different keys run independently`() async throws {
         let coalescer = RequestCoalescer()
         let d1 = try await coalescer.perform(forKey: "a") { Data("a".utf8) }
         let d2 = try await coalescer.perform(forKey: "b") { Data("b".utf8) }
@@ -200,8 +207,8 @@ struct RequestCoalescerTests {
         #expect(d2 == Data("b".utf8))
     }
 
-    @Test("Propagates work errors")
-    func propagatesErrors() async {
+    @Test
+    func `Propagates work errors`() async {
         let coalescer = RequestCoalescer()
         await #expect(throws: APIError.self) {
             try await coalescer.perform(forKey: "k") {
@@ -214,8 +221,8 @@ struct RequestCoalescerTests {
 // MARK: - CacheEnvelope Tests
 
 struct CacheEnvelopeTests {
-    @Test("CacheEnvelope stores data and metadata")
-    func construction() {
+    @Test
+    func `CacheEnvelope stores data and metadata`() {
         let data = Data("test".utf8)
         let date = Date()
         let envelope = CacheEnvelope(data: data, cachedAt: date, version: 2)
@@ -229,8 +236,8 @@ struct CacheEnvelopeTests {
 
 @Suite(.serialized)
 struct ServiceCacheTests {
-    @Test("Authorization header adds Bearer token")
-    func authorizationHeader() async throws {
+    @Test
+    func `Authorization header adds Bearer token`() async throws {
         let session = makeMockSession()
         MockURLProtocol.handler = { request in
             #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer test-token")
@@ -240,13 +247,13 @@ struct ServiceCacheTests {
         let service = RemoteMusicService(
             baseURL: testBaseURL,
             session: session,
-            authorizationToken: "test-token"
+            authorizationToken: "test-token",
         )
         _ = try await service.song(id: "123")
     }
 
-    @Test("Authorization header preserves explicit Bearer prefix")
-    func authorizationHeaderWithExistingPrefix() async throws {
+    @Test
+    func `Authorization header preserves explicit Bearer prefix`() async throws {
         let session = makeMockSession()
         MockURLProtocol.handler = { request in
             #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer already-prefixed")
@@ -256,13 +263,13 @@ struct ServiceCacheTests {
         let service = RemoteMusicService(
             baseURL: testBaseURL,
             session: session,
-            authorizationToken: "Bearer already-prefixed"
+            authorizationToken: "Bearer already-prefixed",
         )
         _ = try await service.song(id: "123")
     }
 
-    @Test("Fresh memory cache hit skips network")
-    func freshMemoryHit() async throws {
+    @Test
+    func `Fresh memory cache hit skips network`() async throws {
         let session = makeMockSession()
         let requestCount = AtomicInt()
         MockURLProtocol.handler = { request in
@@ -280,8 +287,8 @@ struct ServiceCacheTests {
         #expect(requestCount.value == 1)
     }
 
-    @Test("Disk cache hit on cold start")
-    func diskCacheHit() async throws {
+    @Test
+    func `Disk cache hit on cold start`() async throws {
         let session = makeMockSession()
         let diskStore = MockDiskStore()
 
@@ -295,64 +302,64 @@ struct ServiceCacheTests {
         }
 
         let service = RemoteMusicService(
-            baseURL: testBaseURL, session: session, cacheStorageProvider: diskStore
+            baseURL: testBaseURL, session: session, cacheStorageProvider: diskStore,
         )
         let response = try await service.song(id: "123")
         #expect(response.data.first?.id == "123")
         #expect(networkHit == false)
     }
 
-    @Test("Stale fallback on transport error from disk")
-    func staleFallbackOnTransportError() async throws {
+    @Test
+    func `Stale fallback on transport error from disk`() async throws {
         let session = makeMockSession()
         let diskStore = MockDiskStore()
 
         let expiredEnvelope = CacheEnvelope(
             data: Data(songJSON(id: "stale1").utf8),
             cachedAt: Date().addingTimeInterval(-7200),
-            version: 1
+            version: 1,
         )
         await diskStore.store(expiredEnvelope, forKey: cacheKey(forSongID: "stale1"))
 
         MockURLProtocol.handler = { _ in throw URLError(.notConnectedToInternet) }
 
         let service = RemoteMusicService(
-            baseURL: testBaseURL, session: session, cacheStorageProvider: diskStore
+            baseURL: testBaseURL, session: session, cacheStorageProvider: diskStore,
         )
         let response = try await service.song(id: "stale1")
         #expect(response.data.first?.id == "stale1")
     }
 
-    @Test("Stale fallback on 5xx error from disk")
-    func staleFallbackOn5xx() async throws {
+    @Test
+    func `Stale fallback on 5xx error from disk`() async throws {
         let session = makeMockSession()
         let diskStore = MockDiskStore()
 
         let expiredEnvelope = CacheEnvelope(
             data: Data(songJSON(id: "stale5xx").utf8),
             cachedAt: Date().addingTimeInterval(-7200),
-            version: 1
+            version: 1,
         )
         await diskStore.store(expiredEnvelope, forKey: cacheKey(forSongID: "stale5xx"))
 
         MockURLProtocol.handler = makeErrorHandler(statusCode: 503)
 
         let service = RemoteMusicService(
-            baseURL: testBaseURL, session: session, cacheStorageProvider: diskStore
+            baseURL: testBaseURL, session: session, cacheStorageProvider: diskStore,
         )
         let response = try await service.song(id: "stale5xx")
         #expect(response.data.first?.id == "stale5xx")
     }
 
-    @Test("Cached disk entry bypasses 4xx responses")
-    func cachedDiskEntryBypasses4xx() async throws {
+    @Test
+    func `Cached disk entry bypasses 4xx responses`() async throws {
         let session = makeMockSession()
         let diskStore = MockDiskStore()
 
         let cachedEnvelope = CacheEnvelope(
             data: Data(songJSON().utf8),
             cachedAt: Date().addingTimeInterval(-7200),
-            version: 1
+            version: 1,
         )
         await diskStore.store(cachedEnvelope, forKey: cacheKey(forSongID: "404song"))
 
@@ -363,7 +370,7 @@ struct ServiceCacheTests {
         }
 
         let service = RemoteMusicService(
-            baseURL: testBaseURL, session: session, cacheStorageProvider: diskStore
+            baseURL: testBaseURL, session: session, cacheStorageProvider: diskStore,
         )
 
         let response = try await service.song(id: "404song")
@@ -371,15 +378,15 @@ struct ServiceCacheTests {
         #expect(networkHit == false)
     }
 
-    @Test("Cached disk entry bypasses decode failures")
-    func cachedDiskEntryBypassesDecodeFailures() async throws {
+    @Test
+    func `Cached disk entry bypasses decode failures`() async throws {
         let session = makeMockSession()
         let diskStore = MockDiskStore()
 
         let cachedEnvelope = CacheEnvelope(
             data: Data(songJSON().utf8),
             cachedAt: Date().addingTimeInterval(-7200),
-            version: 1
+            version: 1,
         )
         await diskStore.store(cachedEnvelope, forKey: cacheKey(forSongID: "badsong"))
 
@@ -390,7 +397,7 @@ struct ServiceCacheTests {
         }
 
         let service = RemoteMusicService(
-            baseURL: testBaseURL, session: session, cacheStorageProvider: diskStore
+            baseURL: testBaseURL, session: session, cacheStorageProvider: diskStore,
         )
 
         let response = try await service.song(id: "badsong")
@@ -398,22 +405,22 @@ struct ServiceCacheTests {
         #expect(networkHit == false)
     }
 
-    @Test("Disk writes happen on network success")
-    func diskWriteOnSuccess() async throws {
+    @Test
+    func `Disk writes happen on network success`() async throws {
         let session = makeMockSession()
         let diskStore = MockDiskStore()
         MockURLProtocol.handler = makeSuccessHandler()
 
         let service = RemoteMusicService(
-            baseURL: testBaseURL, session: session, cacheStorageProvider: diskStore
+            baseURL: testBaseURL, session: session, cacheStorageProvider: diskStore,
         )
         _ = try await service.song(id: "123")
 
         #expect(await diskStore.storeCount == 1)
     }
 
-    @Test("Corrupt disk entry gets removed and falls through to network")
-    func corruptDiskEntryRemoved() async throws {
+    @Test
+    func `Corrupt disk entry gets removed and falls through to network`() async throws {
         let session = makeMockSession()
         let diskStore = MockDiskStore()
 
@@ -423,35 +430,35 @@ struct ServiceCacheTests {
         MockURLProtocol.handler = makeSuccessHandler(json: songJSON(id: "corrupt1"))
 
         let service = RemoteMusicService(
-            baseURL: testBaseURL, session: session, cacheStorageProvider: diskStore
+            baseURL: testBaseURL, session: session, cacheStorageProvider: diskStore,
         )
         let response = try await service.song(id: "corrupt1")
         #expect(response.data.first?.id == "corrupt1")
         #expect(await diskStore.removeCount >= 1)
     }
 
-    @Test("Version mismatch disk entry gets removed")
-    func versionMismatchRemoved() async throws {
+    @Test
+    func `Version mismatch disk entry gets removed`() async throws {
         let session = makeMockSession()
         let diskStore = MockDiskStore()
 
         let oldEnvelope = CacheEnvelope(
-            data: Data(songJSON().utf8), cachedAt: Date(), version: 99
+            data: Data(songJSON().utf8), cachedAt: Date(), version: 99,
         )
         await diskStore.store(oldEnvelope, forKey: cacheKey(forSongID: "ver1"))
 
         MockURLProtocol.handler = makeSuccessHandler(json: songJSON(id: "ver1"))
 
         let service = RemoteMusicService(
-            baseURL: testBaseURL, session: session, cacheStorageProvider: diskStore
+            baseURL: testBaseURL, session: session, cacheStorageProvider: diskStore,
         )
         let response = try await service.song(id: "ver1")
         #expect(response.data.first?.id == "ver1")
         #expect(await diskStore.removeCount >= 1)
     }
 
-    @Test("cacheSearchResponses false skips all caching")
-    func cacheOptOut() async throws {
+    @Test
+    func `cacheSearchResponses false skips all caching`() async throws {
         let session = makeMockSession()
         let diskStore = MockDiskStore()
 
@@ -476,24 +483,24 @@ struct ServiceCacheTests {
         }
 
         let service = RemoteMusicService(
-            baseURL: testBaseURL, session: session, cacheStorageProvider: diskStore
+            baseURL: testBaseURL, session: session, cacheStorageProvider: diskStore,
         )
 
         _ = try await service.search(
             query: "test", type: .song, limit: 1, offset: 0,
-            cacheSearchResponses: false, prefetchSongMetadata: false
+            cacheSearchResponses: false, prefetchSongMetadata: false,
         )
         _ = try await service.search(
             query: "test", type: .song, limit: 1, offset: 0,
-            cacheSearchResponses: false, prefetchSongMetadata: false
+            cacheSearchResponses: false, prefetchSongMetadata: false,
         )
 
         #expect(requestCount.value == 2)
         #expect(await diskStore.storeCount == 0)
     }
 
-    @Test("Disk cache remains fresh beyond the previous one-hour TTL")
-    func diskCacheNeverExpires() async throws {
+    @Test
+    func `Disk cache remains fresh beyond the previous one-hour TTL`() async throws {
         let session = makeMockSession()
         let diskStore = MockDiskStore()
 
@@ -508,7 +515,7 @@ struct ServiceCacheTests {
         }
 
         let service = RemoteMusicService(
-            baseURL: testBaseURL, session: session, cacheStorageProvider: diskStore
+            baseURL: testBaseURL, session: session, cacheStorageProvider: diskStore,
         )
 
         let r1 = try await service.song(id: "123")
@@ -516,22 +523,22 @@ struct ServiceCacheTests {
         #expect(networkHit == false)
     }
 
-    @Test("Stale disk fallback rejects version mismatch")
-    func staleDiskFallbackVersionMismatch() async throws {
+    @Test
+    func `Stale disk fallback rejects version mismatch`() async throws {
         let session = makeMockSession()
         let diskStore = MockDiskStore()
 
         let oldVersionEnvelope = CacheEnvelope(
             data: Data(songJSON().utf8),
             cachedAt: Date().addingTimeInterval(-7200),
-            version: 99
+            version: 99,
         )
         await diskStore.store(oldVersionEnvelope, forKey: cacheKey(forSongID: "vmm1"))
 
         MockURLProtocol.handler = { _ in throw URLError(.notConnectedToInternet) }
 
         let service = RemoteMusicService(
-            baseURL: testBaseURL, session: session, cacheStorageProvider: diskStore
+            baseURL: testBaseURL, session: session, cacheStorageProvider: diskStore,
         )
 
         await #expect(throws: APIError.self) {

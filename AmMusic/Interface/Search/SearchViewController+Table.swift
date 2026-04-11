@@ -1,3 +1,10 @@
+//
+//  SearchViewController+Table.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import AmMusicKit
 import UIKit
@@ -29,9 +36,12 @@ extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         if tableView === historyTableView {
             guard !searchHistory.isEmpty else { return nil }
-            let headerView = SearchSectionHeaderView(
+            let headerView = tableView.dequeueReusableHeaderFooterView(
+                withIdentifier: SearchSectionHeaderView.reuseID,
+            ) as! SearchSectionHeaderView
+            headerView.configure(
                 title: String(localized: "Recent"),
-                accessoryTitle: String(localized: "Clear")
+                accessoryTitle: String(localized: "Clear"),
             )
             headerView.setAccessoryAction(UIAction { [weak self] _ in
                 self?.clearHistory()
@@ -53,7 +63,11 @@ extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
             return nil
         }
 
-        return SearchSectionHeaderView(title: title)
+        let headerView = tableView.dequeueReusableHeaderFooterView(
+            withIdentifier: SearchSectionHeaderView.reuseID,
+        ) as! SearchSectionHeaderView
+        headerView.configure(title: title)
+        return headerView
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -89,7 +103,7 @@ extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(
         _ tableView: UITableView,
         contextMenuConfigurationForRowAt indexPath: IndexPath,
-        point _: CGPoint
+        point _: CGPoint,
     ) -> UIContextMenuConfiguration? {
         guard tableView === self.tableView,
               let item = diffableDataSource.itemIdentifier(for: indexPath),
@@ -105,7 +119,7 @@ extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
 
     func tableView(
         _ tableView: UITableView,
-        previewForHighlightingContextMenuWithConfiguration configuration: UIContextMenuConfiguration
+        previewForHighlightingContextMenuWithConfiguration configuration: UIContextMenuConfiguration,
     ) -> UITargetedPreview? {
         guard tableView === self.tableView else { return nil }
         return CellContextMenuPreviewHelper.targetedPreview(for: configuration, in: tableView)
@@ -113,7 +127,7 @@ extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
 
     func tableView(
         _ tableView: UITableView,
-        previewForDismissingContextMenuWithConfiguration configuration: UIContextMenuConfiguration
+        previewForDismissingContextMenuWithConfiguration configuration: UIContextMenuConfiguration,
     ) -> UITargetedPreview? {
         guard tableView === self.tableView else { return nil }
         return CellContextMenuPreviewHelper.targetedPreview(for: configuration, in: tableView)
@@ -153,9 +167,9 @@ extension SearchViewController {
                     },
                     sourceProvider: { [weak self] in
                         .search(query: self?.searchState.currentQuery.nilIfEmpty)
-                    }
-                )
-            )
+                    },
+                ),
+            ),
         ) ?? UIMenu()
     }
 

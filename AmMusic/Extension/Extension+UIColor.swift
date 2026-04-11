@@ -1,10 +1,17 @@
+//
+//  Extension+UIColor.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import UIKit
 
 extension UIColor {
     func shiftedHue(
         by delta: CGFloat,
         saturationMultiplier: CGFloat = 1,
-        brightnessMultiplier: CGFloat = 1
+        brightnessMultiplier: CGFloat = 1,
     ) -> UIColor {
         var hue: CGFloat = 0
         var saturation: CGFloat = 0
@@ -23,7 +30,7 @@ extension UIColor {
             hue: normalizedHue,
             saturation: normalizedSaturation,
             brightness: normalizedBrightness,
-            alpha: 1
+            alpha: 1,
         )
     }
 }

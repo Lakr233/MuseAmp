@@ -1,3 +1,10 @@
+//
+//  AuditSnapshot.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public struct AuditSnapshot: Sendable, Codable, Hashable {
@@ -33,7 +40,7 @@ public struct AuditSnapshot: Sendable, Codable, Hashable {
             activeDownloads: Int,
             failedDownloads: Int,
             artworkFiles: Int,
-            lyricsFiles: Int
+            lyricsFiles: Int,
         ) {
             self.tracks = tracks
             self.albums = albums
@@ -77,7 +84,7 @@ public struct AuditSnapshot: Sendable, Codable, Hashable {
         currentStateSchemaVersion: Int,
         lastRebuildSucceeded: Bool,
         lastRebuildTimestamp: Date?,
-        issues: [AuditIssue]
+        issues: [AuditIssue],
     ) {
         self.indexDatabase = indexDatabase
         self.stateDatabase = stateDatabase

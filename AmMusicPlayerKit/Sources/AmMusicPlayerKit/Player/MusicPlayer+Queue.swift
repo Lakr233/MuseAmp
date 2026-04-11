@@ -1,9 +1,21 @@
+//
+//  MusicPlayer+Queue.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 public extension MusicPlayer {
     func next() {
         log(.info, "next requested current=\(describe(item: currentItem))")
         let next = playbackQueue.advance()
         if let next {
-            loadAndPlay(next, reason: .userNext)
+            if engine.advanceToPreloadedItem() {
+                log(.verbose, "using preloaded item for next item=\(describe(item: next))")
+                continueWithCurrentEngineItem(next, reason: .userNext)
+            } else {
+                loadAndPlay(next, reason: .userNext)
+            }
         } else if repeatMode == .off {
             log(.info, "next reached end of queue with repeat off")
             delegate?.musicPlayerDidReachEndOfQueue(self)

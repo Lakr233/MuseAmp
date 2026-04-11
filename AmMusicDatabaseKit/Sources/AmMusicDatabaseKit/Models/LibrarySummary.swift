@@ -1,3 +1,10 @@
+//
+//  LibrarySummary.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public struct LibrarySummary: Sendable, Codable, Hashable {
@@ -10,7 +17,7 @@ public struct LibrarySummary: Sendable, Codable, Hashable {
         trackCount: Int,
         albumCount: Int,
         totalSizeBytes: Int64,
-        totalDurationSeconds: Double
+        totalDurationSeconds: Double,
     ) {
         self.trackCount = trackCount
         self.albumCount = albumCount

@@ -1,3 +1,10 @@
+//
+//  AddToPlaylistMenuProvider.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AlertController
 import AmMusicDatabaseKit
 import UIKit
@@ -16,7 +23,7 @@ final class AddToPlaylistMenuProvider {
         title: String = String(localized: "Add to Playlist"),
         newPlaylistTitle: String = String(localized: "New Playlist…"),
         allowsCreatingPlaylist: Bool = true,
-        onAdd: ((UUID) -> Void)? = nil
+        onAdd: ((UUID) -> Void)? = nil,
     ) -> UIMenu {
         menu(
             songsProvider: { songs },
@@ -24,7 +31,7 @@ final class AddToPlaylistMenuProvider {
             title: title,
             newPlaylistTitle: newPlaylistTitle,
             allowsCreatingPlaylist: allowsCreatingPlaylist,
-            onAdd: onAdd
+            onAdd: onAdd,
         )
     }
 
@@ -32,13 +39,13 @@ final class AddToPlaylistMenuProvider {
         for songs: [PlaylistEntry],
         playlistsProvider: (() -> [Playlist])? = nil,
         title: String = String(localized: "Add to Playlist"),
-        onAdd: ((UUID) -> Void)? = nil
+        onAdd: ((UUID) -> Void)? = nil,
     ) -> UIMenu {
         contextMenu(
             songsProvider: { songs },
             playlistsProvider: playlistsProvider,
             title: title,
-            onAdd: onAdd
+            onAdd: onAdd,
         )
     }
 
@@ -46,7 +53,7 @@ final class AddToPlaylistMenuProvider {
         songsProvider: @escaping () -> [PlaylistEntry],
         playlistsProvider: (() -> [Playlist])? = nil,
         title: String = String(localized: "Add to Playlist"),
-        onAdd: ((UUID) -> Void)? = nil
+        onAdd: ((UUID) -> Void)? = nil,
     ) -> UIMenu {
         menu(
             songsProvider: songsProvider,
@@ -54,7 +61,7 @@ final class AddToPlaylistMenuProvider {
             title: title,
             newPlaylistTitle: "",
             allowsCreatingPlaylist: false,
-            onAdd: onAdd
+            onAdd: onAdd,
         )
     }
 
@@ -64,7 +71,7 @@ final class AddToPlaylistMenuProvider {
         title: String = String(localized: "Add to Playlist"),
         newPlaylistTitle: String = String(localized: "New Playlist…"),
         allowsCreatingPlaylist: Bool = true,
-        onAdd: ((UUID) -> Void)? = nil
+        onAdd: ((UUID) -> Void)? = nil,
     ) -> UIMenu {
         let deferred = UIDeferredMenuElement.uncached { [weak self] completion in
             guard let self else {
@@ -92,7 +99,7 @@ final class AddToPlaylistMenuProvider {
             if allowsCreatingPlaylist {
                 let newPlaylistAction = UIAction(
                     title: newPlaylistTitle,
-                    image: UIImage(systemName: "plus")
+                    image: UIImage(systemName: "plus"),
                 ) { [weak self] _ in
                     self?.presentCreatePlaylistAlert { playlistID in
                         let addedIDs = songsProvider().compactMap { song -> UUID? in
@@ -115,7 +122,7 @@ final class AddToPlaylistMenuProvider {
         return UIMenu(
             title: title,
             image: UIImage(systemName: "text.badge.plus"),
-            children: [deferred]
+            children: [deferred],
         )
     }
 
@@ -127,7 +134,7 @@ final class AddToPlaylistMenuProvider {
             title: String(localized: "New Playlist"),
             message: String(localized: "Enter a name for your playlist."),
             placeholder: String(localized: "Playlist Name"),
-            text: ""
+            text: "",
         ) { [weak self] name in
             let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else {

@@ -1,3 +1,10 @@
+//
+//  LibrarySearchResultCell.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import SnapKit
 import Then
@@ -45,7 +52,7 @@ final class LibrarySearchResultCell: TableBaseCell {
 
         let insets = InterfaceStyle.Insets.symmetric(
             vertical: 6,
-            horizontal: InterfaceStyle.Spacing.small
+            horizontal: InterfaceStyle.Spacing.small,
         )
         artworkView.snp.makeConstraints { $0.size.equalTo(44) }
         row.snp.makeConstraints { $0.edges.equalToSuperview().inset(insets) }
@@ -61,12 +68,12 @@ final class LibrarySearchResultCell: TableBaseCell {
 
     func configure(with track: AudioTrackRecord, query: String, artworkURL: URL?) {
         titleLabel.attributedText = SearchHighlightHelper.attributedString(
-            text: track.title, query: query, font: .systemFont(ofSize: 16), color: .label
+            text: track.title.sanitizedTrackTitle, query: query, font: .systemFont(ofSize: 16), color: .label,
         )
 
         let subtitle = [track.artistName, track.albumTitle].filter { !$0.isEmpty }.joined(separator: " · ")
         subtitleLabel.attributedText = SearchHighlightHelper.attributedString(
-            text: subtitle, query: query, font: .systemFont(ofSize: 13), color: .secondaryLabel
+            text: subtitle, query: query, font: .systemFont(ofSize: 13), color: .secondaryLabel,
         )
 
         let seconds = Int(track.durationSeconds)

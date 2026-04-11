@@ -1,3 +1,10 @@
+//
+//  PlaybackQueue+Shuffle.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 extension PlaybackQueue {
     /// Generate a Fisher-Yates shuffle permutation of canonical indices.
     /// If `pinningCurrent` is non-nil, that canonical index is placed at position 0

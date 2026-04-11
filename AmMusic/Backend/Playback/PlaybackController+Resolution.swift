@@ -1,3 +1,10 @@
+//
+//  PlaybackController+Resolution.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import AmMusicPlayerKit
 import Foundation
@@ -13,7 +20,7 @@ extension PlaybackController {
 
     func restoredCurrentIndex(
         for resolvedItems: [ResolvedPlaybackItem],
-        session: PersistedPlaybackSession
+        session: PersistedPlaybackSession,
     ) -> Int {
         if resolvedItems.indices.contains(session.currentIndex) {
             return session.currentIndex
@@ -38,13 +45,13 @@ extension PlaybackController {
             artistName: item.artist,
             albumName: item.album,
             artworkURL: item.artworkURL,
-            durationInSeconds: item.durationInSeconds
+            durationInSeconds: item.durationInSeconds,
         )
     }
 
     func preferredStartIndex(
         for resolvedItems: [ResolvedPlaybackItem],
-        requestedIndex: Int
+        requestedIndex: Int,
     ) -> Int {
         guard !resolvedItems.isEmpty else { return 0 }
         if let nextPlayable = resolvedItems.firstIndex(where: { $0.originalIndex >= requestedIndex }) {
@@ -66,14 +73,14 @@ extension PlaybackController {
                             for: track,
                             cachedItem: cachedItems[track.id],
                             localDownloadPath: localDownloadPaths[track.id],
-                            audioDirectory: audioDirectory
+                            audioDirectory: audioDirectory,
                         )
                         let item = Self.makeQueuedPlayerItem(for: track, template: templateItem)
                         return ResolvedPlaybackItem(originalIndex: index, track: track, item: item)
                     } catch {
                         AppLog.error(
                             "PlaybackController",
-                            "resolvePlayableItems failed trackID=\(track.id) error=\(error.localizedDescription)"
+                            "resolvePlayableItems failed trackID=\(track.id) error=\(error.localizedDescription)",
                         )
                         return nil
                     }
@@ -97,7 +104,7 @@ extension PlaybackController {
 
     nonisolated static func makeQueuedPlayerItem(
         for track: PlaybackTrack,
-        template: PlayerItem
+        template: PlayerItem,
     ) -> PlayerItem {
         PlayerItem(
             id: makeQueueItemID(for: track.id),
@@ -106,7 +113,7 @@ extension PlaybackController {
             artist: template.artist,
             album: template.album,
             artworkURL: template.artworkURL,
-            durationInSeconds: template.durationInSeconds
+            durationInSeconds: template.durationInSeconds,
         )
     }
 
@@ -140,7 +147,7 @@ extension PlaybackController {
         for track: PlaybackTrack,
         cachedItem: PlayerItem?,
         localDownloadPath: String?,
-        audioDirectory: URL
+        audioDirectory: URL,
     ) async throws -> PlayerItem {
         if let localFileURL = track.localFileURL,
            FileManager.default.fileExists(atPath: localFileURL.path)
@@ -167,7 +174,7 @@ extension PlaybackController {
 
     static func makePlayerItem(
         for track: PlaybackTrack,
-        url: URL
+        url: URL,
     ) -> PlayerItem {
         PlayerItem(
             id: track.id,
@@ -176,7 +183,7 @@ extension PlaybackController {
             artist: track.artistName,
             album: track.albumName ?? "",
             artworkURL: track.artworkURL,
-            durationInSeconds: track.durationInSeconds
+            durationInSeconds: track.durationInSeconds,
         )
     }
 
@@ -199,11 +206,11 @@ extension PlaybackController {
             queue: orderedTracks.map(makePersistedTrack),
             currentTrackID: currentTrack.id,
             currentIndex: currentIndex,
-            currentTime: latestSnapshot.currentTime,
+            currentTime: player.currentTime,
             shuffled: latestSnapshot.shuffled,
             repeatMode: latestSnapshot.repeatMode,
             source: latestSnapshot.source,
-            shouldResumePlayback: latestSnapshot.state == .playing || latestSnapshot.state == .buffering
+            shouldResumePlayback: latestSnapshot.state == .playing || latestSnapshot.state == .buffering,
         )
     }
 
@@ -216,7 +223,7 @@ extension PlaybackController {
             albumID: track.albumID,
             artworkURL: persistedArtworkURLString(for: track),
             durationInSeconds: track.durationInSeconds,
-            localRelativePath: localRelativePath(for: track)
+            localRelativePath: localRelativePath(for: track),
         )
     }
 
@@ -234,7 +241,7 @@ extension PlaybackController {
 
     func restoredArtworkURL(
         for persistedTrack: PersistedPlaybackTrack,
-        localFileURL: URL?
+        localFileURL: URL?,
     ) async -> URL? {
         if let artworkURLString = persistedTrack.artworkURL,
            let artworkURL = URL(string: artworkURLString),
@@ -251,7 +258,7 @@ extension PlaybackController {
         if let rebuiltArtworkURL = await rebuildLocalArtworkIfNeeded(
             forTrackID: persistedTrack.id,
             localFileURL: localFileURL,
-            artworkURL: localArtworkURL
+            artworkURL: localArtworkURL,
         ) {
             return rebuiltArtworkURL
         }
@@ -266,7 +273,7 @@ extension PlaybackController {
         guard FileManager.default.fileExists(atPath: artworkURL.path) else {
             AppLog.warning(
                 self,
-                "restorePersistedPlayback ignored stale local artwork trackID=\(persistedTrack.id) path=\(artworkURL.path)"
+                "restorePersistedPlayback ignored stale local artwork trackID=\(persistedTrack.id) path=\(artworkURL.path)",
             )
             return nil
         }
@@ -277,7 +284,7 @@ extension PlaybackController {
     func rebuildLocalArtworkIfNeeded(
         forTrackID trackID: String,
         localFileURL: URL?,
-        artworkURL: URL
+        artworkURL: URL,
     ) async -> URL? {
         guard let localFileURL,
               FileManager.default.fileExists(atPath: localFileURL.path)
@@ -293,7 +300,7 @@ extension PlaybackController {
             try FileManager.default.createDirectory(
                 at: artworkURL.deletingLastPathComponent(),
                 withIntermediateDirectories: true,
-                attributes: nil
+                attributes: nil,
             )
             try artworkData.write(to: artworkURL, options: .atomic)
             AppLog.info(self, "restorePersistedPlayback rebuilt local artwork trackID=\(trackID)")
@@ -301,7 +308,7 @@ extension PlaybackController {
         } catch {
             AppLog.error(
                 self,
-                "restorePersistedPlayback rebuild local artwork failed trackID=\(trackID) error=\(error.localizedDescription)"
+                "restorePersistedPlayback rebuild local artwork failed trackID=\(trackID) error=\(error.localizedDescription)",
             )
             return nil
         }

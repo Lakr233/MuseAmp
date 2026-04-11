@@ -1,3 +1,10 @@
+//
+//  LyricSelectionSheetViewController.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import SnapKit
 import Then
 import UIKit
@@ -113,7 +120,7 @@ final class LyricSelectionSheetViewController: UIViewController {
                 image: UIImage(systemName: "doc.on.doc.fill"),
                 style: .plain,
                 target: self,
-                action: #selector(copySelectedLyrics)
+                action: #selector(copySelectedLyrics),
             ).then {
                 $0.tintColor = accentColor
             }
@@ -122,7 +129,7 @@ final class LyricSelectionSheetViewController: UIViewController {
                 image: UIImage(systemName: "checkmark"),
                 style: .done,
                 target: self,
-                action: #selector(dismissSheet)
+                action: #selector(dismissSheet),
             ).then {
                 $0.tintColor = accentColor
             }
@@ -193,7 +200,7 @@ private final class LyricSelectionCell: UITableViewCell {
         $0.numberOfLines = 0
         $0.textColor = .label
         $0.font = UIFontMetrics(forTextStyle: .title3).scaledFont(
-            for: .systemFont(ofSize: 22, weight: .semibold)
+            for: .systemFont(ofSize: 22, weight: .semibold),
         )
         $0.adjustsFontForContentSizeCategory = true
     }

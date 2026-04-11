@@ -1,3 +1,10 @@
+//
+//  TabBarController.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Combine
 import LNPopupController
 import SwifterSwift
@@ -6,17 +13,43 @@ import UIKit
 
 class TabBarController: UITabBarController {
     let environment: AppEnvironment
-    private var downloadsBadgeCancellable: AnyCancellable?
-    var playbackPopupContentCancellable: AnyCancellable?
-    var playbackPopupProgressCancellable: AnyCancellable?
+    var cancellables: Set<AnyCancellable> = []
     var popupArtworkTask: Task<Void, Never>?
     var popupArtworkURL: URL?
-    weak var popupButtonsOwner: LNPopupItem?
-    var popupPlayPauseItem: UIBarButtonItem?
-    var popupNextItem: UIBarButtonItem?
-    var nowPlayingPopupContentViewController: NowPlayingViewController?
+    lazy var popupPlayPauseItem = UIBarButtonItem(
+        image: UIImage(systemName: "play.fill"),
+        primaryAction: UIAction { [weak self] _ in
+            self?.environment.playbackController.togglePlayPause()
+        },
+    ).then { $0.accessibilityIdentifier = "popup.playPause" }
+    lazy var popupNextItem = UIBarButtonItem(
+        image: UIImage(systemName: "forward.fill"),
+        primaryAction: UIAction { [weak self] _ in
+            self?.environment.playbackController.next()
+        },
+    ).then { $0.accessibilityIdentifier = "popup.next" }
+    var nowPlayingPopupContentViewController: NowPlayingCompactController?
     var isNowPlayingPopupOpen = false
-    var popupPagingCooldownDate: Date?
+    private(set) lazy var popupPagingHandler = PopupBarPagingHandler(
+        playbackController: environment.playbackController,
+        onRequestUpdate: { [weak self] in
+            guard let self else { return }
+            updateNowPlayingPopupItem(using: environment.playbackController.snapshot)
+        },
+    )
+
+    // MARK: - Popup Context Menu
+
+    lazy var popupPlaybackMenuProvider = PlaybackMenuProvider(
+        playbackController: environment.playbackController,
+    )
+    lazy var popupPlaylistMenuProvider = AddToPlaylistMenuProvider(
+        playlistStore: environment.playlistStore,
+        viewController: self,
+    )
+    lazy var popupSongContextMenuProvider = SongContextMenuProvider(
+        playlistMenuProvider: popupPlaylistMenuProvider,
+    )
 
     private enum Accessibility {
         static let tabBar = "main.tabbar"
@@ -65,27 +98,40 @@ class TabBarController: UITabBarController {
         .fade
     }
 
-    // MARK: - iOS 18+ (UITab / UISearchTab, Liquid Glass on iOS 26)
+    // MARK: - iOS 18+ (UITab, Liquid Glass on iOS 26)
 
     @available(iOS 18.0, *)
     private func setupWithUITab() {
-        let libraryTab = UITab(
-            title: String(localized: "Library"),
-            image: UIImage(systemName: "music.note.house"),
-            identifier: "library"
+        let albumsTab = UITab(
+            title: String(localized: "Albums"),
+            image: UIImage(systemName: "square.stack"),
+            identifier: "albums",
         ) { [environment] _ in
             let vc = SongLibraryViewController(environment: environment)
-            vc.title = String(localized: "Library")
+            vc.title = String(localized: "Albums")
             return UINavigationController(rootViewController: vc).then {
                 $0.navigationBar.prefersLargeTitles = true
-                $0.navigationBar.accessibilityIdentifier = "nav.library"
+                $0.navigationBar.accessibilityIdentifier = "nav.albums"
+            }
+        }
+
+        let songsTab = UITab(
+            title: String(localized: "Songs"),
+            image: UIImage(systemName: "music.note"),
+            identifier: "songs",
+        ) { [environment] _ in
+            let vc = SongsViewController(environment: environment)
+            vc.title = String(localized: "Songs")
+            return UINavigationController(rootViewController: vc).then {
+                $0.navigationBar.prefersLargeTitles = true
+                $0.navigationBar.accessibilityIdentifier = "nav.songs"
             }
         }
 
         let playlistTab = UITab(
             title: String(localized: "Playlist"),
             image: UIImage(systemName: "music.note.list"),
-            identifier: "playlist"
+            identifier: "playlist",
         ) { [environment] _ in
             let vc = PlaylistViewController(environment: environment)
             vc.title = String(localized: "Playlist")
@@ -98,7 +144,7 @@ class TabBarController: UITabBarController {
         let settingsTab = UITab(
             title: String(localized: "Settings"),
             image: UIImage(systemName: "gearshape"),
-            identifier: "settings"
+            identifier: "settings",
         ) { [environment] _ in
             let vc = SettingsViewController(environment: environment)
             vc.title = String(localized: "Settings")
@@ -118,18 +164,19 @@ class TabBarController: UITabBarController {
         }
 
         if #available(iOS 26.0, *) {
-            tabs = [libraryTab, playlistTab, settingsTab, searchTab]
+            tabs = [albumsTab, songsTab, playlistTab, settingsTab, searchTab]
             return
         }
 
-        tabs = [libraryTab, playlistTab, searchTab, settingsTab]
+        tabs = [albumsTab, songsTab, playlistTab, searchTab, settingsTab]
     }
 
     // MARK: - iOS 16–17 (legacy viewControllers)
 
     private func setupWithViewControllers() {
         let navTabs: [(UIViewController, String, String, String)] = [
-            (SongLibraryViewController(environment: environment), String(localized: "Library"), "music.note.house", "library"),
+            (SongLibraryViewController(environment: environment), String(localized: "Albums"), "square.stack", "albums"),
+            (SongsViewController(environment: environment), String(localized: "Songs"), "music.note", "songs"),
             (PlaylistViewController(environment: environment), String(localized: "Playlist"), "music.note.list", "playlist"),
             (SearchViewController(environment: environment), String(localized: "Search"), "magnifyingglass", "search"),
             (SettingsViewController(environment: environment), String(localized: "Settings"), "gearshape", "settings"),
@@ -140,7 +187,7 @@ class TabBarController: UITabBarController {
             vc.tabBarItem = UITabBarItem(
                 title: title,
                 image: UIImage(systemName: icon),
-                selectedImage: nil
+                selectedImage: nil,
             )
             return UINavigationController(rootViewController: vc).then {
                 $0.navigationBar.prefersLargeTitles = true
@@ -153,11 +200,12 @@ class TabBarController: UITabBarController {
     }
 
     private func bindDownloadsBadge() {
-        downloadsBadgeCancellable = environment.downloadManager.tasksPublisher
+        environment.downloadManager.tasksPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] tasks in
                 self?.updateDownloadsBadge(count: tasks.count)
             }
+            .store(in: &cancellables)
     }
 
     private func updateDownloadsBadge(count: Int) {

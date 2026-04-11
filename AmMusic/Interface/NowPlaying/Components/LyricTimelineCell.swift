@@ -1,3 +1,10 @@
+//
+//  LyricTimelineCell.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import SnapKit
 import Then
 import UIKit
@@ -33,7 +40,7 @@ final class LyricTimelineCell: UITableViewCell {
 
     private var currentState: LineState?
     private var seekTime: TimeInterval?
-    private var onTap: ((TimeInterval) -> Void)?
+    private var onTap: (TimeInterval) -> Void = { _ in }
     private let feedbackGenerator = UIImpactFeedbackGenerator(style: .light)
     private var leadingConstraint: Constraint?
     private var trailingConstraint: Constraint?
@@ -69,11 +76,16 @@ final class LyricTimelineCell: UITableViewCell {
         fatalError()
     }
 
+    override func didMoveToSuperview() {
+        super.didMoveToSuperview()
+        selectedBackgroundView?.isHidden = true
+    }
+
     override func prepareForReuse() {
         super.prepareForReuse()
         currentState = nil
         seekTime = nil
-        onTap = nil
+        onTap = { _ in }
         lyricLabel.text = nil
         lyricLabel.alpha = 1
         tapHighlightView.alpha = 0
@@ -85,7 +97,7 @@ final class LyricTimelineCell: UITableViewCell {
         horizontalInset: CGFloat,
         state: LineState,
         seekTime: TimeInterval?,
-        onTap: ((TimeInterval) -> Void)?
+        onTap: @escaping (TimeInterval) -> Void = { _ in },
     ) {
         lyricLabel.text = text.isEmpty ? " " : text
         self.seekTime = seekTime.map { max($0, 0) }
@@ -114,7 +126,7 @@ final class LyricTimelineCell: UITableViewCell {
         guard let seekTime else { return }
         feedbackGenerator.prepare()
         setTapHighlightVisible(true)
-        onTap?(seekTime)
+        onTap(seekTime)
         feedbackGenerator.impactOccurred()
         setTapHighlightVisible(false)
     }
@@ -124,7 +136,7 @@ final class LyricTimelineCell: UITableViewCell {
         guard let seekTime else { return }
         feedbackGenerator.prepare()
         setTapHighlightVisible(true)
-        onTap?(seekTime)
+        onTap(seekTime)
         feedbackGenerator.impactOccurred()
         setTapHighlightVisible(false)
     }

@@ -1,3 +1,10 @@
+//
+//  CatalogSongAttributes.swift
+//  AmMusicKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public struct CatalogSongAttributes: Decodable, Hashable, Sendable {
@@ -38,7 +45,7 @@ public struct CatalogSongAttributes: Decodable, Hashable, Sendable {
         previews: [CatalogPreview]? = nil,
         extendedAssetUrls: CatalogExtendedAssetURLs? = nil,
         artwork: Artwork? = nil,
-        playParams: CatalogPlayParams? = nil
+        playParams: CatalogPlayParams? = nil,
     ) {
         self.name = name
         self.artistName = artistName

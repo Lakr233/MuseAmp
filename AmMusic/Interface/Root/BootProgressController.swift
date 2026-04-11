@@ -1,8 +1,15 @@
+//
+//  BootProgressController.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import UIKit
 
 final class BootProgressController: UIViewController {
-    var onBootComplete: ((AppEnvironment) -> Void)?
+    var onBootComplete: (AppEnvironment) -> Void = { _ in }
 
     private let statusLabel = UILabel()
     private let activityIndicator = UIActivityIndicatorView(style: .medium)
@@ -57,7 +64,7 @@ private extension BootProgressController {
                 let manager = try await AppEnvironment.initializeDatabaseManager()
                 let environment = AppEnvironment(databaseManager: manager)
                 await MainActor.run {
-                    self.onBootComplete?(environment)
+                    self.onBootComplete(environment)
                 }
             } catch {
                 AppLog.error(self, "Boot sequence failed: \(error)")

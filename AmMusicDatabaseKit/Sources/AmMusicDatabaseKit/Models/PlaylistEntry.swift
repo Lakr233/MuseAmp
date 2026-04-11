@@ -1,3 +1,10 @@
+//
+//  PlaylistEntry.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public struct PlaylistEntry: Sendable, Codable, Hashable, Identifiable {
@@ -26,7 +33,7 @@ public struct PlaylistEntry: Sendable, Codable, Hashable, Identifiable {
         artworkURL: String? = nil,
         durationMillis: Int? = nil,
         trackNumber: Int? = nil,
-        lyrics: String? = nil
+        lyrics: String? = nil,
     ) {
         self.entryID = entryID
         self.trackID = trackID

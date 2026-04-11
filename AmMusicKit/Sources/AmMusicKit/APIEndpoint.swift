@@ -1,3 +1,10 @@
+//
+//  APIEndpoint.swift
+//  AmMusicKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 enum APIEndpoint {
@@ -11,7 +18,7 @@ enum APIEndpoint {
         let endpointURL = baseURL.appendingPathComponent(path)
         guard var components = URLComponents(
             url: endpointURL,
-            resolvingAgainstBaseURL: false
+            resolvingAgainstBaseURL: false,
         ) else {
             throw APIError.invalidRequest
         }

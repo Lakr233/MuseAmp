@@ -1,3 +1,10 @@
+//
+//  ImportedTrackMetadata.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public struct ImportedTrackMetadata: Sendable, Codable, Hashable {
@@ -30,7 +37,7 @@ public struct ImportedTrackMetadata: Sendable, Codable, Hashable {
         composerName: String? = nil,
         releaseDate: String? = nil,
         lyrics: String? = nil,
-        sourceKind: TrackSourceKind
+        sourceKind: TrackSourceKind,
     ) {
         self.trackID = trackID
         self.albumID = albumID

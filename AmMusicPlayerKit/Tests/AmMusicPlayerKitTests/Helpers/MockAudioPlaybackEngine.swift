@@ -1,3 +1,10 @@
+//
+//  MockAudioPlaybackEngine.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 @testable import AmMusicPlayerKit
 import AVFoundation
 
@@ -67,7 +74,7 @@ final class MockAudioPlaybackEngine: AudioPlaybackEngine {
     func addPeriodicTimeObserver(
         forInterval _: CMTime,
         queue _: DispatchQueue?,
-        using block: @escaping @Sendable (CMTime) -> Void
+        using block: @escaping @Sendable (CMTime) -> Void,
     ) -> Any {
         addTimeObserverCallCount += 1
         periodicTimeObserver = block
@@ -82,6 +89,30 @@ final class MockAudioPlaybackEngine: AudioPlaybackEngine {
     func preloadNextItem(_ item: AVPlayerItem?) {
         preloadCallCount += 1
         lastPreloadedItem = item
+    }
+
+    // MARK: - Gapless Transition
+
+    var mockHasAdvancedToPreloaded = false
+    var mockAdvanceToPreloadedResult = false
+    var advanceToPreloadedCallCount = 0
+    var clearPreloadedReferenceCallCount = 0
+
+    func hasAdvancedToPreloadedItem() -> Bool {
+        mockHasAdvancedToPreloaded
+    }
+
+    func advanceToPreloadedItem() -> Bool {
+        advanceToPreloadedCallCount += 1
+        if mockAdvanceToPreloadedResult {
+            mockCurrentItem = lastPreloadedItem
+        }
+        return mockAdvanceToPreloadedResult
+    }
+
+    func clearPreloadedReference() {
+        clearPreloadedReferenceCallCount += 1
+        lastPreloadedItem = nil
     }
 
     func simulatePeriodicTimeObserver(seconds: TimeInterval) {

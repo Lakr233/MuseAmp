@@ -1,3 +1,10 @@
+//
+//  LikedSongsPlaylistArtwork.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import UIKit
 
 enum LikedSongsPlaylistArtwork {
@@ -23,7 +30,7 @@ enum LikedSongsPlaylistArtwork {
                 x: (canvasSize.width - symbolSideLength) / 2,
                 y: (canvasSize.height - symbolSideLength) / 2,
                 width: symbolSideLength,
-                height: symbolSideLength
+                height: symbolSideLength,
             )
 
             let configuration = UIImage.SymbolConfiguration(pointSize: symbolSideLength, weight: .regular)
@@ -43,18 +50,18 @@ enum LikedSongsPlaylistArtwork {
 
         let scale = min(
             boundingRect.width / contentSize.width,
-            boundingRect.height / contentSize.height
+            boundingRect.height / contentSize.height,
         )
         let drawSize = CGSize(
             width: contentSize.width * scale,
-            height: contentSize.height * scale
+            height: contentSize.height * scale,
         )
 
         return CGRect(
             x: boundingRect.midX - drawSize.width / 2,
             y: boundingRect.midY - drawSize.height / 2,
             width: drawSize.width,
-            height: drawSize.height
+            height: drawSize.height,
         )
     }
 }

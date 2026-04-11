@@ -1,3 +1,10 @@
+//
+//  QueueSnapshot.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 public struct QueueSnapshot: Sendable {
     public let history: [PlayerItem]
     public let nowPlaying: PlayerItem?

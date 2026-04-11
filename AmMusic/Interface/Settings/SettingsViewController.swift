@@ -1,3 +1,10 @@
+//
+//  SettingsViewController.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import ConfigurableKit
 import SnapKit
 import Then
@@ -26,7 +33,7 @@ final class SettingsViewController: StackScrollController {
         super.setupContentViews()
 
         stackView.addArrangedSubviewWithMargin(
-            ConfigurableSectionHeaderView().with(header: String(localized: "API"))
+            ConfigurableSectionHeaderView().with(header: String(localized: "API")),
         ) { $0.bottom /= 2 }
         stackView.addArrangedSubview(SeparatorView())
         stackView.addArrangedSubviewWithMargin(makeAPIEndpointView())
@@ -35,21 +42,25 @@ final class SettingsViewController: StackScrollController {
         stackView.addArrangedSubview(SeparatorView())
 
         stackView.addArrangedSubviewWithMargin(
-            ConfigurableSectionHeaderView().with(header: String(localized: "Downloads"))
+            ConfigurableSectionHeaderView().with(header: String(localized: "Downloads")),
         ) { $0.bottom /= 2 }
         stackView.addArrangedSubview(SeparatorView())
         stackView.addArrangedSubviewWithMargin(makeDownloadsObject().createView())
         stackView.addArrangedSubview(SeparatorView())
+        stackView.addArrangedSubviewWithMargin(makeMaxConcurrentDownloadsObject().createView())
+        stackView.addArrangedSubview(SeparatorView())
 
         stackView.addArrangedSubviewWithMargin(
-            ConfigurableSectionHeaderView().with(header: String(localized: "Lyrics"))
+            ConfigurableSectionHeaderView().with(header: String(localized: "Tweaks")),
         ) { $0.bottom /= 2 }
         stackView.addArrangedSubview(SeparatorView())
         stackView.addArrangedSubviewWithMargin(makeLyricsAutoConvertChineseObject().createView())
         stackView.addArrangedSubview(SeparatorView())
+        stackView.addArrangedSubviewWithMargin(makeCleanSongTitleObject().createView())
+        stackView.addArrangedSubview(SeparatorView())
 
         stackView.addArrangedSubviewWithMargin(
-            ConfigurableSectionHeaderView().with(header: String(localized: "Diagnostics"))
+            ConfigurableSectionHeaderView().with(header: String(localized: "Diagnostics")),
         ) { $0.bottom /= 2 }
         stackView.addArrangedSubview(SeparatorView())
         stackView.addArrangedSubviewWithMargin(makeLogsObject().createView())
@@ -57,6 +68,13 @@ final class SettingsViewController: StackScrollController {
         stackView.addArrangedSubviewWithMargin(makeClearAPICacheObject().createView())
         stackView.addArrangedSubview(SeparatorView())
         stackView.addArrangedSubviewWithMargin(makeRebuildDatabaseObject().createView())
+        stackView.addArrangedSubview(SeparatorView())
+
+        stackView.addArrangedSubviewWithMargin(
+            ConfigurableSectionHeaderView().with(header: String(localized: "About")),
+        ) { $0.bottom /= 2 }
+        stackView.addArrangedSubview(SeparatorView())
+        stackView.addArrangedSubviewWithMargin(makeOpenSourceLicensesObject().createView())
         stackView.addArrangedSubview(SeparatorView())
 
         buildFooter()
@@ -72,7 +90,25 @@ extension SettingsViewController {
             ephemeralAnnotation: .action { [weak self] _ in
                 guard let self else { return }
                 openDownloads()
-            }
+            },
+        )
+    }
+
+    func makeMaxConcurrentDownloadsObject() -> ConfigurableObject {
+        ConfigurableObject(
+            icon: "arrow.down.to.line.compact",
+            title: "Concurrent Downloads",
+            explain: "Maximum number of simultaneous downloads.",
+            key: AppPreferences.maxConcurrentDownloadsKey,
+            defaultValue: 1,
+            annotation: .menu(selections: {
+                (1 ... 8).map { count in
+                    MenuAnnotation.Option(
+                        title: "\(count)",
+                        rawValue: count,
+                    )
+                }
+            }),
         )
     }
 
@@ -84,7 +120,7 @@ extension SettingsViewController {
             ephemeralAnnotation: .action { [weak self] _ in
                 guard let self else { return }
                 openLogs()
-            }
+            },
         )
     }
 
@@ -97,7 +133,7 @@ extension SettingsViewController {
             $0.text = String(format: String(localized: "Version %@ (%@)"), marketingVersion, buildVersion)
             $0.font = .monospacedSystemFont(
                 ofSize: UIFont.preferredFont(forTextStyle: .caption2).pointSize,
-                weight: .regular
+                weight: .regular,
             )
             $0.textColor = .tertiaryLabel
             $0.textAlignment = .center
@@ -112,8 +148,8 @@ extension SettingsViewController {
                         top: InterfaceStyle.Spacing.small,
                         left: InterfaceStyle.Spacing.small,
                         bottom: InterfaceStyle.Spacing.medium,
-                        right: InterfaceStyle.Spacing.small
-                    )
+                        right: InterfaceStyle.Spacing.small,
+                    ),
                 )
             }
         }

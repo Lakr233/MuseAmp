@@ -1,3 +1,10 @@
+//
+//  MusicPlayer+Observation.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AVFoundation
 import CoreMedia
 import Foundation
@@ -16,7 +23,7 @@ extension MusicPlayer {
         log(.verbose, "setting up time observer interval=\(timeUpdateInterval)")
         timeObserver = engine.addPeriodicTimeObserver(
             forInterval: interval,
-            queue: .main
+            queue: .main,
         ) { [weak self] time in
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -38,7 +45,7 @@ extension MusicPlayer {
         itemEndObserver = NotificationCenter.default.addObserver(
             forName: .AVPlayerItemDidPlayToEndTime,
             object: nil,
-            queue: .main
+            queue: .main,
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.handleItemEnd()
@@ -58,8 +65,13 @@ extension MusicPlayer {
             loadAndPlay(currentItem, reason: .natural)
         case .queue, .off:
             if let next = playbackQueue.advance() {
-                log(.verbose, "advancing to next item after end item=\(describe(item: next))")
-                loadAndPlay(next, reason: .natural)
+                if engine.advanceToPreloadedItem() {
+                    log(.verbose, "gapless transition to preloaded item=\(describe(item: next))")
+                    continueWithCurrentEngineItem(next, reason: .natural)
+                } else {
+                    log(.verbose, "advancing to next item after end item=\(describe(item: next))")
+                    loadAndPlay(next, reason: .natural)
+                }
             } else {
                 log(.info, "handleItemEnd reached end of queue")
                 delegate?.musicPlayerDidReachEndOfQueue(self)
@@ -83,9 +95,9 @@ extension MusicPlayer {
                         userInfo: [
                             NSLocalizedDescriptionKey: String(
                                 localized: "Unknown playback error",
-                                bundle: .module
+                                bundle: .module,
                             ),
-                        ]
+                        ],
                     )
                     log(.error, "player item failed item=\(describe(item: playerItem)) error=\(error.localizedDescription)")
                     delegate?.musicPlayer(self, didFailItem: playerItem, error: error)

@@ -1,3 +1,10 @@
+//
+//  MusicPlayer+Playback.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AVFoundation
 import CoreMedia
 
@@ -109,19 +116,80 @@ public extension MusicPlayer {
         let snap = queue
         nowPlayingManager.updateQueueInfo(
             index: snap.history.count,
-            count: snap.totalCount
+            count: snap.totalCount,
         )
         remoteCommandManager.updateEnabledCommands(queue: snap)
         remoteCommandManager.updateLikeCommand(
             isEnabled: canHandleLikeCommand,
             isActive: currentItemLiked,
             localizedTitle: likeCommandLocalizedTitle,
-            localizedShortTitle: likeCommandLocalizedShortTitle
+            localizedShortTitle: likeCommandLocalizedShortTitle,
         )
 
         delegate?.musicPlayer(self, didTransitionTo: item, reason: reason)
         delegate?.musicPlayer(self, didChangeQueue: snap)
         log(.verbose, "loadAndPlay completed \(describe(queue: snap))")
+    }
+
+    internal func continueWithCurrentEngineItem(_ item: PlayerItem, reason: TransitionReason) {
+        log(.info, "continueWithCurrentEngineItem item=\(describe(item: item)) reason=\(reason)")
+        teardownItemObservers()
+
+        currentItem = item
+
+        if let avItem = engine.currentAVItem {
+            observeItemStatus(avItem, for: item)
+            observeBuffering(avItem)
+
+            // The preloaded item may have already failed before we started observing.
+            if avItem.status == .failed {
+                log(.warning, "preloaded item already failed item=\(describe(item: item))")
+                let error = avItem.error ?? NSError(
+                    domain: "AmMusicPlayerKit",
+                    code: -1,
+                    userInfo: [
+                        NSLocalizedDescriptionKey: String(
+                            localized: "Unknown playback error",
+                            bundle: .module,
+                        ),
+                    ],
+                )
+                delegate?.musicPlayer(self, didFailItem: item, error: error)
+                if let nextItem = playbackQueue.advance() {
+                    loadAndPlay(nextItem, reason: .itemFailed)
+                } else {
+                    delegate?.musicPlayerDidReachEndOfQueue(self)
+                    stop()
+                }
+                return
+            }
+        }
+
+        engine.clearPreloadedReference()
+        preloadNextItem()
+        engine.play()
+        mediaCenterCoordinator.activateSessionIfPossible()
+        setState(.playing)
+
+        nowPlayingManager.setTrack(item)
+        nowPlayingManager.updateRate(1.0)
+
+        let snap = queue
+        nowPlayingManager.updateQueueInfo(
+            index: snap.history.count,
+            count: snap.totalCount,
+        )
+        remoteCommandManager.updateEnabledCommands(queue: snap)
+        remoteCommandManager.updateLikeCommand(
+            isEnabled: canHandleLikeCommand,
+            isActive: currentItemLiked,
+            localizedTitle: likeCommandLocalizedTitle,
+            localizedShortTitle: likeCommandLocalizedShortTitle,
+        )
+
+        delegate?.musicPlayer(self, didTransitionTo: item, reason: reason)
+        delegate?.musicPlayer(self, didChangeQueue: snap)
+        log(.verbose, "continueWithCurrentEngineItem completed \(describe(queue: snap))")
     }
 
     internal func preloadNextItem() {

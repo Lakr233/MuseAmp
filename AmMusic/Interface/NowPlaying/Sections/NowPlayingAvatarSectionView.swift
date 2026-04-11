@@ -1,3 +1,10 @@
+//
+//  NowPlayingAvatarSectionView.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import SnapKit
 import Then
 import UIKit
@@ -9,7 +16,7 @@ final class NowPlayingAvatarSectionView: UIView {
 
     private var displayedArtworkURL: URL?
 
-    var onArtworkLoaded: ((URL, UIImage) -> Void)? {
+    var onArtworkLoaded: (URL, UIImage) -> Void = { _, _ in } {
         didSet {
             artworkView.onImageLoaded = onArtworkLoaded
         }
@@ -21,6 +28,7 @@ final class NowPlayingAvatarSectionView: UIView {
 
         artworkView.snp.makeConstraints { make in
             make.edges.equalToSuperview().inset(NowPlayingArtworkLayout.artworkInset).priority(.high)
+            make.width.equalTo(artworkView.snp.height)
         }
     }
 
@@ -36,14 +44,14 @@ final class NowPlayingAvatarSectionView: UIView {
         if previousURL == url {
             AppLog.verbose(
                 self,
-                "avatar refresh skipped artwork=\(nowPlayingLogURLDescription(url))"
+                "avatar refresh skipped artwork=\(nowPlayingLogURLDescription(url))",
             )
             return
         }
 
         AppLog.info(
             self,
-            "avatar refresh requested previous=\(nowPlayingLogURLDescription(previousURL)) next=\(nowPlayingLogURLDescription(url))"
+            "avatar refresh requested previous=\(nowPlayingLogURLDescription(previousURL)) next=\(nowPlayingLogURLDescription(url))",
         )
 
         let shouldCrossfade = previousURL != nil && url != nil
@@ -76,9 +84,9 @@ private final class NowPlayingArtworkImageView: AmImageView {
             reset()
         }
 
-        InterfaceAnimation.animate(
+        InterfaceAnimate.animate(
             duration: Self.crossfadeDuration,
-            options: [.beginFromCurrentState, .allowUserInteraction, .curveEaseInOut]
+            options: .curveEaseInOut,
         ) {
             snapshot.alpha = 0
         } completion: { _ in

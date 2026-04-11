@@ -1,3 +1,10 @@
+//
+//  PlaybackSnapshot.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicPlayerKit
 import Foundation
 
@@ -40,6 +47,21 @@ nonisolated struct PlaybackSnapshot {
         return Array(queue[nextIndex...])
     }
 
+    func withTime(_ currentTime: TimeInterval, duration: TimeInterval) -> PlaybackSnapshot {
+        PlaybackSnapshot(
+            state: state,
+            queue: queue,
+            playerIndex: playerIndex,
+            currentTime: currentTime,
+            duration: duration,
+            repeatMode: repeatMode,
+            shuffled: shuffled,
+            source: source,
+            isCurrentTrackLiked: isCurrentTrackLiked,
+            outputDevice: outputDevice,
+        )
+    }
+
     static let empty = PlaybackSnapshot(
         state: .idle,
         queue: [],
@@ -50,6 +72,6 @@ nonisolated struct PlaybackSnapshot {
         shuffled: false,
         source: nil,
         isCurrentTrackLiked: false,
-        outputDevice: nil
+        outputDevice: nil,
     )
 }

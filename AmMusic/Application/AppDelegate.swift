@@ -1,3 +1,10 @@
+//
+//  AppDelegate.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AlertController
 @_exported import AmMusicKit
 import UIKit
@@ -6,7 +13,7 @@ import UIKit
 class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(
         _: UIApplication,
-        didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]? = nil
+        didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]? = nil,
     ) -> Bool {
         AlertControllerConfiguration.alertImage = Bundle.appIcon
         AlertControllerConfiguration.accentColor = .accent
@@ -16,11 +23,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(
         _: UIApplication,
         configurationForConnecting connectingSceneSession: UISceneSession,
-        options _: UIScene.ConnectionOptions
+        options _: UIScene.ConnectionOptions,
     ) -> UISceneConfiguration {
         let configuration = UISceneConfiguration(
             name: "Default Configuration",
-            sessionRole: connectingSceneSession.role
+            sessionRole: connectingSceneSession.role,
         )
         configuration.delegateClass = SceneDelegate.self
         return configuration
@@ -33,7 +40,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(
         _: UIApplication,
         handleEventsForBackgroundURLSession _: String,
-        completionHandler: @escaping () -> Void
+        completionHandler: @escaping () -> Void,
     ) {
         backgroundCompletionHandler = completionHandler
     }

@@ -28,6 +28,10 @@
 		50FF00012F88000100FF0001 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 50FF00022F88000100FF0002 /* Kingfisher */; };
 		51A000012F92000100A00001 /* ListViewKit in Frameworks */ = {isa = PBXBuildFile; productRef = 51A000022F92000100A00002 /* ListViewKit */; };
 		52DB00012FA0000100DB0001 /* AmMusicDatabaseKit in Frameworks */ = {isa = PBXBuildFile; productRef = 52DB00022FA0000100DB0002 /* AmMusicDatabaseKit */; };
+		53AA00012FA1000100AA0001 /* AmMusicDatabaseKit in Frameworks */ = {isa = PBXBuildFile; productRef = 53AA00022FA1000100AA0002 /* AmMusicDatabaseKit */; };
+		53AA00032FA1000100AA0003 /* AmMusicPlayerKit in Frameworks */ = {isa = PBXBuildFile; productRef = 53AA00042FA1000100AA0004 /* AmMusicPlayerKit */; };
+		53AA00052FA1000100AA0005 /* AmMusicKit in Frameworks */ = {isa = PBXBuildFile; productRef = 53AA00062FA1000100AA0006 /* AmMusicKit */; };
+		53AA00072FA1000100AA0007 /* ConfigurableKit in Frameworks */ = {isa = PBXBuildFile; productRef = 53AA00082FA1000100AA0008 /* ConfigurableKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -80,6 +84,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				53AA00012FA1000100AA0001 /* AmMusicDatabaseKit in Frameworks */,
+				53AA00032FA1000100AA0003 /* AmMusicPlayerKit in Frameworks */,
+				53AA00052FA1000100AA0005 /* AmMusicKit in Frameworks */,
+				53AA00072FA1000100AA0007 /* ConfigurableKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -161,6 +169,10 @@
 			);
 			name = AmMusicTests;
 			packageProductDependencies = (
+				53AA00022FA1000100AA0002 /* AmMusicDatabaseKit */,
+				53AA00042FA1000100AA0004 /* AmMusicPlayerKit */,
+				53AA00062FA1000100AA0006 /* AmMusicKit */,
+				53AA00082FA1000100AA0008 /* ConfigurableKit */,
 			);
 			productName = AmMusicTests;
 			productReference = 50CC00022F85000100CC0002 /* AmMusicTests.xctest */;
@@ -320,13 +332,19 @@
 			baseConfigurationReferenceRelativePath = Configuration/Development.xcconfig;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				PRODUCT_BUNDLE_IDENTIFIER = wiki.qaq.AmMusic.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AmMusic.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/AmMusic";
 			};
 			name = Debug;
@@ -337,13 +355,19 @@
 			baseConfigurationReferenceRelativePath = Configuration/Release.xcconfig;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				PRODUCT_BUNDLE_IDENTIFIER = wiki.qaq.AmMusic.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AmMusic.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/AmMusic";
 			};
 			name = Release;
@@ -354,7 +378,6 @@
 			baseConfigurationReferenceRelativePath = Configuration/Development.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CURRENT_PROJECT_VERSION = 9;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -380,7 +403,6 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.2.7;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -401,7 +423,6 @@
 			baseConfigurationReferenceRelativePath = Configuration/Release.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CURRENT_PROJECT_VERSION = 9;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -427,7 +448,6 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.2.7;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -726,7 +746,7 @@
 			repositoryURL = "https://github.com/Lakr233/Digger";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 0.0.5;
+				minimumVersion = 0.1.0;
 			};
 		};
 		50EE00032F87000100EE0003 /* XCRemoteSwiftPackageReference "AlertController" */ = {
@@ -865,6 +885,23 @@
 		52DB00022FA0000100DB0002 /* AmMusicDatabaseKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AmMusicDatabaseKit;
+		};
+		53AA00022FA1000100AA0002 /* AmMusicDatabaseKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AmMusicDatabaseKit;
+		};
+		53AA00042FA1000100AA0004 /* AmMusicPlayerKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AmMusicPlayerKit;
+		};
+		53AA00062FA1000100AA0006 /* AmMusicKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AmMusicKit;
+		};
+		53AA00082FA1000100AA0008 /* ConfigurableKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 50D000072F90000100D00007 /* XCRemoteSwiftPackageReference "ConfigurableKit" */;
+			productName = ConfigurableKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

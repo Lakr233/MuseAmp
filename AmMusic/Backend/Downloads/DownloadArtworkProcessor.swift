@@ -1,3 +1,10 @@
+//
+//  DownloadArtworkProcessor.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 @preconcurrency import AVFoundation
 import Foundation
@@ -11,7 +18,7 @@ enum DownloadArtworkProcessor {
         artworkURL: URL?,
         apiClient: APIClient?,
         locations: LibraryPaths,
-        session: URLSession = .shared
+        session: URLSession = .shared,
     ) async {
         guard let artworkURL else {
             return
@@ -23,7 +30,7 @@ enum DownloadArtworkProcessor {
                 artworkURL: artworkURL,
                 apiClient: apiClient,
                 locations: locations,
-                session: session
+                session: session,
             )
 
             if try await hasEmbeddedArtwork(fileURL: fileURL) {
@@ -66,7 +73,7 @@ extension DownloadArtworkProcessor {
         artworkURL: URL,
         apiClient: APIClient?,
         locations: LibraryPaths,
-        session: URLSession
+        session: URLSession,
     ) async throws -> Data {
         let cacheURL = locations.artworkCacheURL(for: trackID)
         if FileManager.default.fileExists(atPath: cacheURL.path) {
@@ -102,7 +109,7 @@ extension DownloadArtworkProcessor {
     static func embedArtwork(
         _ artworkData: Data,
         into fileURL: URL,
-        timeout: TimeInterval = 30
+        timeout: TimeInterval = 30,
     ) async throws {
         guard FileManager.default.isReadableFile(atPath: fileURL.path) else {
             throw ProcessingError.fileUnreadable
@@ -111,14 +118,14 @@ extension DownloadArtworkProcessor {
             try await performEmbedArtwork(
                 artworkData,
                 into: fileURL,
-                exportTimeout: timeout
+                exportTimeout: timeout,
             )
         }
     }
 
     static func withOverallTimeout<T: Sendable>(
         seconds: TimeInterval,
-        operation: @escaping @Sendable () async throws -> T
+        operation: @escaping @Sendable () async throws -> T,
     ) async throws -> T {
         let once = ExportOnceGuard()
         let worker = Task(priority: .utility) {
@@ -162,7 +169,7 @@ extension DownloadArtworkProcessor {
     private static func performEmbedArtwork(
         _ artworkData: Data,
         into fileURL: URL,
-        exportTimeout: TimeInterval
+        exportTimeout: TimeInterval,
     ) async throws {
         let asset = AVURLAsset(url: fileURL)
         guard await (try? asset.load(.isReadable)) == true else {

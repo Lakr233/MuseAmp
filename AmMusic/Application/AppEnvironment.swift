@@ -1,3 +1,10 @@
+//
+//  AppEnvironment.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import Combine
 import Foundation
@@ -31,16 +38,16 @@ final class AppEnvironment {
     let audioFileImporter: AudioFileImporter
     let playlistCoverArtworkCache: PlaylistCoverArtworkCache
 
-    var databaseEventCancellable: AnyCancellable?
+    var cancellables: Set<AnyCancellable> = []
 
     convenience init(
         apiBaseURL: URL = AppPreferences.defaultAPIBaseURL,
-        baseDirectory: URL? = nil
+        baseDirectory: URL? = nil,
     ) {
         do {
             let manager = try Self.initializeDatabaseManagerSynchronously(
                 apiBaseURL: apiBaseURL,
-                baseDirectory: baseDirectory
+                baseDirectory: baseDirectory,
             )
             self.init(databaseManager: manager, apiBaseURL: apiBaseURL)
         } catch {
@@ -51,7 +58,7 @@ final class AppEnvironment {
 
     init(
         databaseManager: DatabaseManager,
-        apiBaseURL: URL = AppPreferences.defaultAPIBaseURL
+        apiBaseURL: URL = AppPreferences.defaultAPIBaseURL,
     ) {
         let paths = databaseManager.paths
         self.paths = paths
@@ -65,11 +72,11 @@ final class AppEnvironment {
         libraryIndexer = SongLibraryIndexer(databaseManager: databaseManager)
         playlistStore = PlaylistStore(
             database: libraryDatabase,
-            legacyFileURL: paths.legacyPlaylistURL
+            legacyFileURL: paths.legacyPlaylistURL,
         )
         downloadStore = DownloadStore(database: libraryDatabase, paths: paths)
         musicLibraryTrackRemovalService = MusicLibraryTrackRemovalService(
-            databaseManager: databaseManager
+            databaseManager: databaseManager,
         )
         networkMonitor = NetworkMonitor()
         downloadManager = DownloadManager(
@@ -81,7 +88,7 @@ final class AppEnvironment {
             networkMonitor: networkMonitor,
             screenAwakeHandler: { shouldKeepAwake in
                 UIApplication.shared.isIdleTimerDisabled = shouldKeepAwake
-            }
+            },
         )
         playbackController = PlaybackController(
             apiClient: apiClient,
@@ -89,19 +96,19 @@ final class AppEnvironment {
             downloadStore: downloadStore,
             metadataReader: metadataReader,
             paths: paths,
-            playlistStore: playlistStore
+            playlistStore: playlistStore,
         )
         lyricsService = LyricsService(
             apiClient: apiClient,
             lyricsCacheStore: databaseManager.lyricsCacheStore,
-            database: libraryDatabase
+            database: libraryDatabase,
         )
         playlistCoverArtworkCache = PlaylistCoverArtworkCache()
         audioFileImporter = AudioFileImporter(
             paths: paths,
             database: libraryDatabase,
             metadataReader: metadataReader,
-            apiClient: apiClient
+            apiClient: apiClient,
         )
 
         observeDatabaseEvents()
@@ -113,11 +120,11 @@ final class AppEnvironment {
 
     func rebuildLibraryDatabase(
         forceArtwork: Bool = false,
-        progressCallback: (@Sendable (Int, Int) -> Void)? = nil
+        progressCallback: (@Sendable (Int, Int) -> Void)? = nil,
     ) async throws -> SongLibraryIndexer.SyncResult {
         try await libraryIndexer.syncLibrary(
             forceArtwork: forceArtwork,
-            progressCallback: progressCallback
+            progressCallback: progressCallback,
         )
     }
 
@@ -132,7 +139,7 @@ final class AppEnvironment {
         } catch {
             AppLog.warning(
                 self,
-                "libraryDatabase.storedLibrarySummary() threw - returning empty summary"
+                "libraryDatabase.storedLibrarySummary() threw - returning empty summary",
             )
             return MusicLibrarySummary(trackCount: 0, totalBytes: 0)
         }

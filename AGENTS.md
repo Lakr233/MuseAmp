@@ -112,6 +112,11 @@
 - State transitions in core services (playback, downloads) should log at `.info`.
 - Do not log sensitive data (tokens, full URLs with auth params). Redact or omit.
 
+## API Verification
+
+- When using iOS/macOS APIs that are new, recently changed, or unfamiliar, search Apple Developer Documentation (via the Apple-docs MCP tools) before writing the code.
+- Verify availability annotations, parameter signatures, and deprecation status against the official docs rather than relying on memory alone.
+
 ## Code Style
 
 - Indentation: 4 spaces.
@@ -121,8 +126,19 @@
 - Use Swift concurrency features where they fit the existing design.
 - Keep comments rare and only where they remove real ambiguity.
 
+## Property Rules
+
+- Avoid unnecessary optionals. If a property can have a meaningful default value, use it instead of making the property optional.
+- Combine subscriptions must be stored in a single `var cancellables: Set<AnyCancellable> = []` per class, using `.store(in: &cancellables)`. Do not create individual `AnyCancellable?` properties for each subscription.
+- Callback closures that are always assigned before use should be non-optional with an empty default (e.g., `var onTap: () -> Void = {}`), not `(() -> Void)?`. Remove optional chaining (`?()`) at call sites.
+- For throttle/cooldown dates, use `Date = .distantPast` instead of `Date?`. Check with `Date() < deadline` instead of unwrapping.
+- For enum state properties, prefer a concrete default case (e.g., `.idle`) over making the property optional.
+- Properties whose values can be derived from other state should be computed properties, not stored.
+- Do not introduce stored properties to track state that is already available from an existing source of truth.
+
 ## Testing Rules
 
+- The project has a macOS Catalyst destination. Tests can be built and run on Catalyst (`My Mac (Mac Catalyst)`) in addition to iOS simulators.
 - Prefer behavior-focused tests over UI-structure tests.
 - New tests should validate application logic, persistence, notifications, file processing, and service behavior without depending on view titles, tab counts/order, selected tabs, or other presentation-only details.
 - Avoid assertions such as `.title == ...`, `tabs.count == ...`, or similar checks that only verify UIKit configuration text or shell layout.

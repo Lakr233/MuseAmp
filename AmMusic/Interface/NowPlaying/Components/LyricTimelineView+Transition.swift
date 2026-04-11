@@ -1,3 +1,10 @@
+//
+//  LyricTimelineView+Transition.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import SnapKit
 import UIKit
 
@@ -20,10 +27,14 @@ extension LyricTimelineView {
         self.mode = mode
         self.currentTime = currentTime
 
+        let blurEnabled = if case .synced = mode { true } else { false }
+        topBlurView.isHidden = !blurEnabled
+        bottomBlurView.isHidden = !blurEnabled
+
         if modeChanged {
             AppLog.info(
                 self,
-                "lyrics view mode changed previous=\(previousMode.logDescription) next=\(mode.logDescription) suspended=\(isAnimationSuspended) animated=\(animated)"
+                "lyrics view mode changed previous=\(previousMode.logDescription) next=\(mode.logDescription) suspended=\(isAnimationSuspended) animated=\(animated)",
             )
         }
 
@@ -42,7 +53,7 @@ extension LyricTimelineView {
                 animateOutgoingTransition(
                     overlay: outgoingTransitionOverlay,
                     targetMode: mode,
-                    currentTime: currentTime
+                    currentTime: currentTime,
                 )
                 return
             }
@@ -54,7 +65,12 @@ extension LyricTimelineView {
                 activeIndex = nil
                 shouldAnimateNextSyncedReveal = false
                 tableView.reloadData()
-                setScrollOffset(to: 0)
+                layoutIfNeeded()
+                if tableView.numberOfRows(inSection: 0) > 0 {
+                    setScrollOffset(to: targetOffsetY(forRow: 0))
+                } else {
+                    setScrollOffset(to: -tableView.contentInset.top)
+                }
             }
             tableView.isHidden = false
             if let outgoingTransitionOverlay {
@@ -64,7 +80,7 @@ extension LyricTimelineView {
                 animateOutgoingTransition(
                     overlay: outgoingTransitionOverlay,
                     targetMode: mode,
-                    currentTime: currentTime
+                    currentTime: currentTime,
                 )
                 return
             }
@@ -92,7 +108,7 @@ extension LyricTimelineView {
                 animateOutgoingTransition(
                     overlay: outgoingTransitionOverlay,
                     targetMode: mode,
-                    currentTime: currentTime
+                    currentTime: currentTime,
                 )
                 return
             }
@@ -101,7 +117,7 @@ extension LyricTimelineView {
                 performInitialSyncedReveal(
                     with: timeline,
                     currentTime: currentTime,
-                    fadingOutMessage: isTransitioningFromMessage
+                    fadingOutMessage: isTransitioningFromMessage,
                 )
             } else {
                 messageLabel.alpha = 1
@@ -126,9 +142,8 @@ extension LyricTimelineView {
         let viewportHeight = tableView.bounds.height
         guard viewportHeight > 0 else { return }
 
-        let halfActiveLineHeight = Layout.activeLineHeightEstimate / 2
-        let headerHeight = max((viewportHeight * Layout.activeLineAnchorFraction) - halfActiveLineHeight, 0)
-        let footerHeight = max((viewportHeight * (1 - Layout.activeLineAnchorFraction)) - halfActiveLineHeight, 0)
+        let headerHeight: CGFloat = 200
+        let footerHeight: CGFloat = 200
 
         let newInsets = UIEdgeInsets(top: headerHeight, left: 0, bottom: footerHeight, right: 0)
         if tableView.contentInset != newInsets {
@@ -158,9 +173,9 @@ extension LyricTimelineView {
             return
         }
 
-        InterfaceAnimation.animate(
+        InterfaceAnimate.animate(
             duration: LyricTimelineAnimation.plainRevealDuration,
-            options: LyricTimelineAnimation.easeOutOptions
+            options: LyricTimelineAnimation.easeOutOptions,
         ) {
             self.tableView.alpha = 1
             if fadingOutMessage {
@@ -207,7 +222,7 @@ extension LyricTimelineView {
     func animateOutgoingTransition(
         overlay: UIView,
         targetMode: Mode,
-        currentTime: TimeInterval
+        currentTime: TimeInterval,
     ) {
         lineTransitionSequence += 1
         let transitionSequence = lineTransitionSequence
@@ -220,10 +235,10 @@ extension LyricTimelineView {
         }
 
         for (index, snapshot) in snapshots.enumerated() {
-            InterfaceAnimation.animate(
+            InterfaceAnimate.animate(
                 duration: LyricTimelineAnimation.outgoingFadeDuration,
                 delay: Double(index) * LyricTimelineAnimation.outgoingFadeStagger,
-                options: LyricTimelineAnimation.easeOutOptions
+                options: LyricTimelineAnimation.easeOutOptions,
             ) {
                 snapshot.alpha = 0
             }
@@ -232,8 +247,8 @@ extension LyricTimelineView {
         let totalDuration = LyricTimelineAnimation.outgoingFadeDuration
             + (Double(max(snapshots.count - 1, 0)) * LyricTimelineAnimation.outgoingFadeStagger)
 
-        InterfaceAnimation.animate(
-            duration: totalDuration
+        InterfaceAnimate.animate(
+            duration: totalDuration,
         ) {} completion: { _ in
             guard transitionSequence == self.lineTransitionSequence else {
                 overlay.removeFromSuperview()
@@ -247,7 +262,7 @@ extension LyricTimelineView {
     func revealTransitionTargetMode(
         _ mode: Mode,
         currentTime: TimeInterval,
-        transitionSequence: Int
+        transitionSequence: Int,
     ) {
         guard transitionSequence == lineTransitionSequence else { return }
 
@@ -264,7 +279,7 @@ extension LyricTimelineView {
             performInitialSyncedReveal(
                 with: timeline,
                 currentTime: currentTime,
-                fadingOutMessage: false
+                fadingOutMessage: false,
             )
         }
     }
@@ -277,12 +292,12 @@ extension LyricTimelineView {
         NSObject.cancelPreviousPerformRequests(
             withTarget: self,
             selector: #selector(endBlurHideCooldown),
-            object: nil
+            object: nil,
         )
 
         if !isBlurHiddenByInteraction {
             isBlurHiddenByInteraction = true
-            InterfaceAnimation.smoothSpringAnimate {
+            InterfaceAnimate.smoothSpringAnimate {
                 self.topBlurView.alpha = 0
                 self.bottomBlurView.alpha = 0
             }
@@ -294,7 +309,7 @@ extension LyricTimelineView {
     @objc
     func endBlurHideCooldown() {
         isBlurHiddenByInteraction = false
-        InterfaceAnimation.smoothSpringAnimate {
+        InterfaceAnimate.smoothSpringAnimate {
             self.topBlurView.alpha = 1
             self.bottomBlurView.alpha = 1
         }
@@ -316,7 +331,7 @@ extension LyricTimelineView {
         NSObject.cancelPreviousPerformRequests(
             withTarget: self,
             selector: #selector(endAutoScrollCooldown),
-            object: nil
+            object: nil,
         )
         perform(#selector(endAutoScrollCooldown), with: nil, afterDelay: Layout.autoScrollCooldown)
     }
@@ -349,16 +364,16 @@ extension LyricTimelineView {
 
         let copyAll = UIAction(
             title: String(localized: "Copy"),
-            image: UIImage(systemName: "doc.on.doc")
+            image: UIImage(systemName: "doc.on.doc"),
         ) { [weak self] _ in
-            self?.onCopyAllLyrics?(lines)
+            self?.onCopyAllLyrics(lines)
         }
 
         let selectCopy = UIAction(
             title: String(localized: "Select & Copy"),
-            image: UIImage(systemName: "text.badge.checkmark")
+            image: UIImage(systemName: "text.badge.checkmark"),
         ) { [weak self] _ in
-            self?.onRequestManageLyrics?(lines, self?.activeIndex)
+            self?.onRequestManageLyrics(lines, self?.activeIndex)
         }
 
         return UIMenu(children: [copyAll, selectCopy])
@@ -393,7 +408,7 @@ extension LyricTimelineView {
         from previousActiveIndex: Int?,
         to nextActiveIndex: Int?,
         timeline: LRCLyricsTimeline,
-        currentTime: TimeInterval
+        currentTime: TimeInterval,
     ) {
         guard previousActiveIndex != nextActiveIndex else { return }
 
@@ -402,7 +417,7 @@ extension LyricTimelineView {
         else {
             AppLog.info(
                 self,
-                "Lyrics line cleared previousIndex=\(previousActiveIndex.map(String.init) ?? "nil") playbackTime=\(formattedTimestamp(currentTime))"
+                "Lyrics line cleared previousIndex=\(previousActiveIndex.map(String.init) ?? "nil") playbackTime=\(formattedTimestamp(currentTime))",
             )
             return
         }
@@ -410,7 +425,7 @@ extension LyricTimelineView {
         let line = timeline.lines[nextActiveIndex]
         AppLog.info(
             self,
-            "Lyrics line switched previousIndex=\(previousActiveIndex.map(String.init) ?? "nil") currentIndex=\(nextActiveIndex) lineTime=\(formattedTimestamp(line.time)) playbackTime=\(formattedTimestamp(currentTime)) text=\"\(sanitizedLogPreview(for: line.text))\""
+            "Lyrics line switched previousIndex=\(previousActiveIndex.map(String.init) ?? "nil") currentIndex=\(nextActiveIndex) lineTime=\(formattedTimestamp(line.time)) playbackTime=\(formattedTimestamp(currentTime)) text=\"\(sanitizedLogPreview(for: line.text))\"",
         )
     }
 
@@ -455,16 +470,17 @@ extension LyricTimelineView {
         NSObject.cancelPreviousPerformRequests(
             withTarget: self,
             selector: #selector(endAutoScrollCooldown),
-            object: nil
+            object: nil,
         )
         NSObject.cancelPreviousPerformRequests(
             withTarget: self,
             selector: #selector(endBlurHideCooldown),
-            object: nil
+            object: nil,
         )
         isAutoScrollInCooldown = false
         isBlurHiddenByInteraction = false
         pendingAutoScrollToActiveLine = false
+        tapScrollCooldownDeadline = .distantPast
         lineTransitionSequence += 1
         cleanupOutgoingTransitionOverlay()
         removeAnimationsRecursively()

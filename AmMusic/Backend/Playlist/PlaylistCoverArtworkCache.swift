@@ -1,3 +1,10 @@
+//
+//  PlaylistCoverArtworkCache.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import Kingfisher
 import UIKit
@@ -14,38 +21,55 @@ actor PlaylistCoverArtworkCache {
         memoryCache.countLimit = 512
     }
 
+    func invalidateCache(for playlist: Playlist) {
+        let prefix = "v3-\(playlist.id.uuidString)-"
+        memoryCache.removeAllObjects()
+        let fileManager = FileManager.default
+        if let files = try? fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) {
+            for file in files where file.deletingPathExtension().lastPathComponent.hasPrefix(prefix) {
+                try? fileManager.removeItem(at: file)
+            }
+        }
+        AppLog.info(self, "playlist cover cache invalidated playlistID=\(playlist.id)")
+    }
+
     func image(
         for playlist: Playlist,
         sideLength: CGFloat,
         scale: CGFloat,
-        urlResolver: @escaping (String?, Int, Int) -> URL?
+        shuffled: Bool = false,
+        urlResolver: @escaping (PlaylistEntry, Int, Int) -> URL?,
     ) async -> UIImage {
         let sidePixels = max(Int((sideLength * scale).rounded()), 1)
         let cacheKey = cacheKey(for: playlist, sidePixels: sidePixels)
-        if let image = memoryCache.object(forKey: cacheKey as NSString) {
-            AppLog.verbose(self, "playlist cover cache memory hit key=\(cacheKey)")
-            return image
-        }
-
         let fileURL = directory.appendingPathComponent(cacheKey).appendingPathExtension("png")
-        if let image = UIImage(contentsOfFile: fileURL.path) {
-            memoryCache.setObject(image, forKey: cacheKey as NSString)
-            AppLog.verbose(self, "playlist cover cache disk hit key=\(cacheKey)")
-            return image
+
+        if !shuffled {
+            if let image = memoryCache.object(forKey: cacheKey as NSString) {
+                AppLog.verbose(self, "playlist cover cache memory hit key=\(cacheKey)")
+                return image
+            }
+
+            if let image = UIImage(contentsOfFile: fileURL.path) {
+                memoryCache.setObject(image, forKey: cacheKey as NSString)
+                AppLog.verbose(self, "playlist cover cache disk hit key=\(cacheKey)")
+                return image
+            }
         }
 
-        let coverSongs = Self.uniqueCoverSongs(from: playlist.songs)
+        let songs = shuffled ? playlist.songs.shuffled() : playlist.songs
+        let coverSongs = Self.uniqueCoverSongs(from: songs)
         let gridDimension = Self.gridDimension(for: coverSongs.count)
         let tileCount = gridDimension * gridDimension
         AppLog.info(
             self,
-            "playlist cover cache render key=\(cacheKey) songs=\(playlist.songs.count) uniqueCovers=\(coverSongs.count) grid=\(gridDimension)x\(gridDimension)"
+            "playlist cover cache render key=\(cacheKey) songs=\(playlist.songs.count) uniqueCovers=\(coverSongs.count) grid=\(gridDimension)x\(gridDimension)",
         )
         let images = await loadImages(
             from: Array(coverSongs.prefix(tileCount)),
             width: sidePixels / gridDimension,
             height: sidePixels / gridDimension,
-            urlResolver: urlResolver
+            urlResolver: urlResolver,
         )
         let successCount = images.reduce(into: 0) { count, image in
             if image != nil {
@@ -55,7 +79,7 @@ actor PlaylistCoverArtworkCache {
         if successCount == 0 {
             AppLog.warning(
                 self,
-                "playlist cover cache render produced no source images key=\(cacheKey) requestedTiles=\(tileCount)"
+                "playlist cover cache render produced no source images key=\(cacheKey) requestedTiles=\(tileCount)",
             )
         } else {
             AppLog.verbose(self, "playlist cover cache render loaded images key=\(cacheKey) success=\(successCount)/\(images.count)")
@@ -137,7 +161,7 @@ private extension PlaylistCoverArtworkCache {
                     x: CGFloat(column) * cellLength,
                     y: CGFloat(row) * cellLength,
                     width: cellLength,
-                    height: cellLength
+                    height: cellLength,
                 )
 
                 guard images.indices.contains(index) else {
@@ -169,7 +193,7 @@ private extension PlaylistCoverArtworkCache {
             x: rect.midX - drawSize.width / 2,
             y: rect.midY - drawSize.height / 2,
             width: drawSize.width,
-            height: drawSize.height
+            height: drawSize.height,
         )
 
         guard let context = UIGraphicsGetCurrentContext() else {
@@ -187,11 +211,11 @@ private extension PlaylistCoverArtworkCache {
         from entries: [PlaylistEntry],
         width: Int,
         height: Int,
-        urlResolver: @escaping (String?, Int, Int) -> URL?
+        urlResolver: @escaping (PlaylistEntry, Int, Int) -> URL?,
     ) async -> [UIImage?] {
         var images: [UIImage?] = []
         for entry in entries {
-            guard let url = urlResolver(entry.artworkURL, width, height) else {
+            guard let url = urlResolver(entry, width, height) else {
                 AppLog.verbose(self, "loadImages missing url trackID=\(entry.trackID) rawArtworkURL=\(entry.artworkURL ?? "nil")")
                 images.append(nil)
                 continue

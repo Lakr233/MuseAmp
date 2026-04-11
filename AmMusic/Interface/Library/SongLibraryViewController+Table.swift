@@ -1,3 +1,10 @@
+//
+//  SongLibraryViewController+Table.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import UIKit
 
@@ -45,7 +52,7 @@ extension SongLibraryViewController: UITableViewDelegate {
 
     func tableView(
         _: UITableView,
-        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
+        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath,
     ) -> UISwipeActionsConfiguration? {
         guard !isEditing, !isSearchActive,
               let item = dataSource.itemIdentifier(for: indexPath),
@@ -63,7 +70,7 @@ extension SongLibraryViewController: UITableViewDelegate {
     func tableView(
         _: UITableView,
         contextMenuConfigurationForRowAt indexPath: IndexPath,
-        point _: CGPoint
+        point _: CGPoint,
     ) -> UIContextMenuConfiguration? {
         guard !isEditing,
               let item = dataSource.itemIdentifier(for: indexPath)
@@ -88,14 +95,14 @@ extension SongLibraryViewController: UITableViewDelegate {
 
     func tableView(
         _: UITableView,
-        previewForHighlightingContextMenuWithConfiguration configuration: UIContextMenuConfiguration
+        previewForHighlightingContextMenuWithConfiguration configuration: UIContextMenuConfiguration,
     ) -> UITargetedPreview? {
         CellContextMenuPreviewHelper.targetedPreview(for: configuration, in: tableView)
     }
 
     func tableView(
         _: UITableView,
-        previewForDismissingContextMenuWithConfiguration configuration: UIContextMenuConfiguration
+        previewForDismissingContextMenuWithConfiguration configuration: UIContextMenuConfiguration,
     ) -> UITargetedPreview? {
         CellContextMenuPreviewHelper.targetedPreview(for: configuration, in: tableView)
     }
@@ -107,14 +114,14 @@ extension SongLibraryViewController {
     func buildMenu(for album: AlbumGroup) -> UIMenu {
         let openAlbumAction = UIAction(
             title: String(localized: "Open Album"),
-            image: UIImage(systemName: "chevron.right")
+            image: UIImage(systemName: "chevron.right"),
         ) { [weak self] _ in
             self?.openAlbum(album)
         }
 
         let exportAction = UIAction(
             title: String(localized: "Export"),
-            image: UIImage(systemName: "square.and.arrow.up")
+            image: UIImage(systemName: "square.and.arrow.up"),
         ) { [weak self] _ in
             guard let self else { return }
             let items = exportItems(for: album)
@@ -132,13 +139,13 @@ extension SongLibraryViewController {
         let copyMenu = CopyMenuProvider.albumMenu(
             albumName: album.albumTitle,
             artistName: album.artistName,
-            songNames: songNames
+            songNames: songNames,
         )
 
         let deleteAction = UIAction(
             title: String(localized: "Delete Album"),
             image: UIImage(systemName: "trash"),
-            attributes: .destructive
+            attributes: .destructive,
         ) { [weak self] _ in
             guard let self, let album = albumsByID[album.id] else { return }
             deleteAlbum(album)
@@ -150,8 +157,8 @@ extension SongLibraryViewController {
                 tracksProvider: { [weak self] in
                     self?.playbackTracks(for: album) ?? []
                 },
-                sourceProvider: { .album(id: album.id) }
-            )
+                sourceProvider: { .album(id: album.id) },
+            ),
         ) {
             sections.append(playbackSection)
         }
@@ -164,7 +171,11 @@ extension SongLibraryViewController {
     }
 
     func openAlbum(_ album: AlbumGroup) {
-        albumNavigationHelper.pushAlbumDetail(album: localCatalogAlbum(from: album))
+        albumNavigationHelper.pushAlbumDetail(
+            albumID: album.albumID,
+            albumName: album.albumTitle,
+            artistName: album.artistName,
+        )
     }
 
     func openAlbumForTrack(_ track: AudioTrackRecord) {
@@ -173,8 +184,10 @@ extension SongLibraryViewController {
             return
         }
         albumNavigationHelper.pushAlbumDetail(
-            album: localCatalogAlbum(from: album),
-            highlightSongs: [track.trackID]
+            albumID: album.albumID,
+            albumName: album.albumTitle,
+            artistName: album.artistName,
+            highlightSongs: [track.trackID],
         )
     }
 
@@ -203,48 +216,5 @@ extension SongLibraryViewController {
             subtitleParts.append(String(localized: "\(durationMinutes) min"))
         }
         return subtitleParts.joined(separator: " · ")
-    }
-
-    func localCatalogAlbum(from album: AlbumGroup) -> CatalogAlbum {
-        let tracks: [AudioTrackRecord]
-        do {
-            tracks = try environment.databaseManager.tracks(inAlbumID: album.albumID)
-        } catch {
-            AppLog.error(self, "localCatalogAlbum tracks query failed albumID=\(album.albumID) error=\(error)")
-            tracks = []
-        }
-        let firstTrack = tracks.first
-        let artworkTrackID = album.artworkTrackID ?? firstTrack?.trackID
-        let artwork: Artwork? = artworkTrackID.flatMap { cachedArtwork(forTrackID: $0) }
-        let attributes = CatalogAlbumAttributes(
-            artistName: album.artistName,
-            name: album.albumTitle,
-            trackCount: album.trackCount,
-            releaseDate: firstTrack?.releaseDate,
-            genreNames: firstTrack?.genreName.map { [$0] },
-            artwork: artwork
-        )
-        let relationships = CatalogAlbumRelationships(
-            tracks: ResourceList(
-                href: nil,
-                next: nil,
-                data: tracks.map { $0.catalogSong(artwork: cachedArtwork(forTrackID: $0.trackID)) }
-            )
-        )
-        return CatalogAlbum(
-            id: album.id,
-            type: "albums",
-            href: nil,
-            attributes: attributes,
-            relationships: relationships
-        )
-    }
-
-    func cachedArtwork(forTrackID trackID: String) -> Artwork? {
-        let artworkURL = environment.paths.artworkCacheURL(for: trackID)
-        guard FileManager.default.fileExists(atPath: artworkURL.path) else {
-            return nil
-        }
-        return Artwork(width: nil, height: nil, url: artworkURL.absoluteString)
     }
 }

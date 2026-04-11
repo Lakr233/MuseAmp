@@ -1,3 +1,10 @@
+//
+//  EmbeddedMetadataReader.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import AVFoundation
 import Foundation
@@ -37,7 +44,7 @@ final nonisolated class EmbeddedMetadataReader: @unchecked Sendable {
         trackID: String,
         albumID: String?,
         fileSize: Int64,
-        modifiedAt: Date
+        modifiedAt: Date,
     ) async throws -> AudioTrackRecord {
         let asset = AVURLAsset(url: fileURL)
         let duration = try await asset.load(.duration)
@@ -78,7 +85,7 @@ final nonisolated class EmbeddedMetadataReader: @unchecked Sendable {
             hasEmbeddedArtwork: hasEmbeddedArtwork,
             sourceKind: .unknown,
             createdAt: .init(),
-            updatedAt: .init()
+            updatedAt: .init(),
         )
     }
 }

@@ -1,11 +1,18 @@
+//
+//  DatabaseIntegrityTests.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import Foundation
 import Testing
 
 @Suite(.serialized)
 struct DatabaseIntegrityTests {
-    @Test("Index reset preserves state database records")
-    func indexResetPreservesStateRecords() async throws {
+    @Test
+    func `Index reset preserves state database records`() async throws {
         let fixture = try DatabaseIntegrityFixture()
         defer { try? fixture.cleanup() }
 
@@ -19,7 +26,7 @@ struct DatabaseIntegrityTests {
                 title: "Snapshot Title",
                 artistName: "Snapshot Artist",
                 albumID: "state-album",
-                albumTitle: "Snapshot Album"
+                albumTitle: "Snapshot Album",
             )
             _ = try await manager.send(.addPlaylistEntry(entry, playlistID: playlist.id))
 
@@ -27,7 +34,7 @@ struct DatabaseIntegrityTests {
                 trackID: "queued-track",
                 albumID: "state-album",
                 title: "Queued Track",
-                artistName: "Queue Artist"
+                artistName: "Queue Artist",
             )
             _ = try await manager.send(.enqueueDownloads([request]))
 
@@ -38,7 +45,7 @@ struct DatabaseIntegrityTests {
                 title: "Library Title",
                 artistName: "Library Artist",
                 albumTitle: "Library Album",
-                sourceKind: .downloaded
+                sourceKind: .downloaded,
             )
             await fixture.setInspectionMetadata(metadata)
             _ = try await manager.send(.ingestAudioFile(url: sourceURL, metadata: metadata))
@@ -61,7 +68,7 @@ struct DatabaseIntegrityTests {
         #expect(queuedAfterReset.map(\.trackID) == ["queued-track"])
 
         let tracksBeforeRebuild = try reloadedManager.searchTracks(
-            query: "Library Title", limit: 10
+            query: "Library Title", limit: 10,
         )
         #expect(tracksBeforeRebuild.isEmpty)
 
@@ -78,8 +85,8 @@ struct DatabaseIntegrityTests {
         #expect(restoredTracks.count == 1)
     }
 
-    @Test("Rebuild prunes invalid files and reconciles stale rows")
-    func rebuildPrunesInvalidFilesAndDeletesStaleRows() async throws {
+    @Test
+    func `Rebuild prunes invalid files and reconciles stale rows`() async throws {
         let fixture = try DatabaseIntegrityFixture()
         defer { try? fixture.cleanup() }
 
@@ -126,8 +133,8 @@ struct DatabaseIntegrityTests {
         #expect(tracksAfterDeletion.isEmpty)
     }
 
-    @Test("Playlist entries keep snapshot metadata after track changes")
-    func playlistEntriesKeepSnapshotMetadata() async throws {
+    @Test
+    func `Playlist entries keep snapshot metadata after track changes`() async throws {
         let fixture = try DatabaseIntegrityFixture()
         defer { try? fixture.cleanup() }
 
@@ -142,7 +149,7 @@ struct DatabaseIntegrityTests {
             title: "First Library Title",
             artistName: "First Artist",
             albumTitle: "Snapshot Album",
-            sourceKind: .downloaded
+            sourceKind: .downloaded,
         )
         _ = try await manager.send(.ingestAudioFile(url: firstFile, metadata: firstMetadata))
 
@@ -151,7 +158,7 @@ struct DatabaseIntegrityTests {
             title: "First Library Title",
             artistName: "First Artist",
             albumID: "snapshot-album",
-            albumTitle: "Snapshot Album"
+            albumTitle: "Snapshot Album",
         )
         _ = try await manager.send(.addPlaylistEntry(snapshotEntry, playlistID: playlist.id))
 
@@ -162,7 +169,7 @@ struct DatabaseIntegrityTests {
             title: "Updated Library Title",
             artistName: "Updated Artist",
             albumTitle: "Snapshot Album",
-            sourceKind: .downloaded
+            sourceKind: .downloaded,
         )
         _ = try await manager.send(.ingestAudioFile(url: secondFile, metadata: secondMetadata))
 
@@ -177,8 +184,8 @@ struct DatabaseIntegrityTests {
         #expect(albumTracks.first?.artistName == "Updated Artist")
     }
 
-    @Test("Removing tracks or albums keeps playlist snapshot entries")
-    func removeOperationsPreservePlaylistEntries() async throws {
+    @Test
+    func `Removing tracks or albums keeps playlist snapshot entries`() async throws {
         let fixture = try DatabaseIntegrityFixture()
         defer { try? fixture.cleanup() }
 
@@ -194,7 +201,7 @@ struct DatabaseIntegrityTests {
             title: "Remove Track 1",
             artistName: "Remove Artist",
             albumTitle: "Remove Album",
-            sourceKind: .downloaded
+            sourceKind: .downloaded,
         )
         _ = try await manager.send(.ingestAudioFile(url: firstFile, metadata: firstMetadata))
 
@@ -205,7 +212,7 @@ struct DatabaseIntegrityTests {
             title: "Remove Track 2",
             artistName: "Remove Artist",
             albumTitle: "Remove Album",
-            sourceKind: .downloaded
+            sourceKind: .downloaded,
         )
         _ = try await manager.send(.ingestAudioFile(url: secondFile, metadata: secondMetadata))
 
@@ -214,14 +221,14 @@ struct DatabaseIntegrityTests {
             title: "Snapshot Remove 1",
             artistName: "Snapshot Artist",
             albumID: "remove-album",
-            albumTitle: "Remove Album"
+            albumTitle: "Remove Album",
         )
         let secondEntry = PlaylistEntry(
             trackID: "remove-track-2",
             title: "Snapshot Remove 2",
             artistName: "Snapshot Artist",
             albumID: "remove-album",
-            albumTitle: "Remove Album"
+            albumTitle: "Remove Album",
         )
         _ = try await manager.send(.addPlaylistEntry(firstEntry, playlistID: playlist.id))
         _ = try await manager.send(.addPlaylistEntry(secondEntry, playlistID: playlist.id))
@@ -232,7 +239,7 @@ struct DatabaseIntegrityTests {
 
         let playlistAfterTrackRemoval = try manager.fetchPlaylist(id: playlist.id)
         #expect(
-            playlistAfterTrackRemoval?.entries.map(\.trackID) == ["remove-track-1", "remove-track-2"]
+            playlistAfterTrackRemoval?.entries.map(\.trackID) == ["remove-track-1", "remove-track-2"],
         )
 
         _ = try await manager.send(.removeAlbum(albumID: "remove-album"))
@@ -240,16 +247,16 @@ struct DatabaseIntegrityTests {
         #expect(tracksAfterAlbumRemoval.isEmpty)
 
         let albumDirectory = fixture.paths.audioDirectory.appendingPathComponent(
-            "remove-album", isDirectory: true
+            "remove-album", isDirectory: true,
         )
         #expect(!FileManager.default.fileExists(atPath: albumDirectory.path))
 
         let playlistAfterAlbumRemoval = try manager.fetchPlaylist(id: playlist.id)
         #expect(
-            playlistAfterAlbumRemoval?.entries.map(\.trackID) == ["remove-track-1", "remove-track-2"]
+            playlistAfterAlbumRemoval?.entries.map(\.trackID) == ["remove-track-1", "remove-track-2"],
         )
         #expect(
-            playlistAfterAlbumRemoval?.entries.map(\.title) == ["Snapshot Remove 1", "Snapshot Remove 2"]
+            playlistAfterAlbumRemoval?.entries.map(\.title) == ["Snapshot Remove 1", "Snapshot Remove 2"],
         )
     }
 

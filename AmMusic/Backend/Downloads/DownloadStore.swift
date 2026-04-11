@@ -1,3 +1,10 @@
+//
+//  DownloadStore.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import Foundation
 
@@ -66,7 +73,7 @@ final nonisolated class DownloadStore {
         let exists = FileManager.default.fileExists(atPath: fileURL.path)
         AppLog.verbose(
             self,
-            "isDownloaded trackID=\(trackID) trackExists=true fileExists=\(exists) relativePath='\(track.relativePath)'"
+            "isDownloaded trackID=\(trackID) trackExists=true fileExists=\(exists) relativePath='\(track.relativePath)'",
         )
         return exists
     }

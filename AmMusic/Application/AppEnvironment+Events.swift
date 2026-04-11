@@ -1,14 +1,22 @@
+//
+//  AppEnvironment+Events.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import Combine
 import Foundation
 
 extension AppEnvironment {
     func observeDatabaseEvents() {
-        databaseEventCancellable = databaseManager.events
+        databaseManager.events
             .receive(on: DispatchQueue.main)
             .sink { event in
                 self.handleDatabaseEvent(event)
             }
+            .store(in: &cancellables)
     }
 
     func handleDatabaseEvent(_ event: LibraryEvent) {
@@ -19,7 +27,7 @@ extension AppEnvironment {
             NotificationCenter.default.post(
                 name: .artworkDidUpdate,
                 object: nil,
-                userInfo: [AppNotificationUserInfoKey.trackIDs: Array(trackIDs)]
+                userInfo: [AppNotificationUserInfoKey.trackIDs: Array(trackIDs)],
             )
         default:
             break

@@ -1,3 +1,10 @@
+//
+//  AmSongCell.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import SnapKit
 import Then
@@ -14,7 +21,7 @@ final class AmSongCell: TableBaseCell {
     private enum Layout {
         static let defaultRowInsets = InterfaceStyle.Insets.symmetric(
             vertical: 6,
-            horizontal: InterfaceStyle.Spacing.small
+            horizontal: InterfaceStyle.Spacing.small,
         )
     }
 
@@ -74,7 +81,7 @@ final class AmSongCell: TableBaseCell {
         row.snp.makeConstraints { make in
             rowTopConstraint = make.top.equalToSuperview().inset(rowInsets.top).constraint
             rowLeftConstraint = make.left.equalToSuperview().inset(rowInsets.left).constraint
-            rowBottomConstraint = make.bottom.equalToSuperview().inset(rowInsets.bottom).constraint
+            rowBottomConstraint = make.bottom.equalToSuperview().inset(rowInsets.bottom).priority(.high).constraint
             rowRightConstraint = make.right.equalToSuperview().inset(rowInsets.right).constraint
         }
     }
@@ -94,24 +101,24 @@ final class AmSongCell: TableBaseCell {
     // MARK: - Configuration
 
     func configure(with song: CatalogSong, artworkURL: URL? = nil) {
-        titleLabel.text = song.attributes.name
+        titleLabel.text = song.attributes.name.sanitizedTrackTitle
         subtitleLabel.text = song.attributes.artistName
         trailingLabel.text = song.attributes.durationInMillis.map { formattedDuration(millis: $0) }
         artworkView.loadImage(
             url: artworkURL
-                ?? APIClient.resolveMediaURL(song.attributes.artwork?.url, width: 88, height: 88)
+                ?? APIClient.resolveMediaURL(song.attributes.artwork?.url, width: 88, height: 88),
         )
     }
 
     func configure(with track: AudioTrackRecord) {
-        titleLabel.text = track.title
+        titleLabel.text = track.title.sanitizedTrackTitle
         subtitleLabel.text = [track.artistName, track.albumTitle].filter { !$0.isEmpty }.joined(separator: " · ")
         let seconds = Int(track.durationSeconds)
         trailingLabel.text = seconds > 0 ? formattedDuration(seconds: seconds) : nil
     }
 
     func configure(with track: PlaybackTrack, showsAlbumName: Bool = false, trailingText: String? = nil) {
-        titleLabel.text = track.title
+        titleLabel.text = track.title.sanitizedTrackTitle
         if showsAlbumName,
            let albumName = track.albumName,
            !albumName.isEmpty
@@ -125,7 +132,7 @@ final class AmSongCell: TableBaseCell {
     }
 
     func configure(with entry: PlaylistEntry, artworkURL: URL? = nil) {
-        titleLabel.text = entry.title
+        titleLabel.text = entry.title.sanitizedTrackTitle
         subtitleLabel.text = [entry.artistName, entry.albumTitle].compactMap { value in
             guard let value, !value.isEmpty else { return nil }
             return value
@@ -133,7 +140,7 @@ final class AmSongCell: TableBaseCell {
         trailingLabel.text = entry.durationMillis.map { formattedDuration(millis: $0) }
         artworkView.loadImage(
             url: artworkURL
-                ?? APIClient.resolveMediaURL(entry.artworkURL, width: 88, height: 88)
+                ?? APIClient.resolveMediaURL(entry.artworkURL, width: 88, height: 88),
         )
     }
 

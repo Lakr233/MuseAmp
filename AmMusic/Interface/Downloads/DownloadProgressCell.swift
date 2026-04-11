@@ -1,3 +1,10 @@
+//
+//  DownloadProgressCell.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import GlyphixTextFx
 import SnapKit
 import Then
@@ -47,7 +54,7 @@ final class DownloadProgressCell: TableBaseCell {
     }
 
     func update(with task: ActiveDownloadTask, animated: Bool = false) {
-        titleLabel.text = task.title
+        titleLabel.text = task.title.sanitizedTrackTitle
 
         var subtitle = task.artistName
         switch task.state {
@@ -66,13 +73,12 @@ final class DownloadProgressCell: TableBaseCell {
         subtitleLabel.textColor = task.state == .failed ? .systemRed : .secondaryLabel
 
         switch task.state {
-        case .waiting: progressLabel.text = "—"
-        case .waitingForNetwork: progressLabel.text = "—"
+        case .waiting, .waitingForNetwork: progressLabel.text = ""
         case .resolving: progressLabel.text = "…"
         case .finalizing: progressLabel.text = "…"
         case .failed: progressLabel.text = "!"
         case .downloading, .paused:
-            progressLabel.text = task.progress >= 0 ? "\(Int(task.progress * 100))%" : "—"
+            progressLabel.text = task.progress >= 0 ? "\(Int(task.progress * 100))%" : ""
         }
         progressLabel.textColor = task.state == .failed ? .systemRed : .tintColor
 
@@ -81,7 +87,7 @@ final class DownloadProgressCell: TableBaseCell {
         currentProgress = task.progress
         setNeedsLayout()
         if animated {
-            InterfaceAnimation.smoothSpringAnimate { self.layoutIfNeeded() }
+            InterfaceAnimate.smoothSpringAnimate { self.layoutIfNeeded() }
         }
     }
 
@@ -117,8 +123,8 @@ private extension DownloadProgressCell {
             $0.edges.equalToSuperview().inset(
                 InterfaceStyle.Insets.symmetric(
                     vertical: InterfaceStyle.Spacing.xSmall,
-                    horizontal: InterfaceStyle.Spacing.small
-                )
+                    horizontal: InterfaceStyle.Spacing.small,
+                ),
             )
         }
     }

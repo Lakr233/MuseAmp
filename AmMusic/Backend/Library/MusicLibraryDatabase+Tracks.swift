@@ -1,3 +1,10 @@
+//
+//  MusicLibraryDatabase+Tracks.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import Foundation
 
@@ -21,7 +28,7 @@ nonisolated extension MusicLibraryDatabase {
     func storedLibrarySummary() throws -> MusicLibrarySummary {
         let summary = try databaseManager.librarySummary()
         return MusicLibrarySummary(
-            trackCount: summary.trackCount, totalBytes: summary.totalSizeBytes
+            trackCount: summary.trackCount, totalBytes: summary.totalSizeBytes,
         )
     }
 

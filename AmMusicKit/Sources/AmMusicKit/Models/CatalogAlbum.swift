@@ -1,3 +1,10 @@
+//
+//  CatalogAlbum.swift
+//  AmMusicKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public struct CatalogAlbum: Decodable, Hashable, Sendable, Identifiable {
@@ -12,7 +19,7 @@ public struct CatalogAlbum: Decodable, Hashable, Sendable, Identifiable {
         type: String,
         href: String?,
         attributes: CatalogAlbumAttributes,
-        relationships: CatalogAlbumRelationships?
+        relationships: CatalogAlbumRelationships?,
     ) {
         self.id = id
         self.type = type

@@ -1,3 +1,10 @@
+//
+//  PlaylistEntryRow.swift
+//  AmMusicDatabaseKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 @preconcurrency import WCDBSwift
 
@@ -22,7 +29,7 @@ struct PlaylistEntryRow: Codable, TableCodable {
         entry: PlaylistEntry,
         playlistID: UUID,
         position: Int,
-        createdAt: Date = .init()
+        createdAt: Date = .init(),
     ) {
         entryID = entry.entryID
         self.playlistID = playlistID.uuidString
@@ -50,7 +57,7 @@ struct PlaylistEntryRow: Codable, TableCodable {
             artworkURL: artworkURL,
             durationMillis: durationMillis,
             trackNumber: trackNumber,
-            lyrics: lyrics
+            lyrics: lyrics,
         )
     }
 

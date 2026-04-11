@@ -1,3 +1,10 @@
+//
+//  SearchState.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicKit
 import Foundation
 
@@ -45,7 +52,7 @@ struct SearchHistoryStore {
     init(
         defaults: UserDefaults = .standard,
         key: String = "SearchHistory",
-        limit: Int = 20
+        limit: Int = 20,
     ) {
         self.defaults = defaults
         self.key = key

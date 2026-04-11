@@ -1,3 +1,10 @@
+//
+//  Extension+UITableView.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import UIKit
 
 extension UITableView {
@@ -28,7 +35,7 @@ extension UITableView {
     private func sizeAuxiliaryView(
         _ view: UIView,
         to width: CGFloat,
-        widthConstraint: inout NSLayoutConstraint?
+        widthConstraint: inout NSLayoutConstraint?,
     ) {
         view.translatesAutoresizingMaskIntoConstraints = false
         widthConstraint?.isActive = false
@@ -39,7 +46,7 @@ extension UITableView {
         let height = view.systemLayoutSizeFitting(
             CGSize(width: width, height: UIView.layoutFittingCompressedSize.height),
             withHorizontalFittingPriority: .required,
-            verticalFittingPriority: .fittingSizeLevel
+            verticalFittingPriority: .fittingSizeLevel,
         ).height
         view.translatesAutoresizingMaskIntoConstraints = true
         view.frame = CGRect(x: 0, y: 0, width: width, height: height)

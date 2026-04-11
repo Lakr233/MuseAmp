@@ -1,3 +1,10 @@
+//
+//  DownloadManager+Queue.swift
+//  AmMusic
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import AmMusicDatabaseKit
 import Digger
 import Foundation
@@ -83,7 +90,7 @@ extension DownloadManager {
                 }
             } catch {
                 AppLog.error(
-                    self, "API playback failed for trackID=\(trackID): \(error.localizedDescription)"
+                    self, "API playback failed for trackID=\(trackID): \(error.localizedDescription)",
                 )
                 await apiClient.invalidatePlaybackCache(id: trackID)
                 failTask(trackID: trackID, error: error.localizedDescription)
@@ -125,7 +132,7 @@ extension DownloadManager {
                 retryCount: record.retryCount,
                 errorMessage: record.errorMessage,
                 createdAt: record.createdAt,
-                updatedAt: Date()
+                updatedAt: Date(),
             )
             downloadStore.upsert(updated)
         }
@@ -143,7 +150,7 @@ extension DownloadManager {
             speed: 0,
             retryCount: record.retryCount,
             state: record.status == .waitingForNetwork ? .waitingForNetwork : .waiting,
-            queueOrder: allocateQueueOrder()
+            queueOrder: allocateQueueOrder(),
         )
         tasks[trackID] = task
     }
@@ -167,7 +174,7 @@ extension DownloadManager {
             speed: 0,
             retryCount: record.retryCount,
             state: .failed,
-            queueOrder: allocateQueueOrder()
+            queueOrder: allocateQueueOrder(),
         )
         tasks[trackID] = task
     }
@@ -183,7 +190,7 @@ extension DownloadManager {
         let fileURL = FileManager.default.fileExists(atPath: tmpURL.path) ? tmpURL : finalURL
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
             AppLog.warning(
-                self, "rehydrateFinalizingRecord missing file for trackID=\(trackID), requeuing"
+                self, "rehydrateFinalizingRecord missing file for trackID=\(trackID), requeuing",
             )
             let queuedRecord = DownloadJob(
                 jobID: record.jobID,
@@ -199,7 +206,7 @@ extension DownloadManager {
                 retryCount: record.retryCount,
                 errorMessage: record.errorMessage,
                 createdAt: record.createdAt,
-                updatedAt: Date()
+                updatedAt: Date(),
             )
             downloadStore.upsert(queuedRecord)
             rehydrateQueuedRecord(queuedRecord)
@@ -220,7 +227,7 @@ extension DownloadManager {
             speed: 0,
             retryCount: record.retryCount,
             state: .finalizing,
-            queueOrder: allocateQueueOrder()
+            queueOrder: allocateQueueOrder(),
         )
         tasks[trackID] = task
         startFinalizing(trackID: trackID, fileURL: fileURL)

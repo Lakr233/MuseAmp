@@ -1,3 +1,10 @@
+//
+//  PlayerItem.swift
+//  AmMusicPlayerKit
+//
+//  Created by @Lakr233 on 2026/04/11.
+//
+
 import Foundation
 
 public struct PlayerItem: Sendable, Hashable, Identifiable {
@@ -16,7 +23,7 @@ public struct PlayerItem: Sendable, Hashable, Identifiable {
         artist: String,
         album: String,
         artworkURL: URL? = nil,
-        durationInSeconds: TimeInterval? = nil
+        durationInSeconds: TimeInterval? = nil,
     ) {
         self.id = id
         self.url = url
