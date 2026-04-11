@@ -74,13 +74,11 @@ extension NowPlayingListSectionView {
     }
 
     func applyQueueSnapshot(
-        animatingDifferences: Bool,
-        interfaceAnimated: Bool = false,
         reconfiguredItems: [String],
     ) {
         AppLog.info(
             self,
-            "queue snapshot start history=\(historyTracks.count) upcoming=\(queueTracks.count) reconfigured=\(reconfiguredItems.count) animating=\(animatingDifferences) interfaceAnimated=\(interfaceAnimated)",
+            "queue snapshot start history=\(historyTracks.count) upcoming=\(queueTracks.count) reconfigured=\(reconfiguredItems.count)",
         )
         var snapshot = NSDiffableDataSourceSnapshot<NowPlayingQueueSection, String>()
         snapshot.appendSections(NowPlayingQueueSection.all)
@@ -101,13 +99,6 @@ extension NowPlayingListSectionView {
             snapshot.reconfigureItems(reconfiguredItems)
         }
 
-        let shouldAnimateDifferences = hasAppliedInitialSnapshot
-            && animatingDifferences
-            && window != nil
-        let shouldInterfaceAnimate = hasAppliedInitialSnapshot
-            && interfaceAnimated
-            && window != nil
-
         let finishApply: () -> Void = { [weak self] in
             guard let self else {
                 return
@@ -119,20 +110,11 @@ extension NowPlayingListSectionView {
             performPendingAutoScrollIfNeeded(animated: true)
             AppLog.info(
                 self,
-                "queue snapshot finished visibleRows=\(queueTableView.indexPathsForVisibleRows?.count ?? 0) animating=\(shouldAnimateDifferences) interfaceAnimated=\(shouldInterfaceAnimate)",
+                "queue snapshot finished visibleRows=\(queueTableView.indexPathsForVisibleRows?.count ?? 0)",
             )
         }
 
-        if shouldInterfaceAnimate {
-            InterfaceAnimate.smoothSpringAnimate {
-                self.dataSource.apply(snapshot, animatingDifferences: true)
-                self.queueTableView.layoutIfNeeded()
-            } completion: { _ in
-                finishApply()
-            }
-        } else {
-            dataSource.apply(snapshot, animatingDifferences: shouldAnimateDifferences, completion: finishApply)
-        }
+        dataSource.apply(snapshot, animatingDifferences: false, completion: finishApply)
     }
 
     func makeDisplayTracks(

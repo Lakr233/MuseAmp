@@ -188,7 +188,6 @@ final class NowPlayingListSectionView: UIView {
         queue: [PlaybackTrack],
         playerIndex: Int?,
         repeatMode: RepeatMode,
-        animatingDifferences: Bool = false,
     ) {
         let previousHistoryTracks = historyTracks
         let previousQueueTracks = queueTracks
@@ -211,7 +210,7 @@ final class NowPlayingListSectionView: UIView {
 
         AppLog.info(
             self,
-            "queue refresh apply total=\(queue.count) history=\(historyTracks.count) upcoming=\(queueTracks.count) playerIndex=\(nowPlayingLogIndex(playerIndex)) repeatMode=\(String(describing: repeatMode)) identityChanged=\(didHistoryIdentityChange || didQueueIdentityChange) contentChanged=\(didTrackContentChange) playerChanged=\(didPlayerIndexChange) repeatChanged=\(didRepeatModeChange) animate=\(animatingDifferences)",
+            "queue refresh apply total=\(queue.count) history=\(historyTracks.count) upcoming=\(queueTracks.count) playerIndex=\(nowPlayingLogIndex(playerIndex)) repeatMode=\(String(describing: repeatMode)) identityChanged=\(didHistoryIdentityChange || didQueueIdentityChange) contentChanged=\(didTrackContentChange) playerChanged=\(didPlayerIndexChange) repeatChanged=\(didRepeatModeChange)",
         )
 
         if didPlayerIndexChange {
@@ -230,8 +229,6 @@ final class NowPlayingListSectionView: UIView {
         }
 
         applyQueueSnapshot(
-            animatingDifferences: animatingDifferences && !didPlayerIndexChange && (didHistoryIdentityChange || didQueueIdentityChange),
-            interfaceAnimated: animatingDifferences && didPlayerIndexChange && (didHistoryIdentityChange || didQueueIdentityChange),
             reconfiguredItems: reconfiguredItemIdentifiers(
                 didTrackContentChange: didTrackContentChange,
                 previousPlayerIndex: previousPlayerIndex,

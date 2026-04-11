@@ -46,6 +46,22 @@ extension SettingsViewController {
         navigationController?.pushViewController(controller, animated: true)
     }
 
+    func makeTransferObject() -> ConfigurableObject {
+        ConfigurableObject(
+            icon: "arrow.triangle.2.circlepath.circle",
+            title: "Transfer Songs",
+            explain: "Send or receive songs with another device on the same network.",
+            ephemeralAnnotation: .action { [weak self] _ in
+                self?.openTransfer()
+            },
+        )
+    }
+
+    func openTransfer() {
+        let controller = SyncRoleSelectionViewController(environment: environment)
+        navigationController?.pushViewController(controller, animated: true)
+    }
+
     func confirmClearAPICache() {
         ConfirmationAlertPresenter.present(
             on: self,

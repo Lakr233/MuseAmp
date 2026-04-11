@@ -46,6 +46,10 @@ final class APIClient: @unchecked Sendable {
         )
     }
 
+    nonisolated func performRequest(for request: URLRequest) async throws -> (Data, URLResponse) {
+        try await session.data(for: request)
+    }
+
     nonisolated func searchSongs(query: String, limit: Int, offset: Int) async throws -> [CatalogSong] {
         AppLog.verbose(self, "searchSongs query=\(query) limit=\(limit) offset=\(offset)")
         let service = synchronizedState().service

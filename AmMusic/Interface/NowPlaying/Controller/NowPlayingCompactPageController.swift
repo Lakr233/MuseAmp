@@ -172,13 +172,11 @@ final class NowPlayingCompactPageController: UIViewController {
         queue: [PlaybackTrack],
         playerIndex: Int?,
         repeatMode: RepeatMode,
-        animatingDifferences: Bool = false,
     ) {
         listSectionView.updateQueue(
             queue: queue,
             playerIndex: playerIndex,
             repeatMode: repeatMode,
-            animatingDifferences: animatingDifferences,
         )
     }
 

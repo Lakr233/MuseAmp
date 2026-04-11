@@ -132,7 +132,6 @@ extension NowPlayingRelaxedController {
                     queue: snapshot.queue,
                     playerIndex: snapshot.playerIndex,
                     repeatMode: snapshot.repeatMode,
-                    animatingDifferences: true,
                 )
             }
             .store(in: &cancellables)

@@ -51,6 +51,13 @@ final class SettingsViewController: StackScrollController {
         stackView.addArrangedSubview(SeparatorView())
 
         stackView.addArrangedSubviewWithMargin(
+            ConfigurableSectionHeaderView().with(header: String(localized: "Transfer")),
+        ) { $0.bottom /= 2 }
+        stackView.addArrangedSubview(SeparatorView())
+        stackView.addArrangedSubviewWithMargin(makeTransferObject().createView())
+        stackView.addArrangedSubview(SeparatorView())
+
+        stackView.addArrangedSubviewWithMargin(
             ConfigurableSectionHeaderView().with(header: String(localized: "Tweaks")),
         ) { $0.bottom /= 2 }
         stackView.addArrangedSubview(SeparatorView())

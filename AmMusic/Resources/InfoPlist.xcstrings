@@ -36,6 +36,42 @@
           }
         }
       }
+    },
+    "NSCameraUsageDescription": {
+      "comment": "Privacy - Camera Usage Description",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your camera is used to scan a QR code displayed on another device during local-network song transfers. The camera feed is processed on-device in real time and is never recorded, stored, or shared."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在本地网络传输歌曲时使用相机扫描另一台设备上显示的二维码。相机画面仅在设备上实时处理，不会被录制、存储或分享。"
+          }
+        }
+      }
+    },
+    "NSLocalNetworkUsageDescription": {
+      "comment": "Privacy - Local Network Usage Description",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your local network is used to discover nearby devices and transfer songs between them. All data stays on your local network and is never sent to external servers."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用本地网络来发现附近设备并在设备间传输歌曲。所有数据仅在本地网络传输，不会发送至外部服务器。"
+          }
+        }
+      }
     }
   },
   "version": "1.2"

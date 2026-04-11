@@ -45,7 +45,7 @@ enum ExportMetadataProcessor {
         }
     }
 
-    private static let logger = "ExportMetadataProcessor"
+    private nonisolated static let logger = "ExportMetadataProcessor"
 
     static func embedExportMetadata(
         _ info: ExportInfo,
@@ -63,7 +63,7 @@ enum ExportMetadataProcessor {
 
     /// Validates that the ExportInfo has all required fields for a complete
     /// metadata embed (trackID, albumID, title, artistName must be present).
-    static func validateExportInfo(_ info: ExportInfo) throws {
+    nonisolated static func validateExportInfo(_ info: ExportInfo) throws {
         guard info.trackID.isCatalogID else {
             AppLog.error(logger, "validateExportInfo invalid trackID='\(info.trackID)'")
             throw ExportError.invalidTrackID(info.trackID)

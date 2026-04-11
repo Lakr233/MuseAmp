@@ -241,6 +241,22 @@
         }
       }
     },
+    "6-digit password" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6-digit password"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6 位密码"
+          }
+        }
+      }
+    },
     "About" : {
       "localizations" : {
         "en" : {
@@ -253,6 +269,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "关于"
+          }
+        }
+      }
+    },
+    "Actions" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actions"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "操作"
           }
         }
       }
@@ -433,6 +465,38 @@
         }
       }
     },
+    "All songs are already in your library." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All songs are already in your library."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有歌曲都已在你的资料库中。"
+          }
+        }
+      }
+    },
+    "Allow camera access in Settings or use manual address entry instead." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow camera access in Settings or use manual address entry instead."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请在设置中允许相机访问，或改用手动输入地址。"
+          }
+        }
+      }
+    },
     "Allow Cellular Download" : {
       "localizations" : {
         "en" : {
@@ -445,6 +509,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "允许使用蜂窝网络下载"
+          }
+        }
+      }
+    },
+    "already existed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "already existed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已存在"
           }
         }
       }
@@ -657,6 +737,22 @@
         }
       }
     },
+    "Camera Access Needed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera Access Needed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要相机权限"
+          }
+        }
+      }
+    },
     "Cancel" : {
       "localizations" : {
         "en" : {
@@ -685,6 +781,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "更改封面"
+          }
+        }
+      }
+    },
+    "Choose Mode" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Mode"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择模式"
           }
         }
       }
@@ -785,6 +897,38 @@
         }
       }
     },
+    "Comparing library..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comparing library..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在比对资料库..."
+          }
+        }
+      }
+    },
+    "Complete" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Complete"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成"
+          }
+        }
+      }
+    },
     "Concurrent Downloads" : {
       "localizations" : {
         "en" : {
@@ -813,6 +957,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已配置"
+          }
+        }
+      }
+    },
+    "Connecting" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecting"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在连接"
+          }
+        }
+      }
+    },
+    "Connection Failed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connection Failed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接失败"
           }
         }
       }
@@ -909,6 +1085,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "严重"
+          }
+        }
+      }
+    },
+    "Current" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前"
           }
         }
       }
@@ -1073,6 +1265,38 @@
         }
       }
     },
+    "Deselect All" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deselect All"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消全选"
+          }
+        }
+      }
+    },
+    "Devices" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Devices"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设备"
+          }
+        }
+      }
+    },
     "Diagnostics" : {
       "localizations" : {
         "en" : {
@@ -1233,6 +1457,22 @@
         }
       }
     },
+    "Downloading..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloading..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在下载..."
+          }
+        }
+      }
+    },
     "Downloads" : {
       "localizations" : {
         "en" : {
@@ -1330,6 +1570,7 @@
       }
     },
     "Embedding metadata…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1389,6 +1630,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "输入新的歌单名称。"
+          }
+        }
+      }
+    },
+    "Enter Address" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter Address"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入地址"
+          }
+        }
+      }
+    },
+    "Enter an address in the form host:port." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter an address in the form host:port."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请输入 host:port 格式的地址。"
+          }
+        }
+      }
+    },
+    "Enter Password" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter Password"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入密码"
           }
         }
       }
@@ -1489,6 +1778,9 @@
         }
       }
     },
+    "Export is not available because the local library services are not ready." : {
+
+    },
     "Export Selected" : {
       "localizations" : {
         "en" : {
@@ -1553,6 +1845,22 @@
         }
       }
     },
+    "Fetching song list..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fetching song list..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在获取歌曲列表..."
+          }
+        }
+      }
+    },
     "Filter by Category" : {
       "localizations" : {
         "en" : {
@@ -1597,6 +1905,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "收尾中…"
+          }
+        }
+      }
+    },
+    "Find another device on your network and import songs you don't have yet." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find another device on your network and import songs you don't have yet."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在网络中查找另一台设备，并导入你还没有的歌曲。"
           }
         }
       }
@@ -1649,6 +1973,22 @@
         }
       }
     },
+    "Imported" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imported"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已导入"
+          }
+        }
+      }
+    },
     "Importing" : {
       "localizations" : {
         "en" : {
@@ -1677,6 +2017,25 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在导入 %1$lld / %2$lld..."
+          }
+        }
+      }
+    },
+    "Importing..." : {
+
+    },
+    "Incorrect password" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Incorrect password"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "密码错误"
           }
         }
       }
@@ -1713,6 +2072,118 @@
         }
       }
     },
+    "Interrupted" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Interrupted"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已中断"
+          }
+        }
+      }
+    },
+    "Invalid Address" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid Address"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地址无效"
+          }
+        }
+      }
+    },
+    "Invalid address format \"%@\". Use hostname:port, IPv4:port, or [IPv6]:port." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid address format \"%@\". Use hostname:port, IPv4:port, or [IPv6]:port."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地址格式“%@”无效。请使用 hostname:port、IPv4:port 或 [IPv6]:port。"
+          }
+        }
+      }
+    },
+    "Invalid auth payload." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid auth payload."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无效的认证请求内容。"
+          }
+        }
+      }
+    },
+    "Invalid port in \"%@\"." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid port in \"%@\"."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” 的端口无效。"
+          }
+        }
+      }
+    },
+    "Invalid QR Code" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid QR Code"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无效的二维码"
+          }
+        }
+      }
+    },
+    "Invalid request." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid request."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无效请求。"
+          }
+        }
+      }
+    },
     "iPhone" : {
       "localizations" : {
         "en" : {
@@ -1725,6 +2196,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "iPhone"
+          }
+        }
+      }
+    },
+    "Keep the app active on both devices. Transfers stop if either app moves to the background." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep the app active on both devices. Transfers stop if either app moves to the background."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请在两台设备上都保持应用位于前台，任一应用进入后台都会中断传输。"
           }
         }
       }
@@ -1873,6 +2360,38 @@
         }
       }
     },
+    "Make sure both devices are on the same local network." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Make sure both devices are on the same local network."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确保两台设备位于同一本地网络中。"
+          }
+        }
+      }
+    },
+    "Manual Connection" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manual Connection"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "手动连接"
+          }
+        }
+      }
+    },
     "Maximum number of simultaneous downloads." : {
       "localizations" : {
         "en" : {
@@ -1905,7 +2424,24 @@
         }
       }
     },
+    "Message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Message"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "信息"
+          }
+        }
+      }
+    },
     "Metadata embedding failed for \"%@\": %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1922,6 +2458,7 @@
       }
     },
     "Metadata validation failed for \"%@\": %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1933,6 +2470,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "“%1$@”的元数据验证失败：%2$@"
+          }
+        }
+      }
+    },
+    "Missing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Missing"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缺失"
+          }
+        }
+      }
+    },
+    "Missing host name in \"%@\"." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Missing host name in \"%@\"."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” 缺少主机名。"
+          }
+        }
+      }
+    },
+    "Missing port in \"%@\"." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Missing port in \"%@\"."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” 缺少端口。"
           }
         }
       }
@@ -2033,6 +2618,22 @@
         }
       }
     },
+    "No Endpoint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Endpoint"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无地址"
+          }
+        }
+      }
+    },
     "No logs yet." : {
       "localizations" : {
         "en" : {
@@ -2113,6 +2714,22 @@
         }
       }
     },
+    "No reachable address was available for the selected device." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No reachable address was available for the selected device."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所选设备没有可用的可达地址。"
+          }
+        }
+      }
+    },
     "No Results" : {
       "localizations" : {
         "en" : {
@@ -2128,6 +2745,9 @@
           }
         }
       }
+    },
+    "No Songs Available" : {
+
     },
     "No Songs Yet" : {
       "localizations" : {
@@ -2161,6 +2781,22 @@
         }
       }
     },
+    "None of the selected songs could be prepared for transfer." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None of the selected songs could be prepared for transfer."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所选歌曲都无法为传输做好准备。"
+          }
+        }
+      }
+    },
     "Not Configured" : {
       "localizations" : {
         "en" : {
@@ -2177,6 +2813,22 @@
         }
       }
     },
+    "Not Found." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not Found."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未找到。"
+          }
+        }
+      }
+    },
     "Nothing Playing" : {
       "localizations" : {
         "en" : {
@@ -2189,6 +2841,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "无播放内容"
+          }
+        }
+      }
+    },
+    "Nothing to Import" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing to Import"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无需导入"
           }
         }
       }
@@ -2285,6 +2953,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "打开当前歌曲所在的专辑页面"
+          }
+        }
+      }
+    },
+    "Password" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "密码"
           }
         }
       }
@@ -2545,6 +3229,22 @@
         }
       }
     },
+    "Preparing files..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparing files..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在准备文件..."
+          }
+        }
+      }
+    },
     "Preparing…" : {
       "localizations" : {
         "en" : {
@@ -2577,6 +3277,22 @@
         }
       }
     },
+    "Primary Endpoint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Primary Endpoint"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主地址"
+          }
+        }
+      }
+    },
     "Processing %d/%d..." : {
       "localizations" : {
         "en" : {
@@ -2589,6 +3305,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在处理 %1$d/%2$d..."
+          }
+        }
+      }
+    },
+    "Progress" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Progress"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "进度"
+          }
+        }
+      }
+    },
+    "QR Code" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "QR Code"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "二维码"
           }
         }
       }
@@ -2689,6 +3437,22 @@
         }
       }
     },
+    "Ready" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ready"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已就绪"
+          }
+        }
+      }
+    },
     "Rebuild" : {
       "localizations" : {
         "en" : {
@@ -2765,6 +3529,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在重建数据库"
+          }
+        }
+      }
+    },
+    "Receive Songs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receive Songs"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接收歌曲"
+          }
+        }
+      }
+    },
+    "Receiving" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receiving"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接收中"
+          }
+        }
+      }
+    },
+    "Receiving was interrupted because the app left the foreground." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receiving was interrupted because the app left the foreground."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用离开前台，接收已中断。"
+          }
+        }
+      }
+    },
+    "Receiving was interrupted because the app moved to the background." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receiving was interrupted because the app moved to the background."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用进入后台，接收已中断。"
           }
         }
       }
@@ -3041,6 +3869,9 @@
         }
       }
     },
+    "Request too large." : {
+
+    },
     "Resource not found, please check your installation." : {
       "localizations" : {
         "en" : {
@@ -3073,6 +3904,22 @@
         }
       }
     },
+    "Return to transfer options." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Return to transfer options."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返回传输选项。"
+          }
+        }
+      }
+    },
     "Save as Playlist" : {
       "localizations" : {
         "en" : {
@@ -3101,6 +3948,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "添加到歌单"
+          }
+        }
+      }
+    },
+    "Scan QR Code" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan QR Code"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "扫描二维码"
+          }
+        }
+      }
+    },
+    "Scan the sender's temporary transfer QR code." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan the sender's temporary transfer QR code."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "扫描发送方的临时传输二维码。"
           }
         }
       }
@@ -3149,6 +4028,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在扫描已保存的歌曲…"
+          }
+        }
+      }
+    },
+    "Scanning your local network" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scanning your local network"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在扫描本地网络"
           }
         }
       }
@@ -3233,6 +4128,22 @@
         }
       }
     },
+    "Searching..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Searching..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索中..."
+          }
+        }
+      }
+    },
     "Select" : {
       "localizations" : {
         "en" : {
@@ -3261,6 +4172,166 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "选择并拷贝"
+          }
+        }
+      }
+    },
+    "Select All" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select All"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全选"
+          }
+        }
+      }
+    },
+    "Select Songs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select Songs"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择歌曲"
+          }
+        }
+      }
+    },
+    "Select songs and let another device download them." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select songs and let another device download them."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择歌曲并让另一台设备下载。"
+          }
+        }
+      }
+    },
+    "Send or receive songs with another device on the same network." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send or receive songs with another device on the same network."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在同一本地网络上与另一台设备互传歌曲。"
+          }
+        }
+      }
+    },
+    "Send Songs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send Songs"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发送歌曲"
+          }
+        }
+      }
+    },
+    "Sending" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sending"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发送中"
+          }
+        }
+      }
+    },
+    "Sending was interrupted because the app left the foreground." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sending was interrupted because the app left the foreground."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用离开前台，发送已中断。"
+          }
+        }
+      }
+    },
+    "Sending was interrupted because the app moved to the background." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sending was interrupted because the app moved to the background."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用进入后台，发送已中断。"
+          }
+        }
+      }
+    },
+    "Server" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器"
+          }
+        }
+      }
+    },
+    "Service Name" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Service Name"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务名称"
           }
         }
       }
@@ -3377,6 +4448,22 @@
         }
       }
     },
+    "Skipped" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skipped"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已跳过"
+          }
+        }
+      }
+    },
     "Song Name" : {
       "localizations" : {
         "en" : {
@@ -3405,6 +4492,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "歌曲"
+          }
+        }
+      }
+    },
+    "Songs Ready" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Songs Ready"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已准备歌曲"
           }
         }
       }
@@ -3617,6 +4720,102 @@
         }
       }
     },
+    "Start (%lld selected)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start (%lld selected)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始（已选 %lld 首）"
+          }
+        }
+      }
+    },
+    "Start (0 selected)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start (0 selected)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始（已选 0 首）"
+          }
+        }
+      }
+    },
+    "Statistics" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Statistics"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "统计"
+          }
+        }
+      }
+    },
+    "Status" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Status"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "状态"
+          }
+        }
+      }
+    },
+    "Stop Server" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop Server"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停止服务器"
+          }
+        }
+      }
+    },
+    "Stop sharing songs with other devices." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop sharing songs with other devices."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停止与其他设备共享歌曲。"
+          }
+        }
+      }
+    },
     "Tap + to create your first playlist" : {
       "localizations" : {
         "en" : {
@@ -3629,6 +4828,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "轻点“+”创建你的首个歌单"
+          }
+        }
+      }
+    },
+    "The other device did not return a transfer token." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The other device did not return a transfer token."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对方设备没有返回传输令牌。"
+          }
+        }
+      }
+    },
+    "The other device returned an invalid response." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The other device returned an invalid response."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对方设备返回了无效响应。"
+          }
+        }
+      }
+    },
+    "The scanned QR code could not be read." : {
+
+    },
+    "The transfer request failed with status code %lld." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The transfer request failed with status code %lld."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "传输请求失败，状态码为 %lld。"
           }
         }
       }
@@ -3729,6 +4979,102 @@
         }
       }
     },
+    "Total Songs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total Songs"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歌曲总数"
+          }
+        }
+      }
+    },
+    "Track not found." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Track not found."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未找到歌曲。"
+          }
+        }
+      }
+    },
+    "Transfer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transfer"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "传输"
+          }
+        }
+      }
+    },
+    "Transfer Failed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transfer Failed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "传输失败"
+          }
+        }
+      }
+    },
+    "Transfer Songs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transfer Songs"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "传输歌曲"
+          }
+        }
+      }
+    },
+    "Transferring" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transferring"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "传输中"
+          }
+        }
+      }
+    },
     "Try a different search term" : {
       "localizations" : {
         "en" : {
@@ -3757,6 +5103,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "调整"
+          }
+        }
+      }
+    },
+    "Type a host name or IP address and port." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type a host name or IP address and port."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入主机名或 IP 地址和端口。"
+          }
+        }
+      }
+    },
+    "Unauthorized." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unauthorized."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未授权。"
           }
         }
       }
@@ -3837,6 +5215,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用默认值 (%@)"
+          }
+        }
+      }
+    },
+    "Use hostname:port, IPv4:port, or [IPv6]:port." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use hostname:port, IPv4:port, or [IPv6]:port."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 hostname:port、IPv4:port 或 [IPv6]:port。"
           }
         }
       }
@@ -3936,6 +5330,9 @@
           }
         }
       }
+    },
+    "Your local library is empty. Import songs first before sending." : {
+
     }
   },
   "version" : "1.2"

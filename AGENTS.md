@@ -21,7 +21,7 @@
 
 ### Application Layer
 
-- `Application/` contains only app lifecycle and configuration: `AppDelegate.swift`, `SceneDelegate.swift`, `AppEnvironment.swift`, `AppEnvironment+Bootstrap.swift`, `AppEnvironment+Events.swift`, `AppPreferences.swift`.
+- `Application/` contains only app lifecycle and configuration: `AppDelegate.swift`, `SceneDelegate.swift`, `AppEnvironment.swift`, `AppEnvironment+Bootstrap.swift`, `AppEnvironment+Events.swift`, `AppEnvironment+Transfer.swift`, `AppPreferences.swift`.
 - `Configuration/` contains Xcode build configuration files (`Base.xcconfig`, `Development.xcconfig`, `Release.xcconfig`, `Version.xcconfig`).
 - All domain logic lives under `Backend/`, not `Application/`.
 
@@ -36,6 +36,7 @@
 - `Backend/Models/`: app-facing media models and adapter types used by the interface layer.
 - `Backend/Playback/`: playback state ownership, playback domain models, and the shared `PlaybackController` bridge to `AmMusicPlayerKit`.
 - `Backend/Playlist/`: playlist CRUD, persistence, artwork generation, and `PlaylistCoverArtworkCache`.
+- `Backend/Sync/`: local-network song transfer protocol models, sender/receiver session orchestration, Bonjour discovery/advertising, and transfer file preparation.
 - `Backend/Supplement/`: cross-cutting utilities (metadata helpers, string sanitization, file name formatting).
 
 ### Interface Layer
@@ -46,6 +47,7 @@
 - `Interface/Collections/`: reusable album and track presentation components.
 - `Interface/Common/SongExportPresenter.swift`: UI presenter for sharing/exporting songs (split from `Backend/MenuProviders/`).
 - `Interface/Library/`, `Search/`, `AlbumDetail/`, `NowPlaying/`, `Downloads/`, `Playlist/`, `Settings/`: feature-owned UI.
+- `Interface/Sync/`: LAN transfer UIKit flows for sender setup, receiver discovery/manual connect, QR handoff, and transfer progress.
 - `Interface/NowPlaying/Controller/`: main view controller and its responsibility-based extensions.
 - `Interface/NowPlaying/ViewModel/`: view models for now playing state presentation.
 - `Interface/NowPlaying/Sections/`: section views composing the now playing pages (avatar, center, list, lyric, transport).
@@ -83,6 +85,7 @@
 - New playback state and queue mutations must continue to flow through `PlaybackController`; mini player and now playing screens observe it.
 - `PlaybackController` is responsible for local-vs-remote playback URL resolution, `MusicPlayerDelegate` bridging, and app-facing playback snapshots.
 - New tab-level or browse-level features should usually get a new folder under `AmMusic/Interface/`.
+- Local-network transfer services and transport helpers belong under `Backend/Sync/`; transfer view controllers and QR/manual-connect flows belong under `Interface/Sync/`.
 - Shared UI goes into `Interface/Common/` or `Interface/Collections/` only when it is used by more than one feature or is clearly cross-feature infrastructure.
 - Shared UIKit menu and action providers belong under `Backend/MenuProviders/`.
 - If a UI type is only used by one feature, keep it inside that feature folder even if it looks reusable.

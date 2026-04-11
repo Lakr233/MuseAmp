@@ -9,6 +9,14 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_ammusic-sync._tcp</string>
+	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Your camera is used to scan a QR code displayed on another device during local-network song transfers. The camera feed is processed on-device in real time and is never recorded, stored, or shared.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Your local network is used to discover nearby devices and transfer songs between them. All data stays on your local network and is never sent to external servers.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
