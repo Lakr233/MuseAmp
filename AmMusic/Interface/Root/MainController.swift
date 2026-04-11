@@ -79,8 +79,6 @@ class MainController: UIViewController {
     private(set) lazy var sidebarViewController = SidebarViewController(environment: environment)
     private(set) lazy var contentContainerController = UIViewController()
     private(set) lazy var rootSplitViewController = UISplitViewController(style: .doubleColumn)
-    private(set) lazy var navigationCoordinator = AppNavigationCoordinator(environment: environment)
-
     private var contentNavigationControllers: [RootDestination: UINavigationController] = [:]
     private var playlistNavigationControllers: [UUID: UINavigationController] = [:]
 
@@ -237,7 +235,6 @@ class MainController: UIViewController {
         selectedPlaylistID = nil
         let nav = contentNavigationController(for: destination)
         installContentNavigationController(nav)
-        navigationCoordinator.rootViewController = nav
 
         if rootSplitViewController.displayMode == .oneOverSecondary {
             InterfaceAnimate.quickAnimate(duration: 0.25) {
@@ -258,7 +255,6 @@ class MainController: UIViewController {
         selectedPlaylistID = playlistID
         let nav = playlistNavigationController(for: playlistID)
         installContentNavigationController(nav)
-        navigationCoordinator.rootViewController = nav
 
         if rootSplitViewController.displayMode == .oneOverSecondary {
             InterfaceAnimate.quickAnimate(duration: 0.25) {

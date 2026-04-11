@@ -53,7 +53,6 @@ extension MainController {
             contentNavigationController(for: selectedDestination)
         }
         installContentNavigationController(nav)
-        navigationCoordinator.rootViewController = nav
         contentContainerController.view.tintColor = .accent
         rootSplitViewController.setViewController(contentContainerController, for: .secondary)
 
