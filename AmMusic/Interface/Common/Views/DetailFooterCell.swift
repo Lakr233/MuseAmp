@@ -12,8 +12,6 @@ import UIKit
 final class DetailFooterCell: TableBaseCell {
     static let reuseID = "DetailFooterCell"
 
-    private let listEndDecorationView = ListEndDecorationView()
-
     private let infoLabel = UILabel().then {
         $0.font = .preferredFont(forTextStyle: .footnote)
         $0.textColor = .secondaryLabel
@@ -41,20 +39,11 @@ final class DetailFooterCell: TableBaseCell {
         atmosBadge.isHidden = true
         spatialBadge.isHidden = true
 
-        contentView.addSubview(listEndDecorationView)
         contentView.addSubview(infoLabel)
         contentView.addSubview(badgeStack)
 
-        listEndDecorationView.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(InterfaceStyle.Spacing.small).priority(.high)
-            make.centerX.equalToSuperview().priority(.high)
-            make.leading.greaterThanOrEqualToSuperview().offset(56).priority(.high)
-            make.trailing.lessThanOrEqualToSuperview().inset(56).priority(.high)
-            make.width.lessThanOrEqualTo(256).priority(.high)
-        }
-
         infoLabel.snp.makeConstraints { make in
-            make.top.equalTo(listEndDecorationView.snp.bottom).offset(InterfaceStyle.Spacing.medium).priority(.high)
+            make.top.equalToSuperview().offset(InterfaceStyle.Spacing.medium).priority(.high)
             make.leading.trailing.equalToSuperview().inset(20).priority(.high)
         }
 

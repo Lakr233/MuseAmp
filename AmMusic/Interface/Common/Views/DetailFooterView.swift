@@ -15,8 +15,6 @@ final class DetailFooterView: UIView {
         set { infoLabel.text = newValue }
     }
 
-    private let listEndDecorationView = ListEndDecorationView()
-
     private let infoLabel = UILabel().then {
         $0.font = .preferredFont(forTextStyle: .footnote)
         $0.textColor = .secondaryLabel
@@ -27,16 +25,10 @@ final class DetailFooterView: UIView {
         super.init(frame: frame)
         backgroundColor = .clear
 
-        addSubview(listEndDecorationView)
         addSubview(infoLabel)
 
-        listEndDecorationView.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(InterfaceStyle.Spacing.small).priority(.high)
-            make.leading.trailing.equalToSuperview().inset(56).priority(.high)
-        }
-
         infoLabel.snp.makeConstraints { make in
-            make.top.equalTo(listEndDecorationView.snp.bottom).offset(InterfaceStyle.Spacing.medium).priority(.high)
+            make.top.equalToSuperview().offset(InterfaceStyle.Spacing.medium).priority(.high)
             make.leading.trailing.equalToSuperview().inset(20).priority(.high)
             make.bottom.equalToSuperview().inset(InterfaceStyle.Spacing.large).priority(.high)
         }
