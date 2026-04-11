@@ -32,7 +32,7 @@ extension SearchViewController {
             searchTask?.cancel()
             let hadResults = resetSearchState()
             if hadResults {
-                InterfaceAnimate.transition(with: tableView, duration: 0.2) {
+                Interface.transition(with: tableView, duration: 0.2) {
                     self.applySnapshot(animating: false)
                 }
             } else {
@@ -73,7 +73,7 @@ extension SearchViewController {
                     self.updateInitialResults(query: trimmed, songs: newSongs, albums: newAlbums)
 
                     if hadPreviousResults {
-                        InterfaceAnimate.transition(with: self.tableView, duration: 0.2) {
+                        Interface.transition(with: self.tableView, duration: 0.2) {
                             self.applySnapshot(animating: false)
                         }
                     } else {

@@ -84,7 +84,7 @@ private final class NowPlayingArtworkImageView: AmImageView {
             reset()
         }
 
-        InterfaceAnimate.animate(
+        Interface.animate(
             duration: Self.crossfadeDuration,
             options: .curveEaseInOut,
         ) {

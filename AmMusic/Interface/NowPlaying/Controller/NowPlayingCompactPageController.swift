@@ -279,7 +279,7 @@ final class NowPlayingCompactPageController: UIViewController {
         }
 
         isProgrammaticScrollInFlight = true
-        InterfaceAnimate.springAnimate(
+        Interface.springAnimate(
             duration: NowPlayingPageAnimation.duration,
             dampingRatio: NowPlayingPageAnimation.damping,
             initialVelocity: NowPlayingPageAnimation.initialVelocity,

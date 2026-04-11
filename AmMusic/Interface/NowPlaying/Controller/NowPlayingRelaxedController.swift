@@ -278,7 +278,8 @@ class NowPlayingRelaxedController: UIViewController {
         }
 
         listSectionView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
+            make.top.bottom.equalToSuperview()
+            make.leading.trailing.equalToSuperview().inset(16)
         }
 
         listSectionView.alpha = 0
@@ -324,7 +325,7 @@ class NowPlayingRelaxedController: UIViewController {
         incomingView.alpha = 0
         incomingView.transform = CGAffineTransform(scaleX: 1.04, y: 1.04)
 
-        InterfaceAnimate.springAnimate(
+        Interface.springAnimate(
             duration: 0.35,
             dampingRatio: 0.92,
             initialVelocity: 0.8,

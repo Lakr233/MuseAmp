@@ -165,11 +165,15 @@ final class AlbumTrackCell: TableBaseCell {
         return UIImage(systemName: "\(number).circle", withConfiguration: configuration)
     }
 
-    func animateTapHighlight() {
+    override func setHighlighted(_ highlighted: Bool, animated: Bool) {
+        super.setHighlighted(highlighted, animated: animated)
         highlightView.layer.removeAllAnimations()
-        highlightView.alpha = 1
-        InterfaceAnimate.animate(duration: 0.25, options: .curveEaseOut) {
-            self.highlightView.alpha = 0
+        if highlighted {
+            highlightView.alpha = 1
+        } else {
+            Interface.animate(duration: 0.25) {
+                self.highlightView.alpha = 0
+            }
         }
     }
 }

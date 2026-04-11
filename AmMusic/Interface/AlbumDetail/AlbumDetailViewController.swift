@@ -160,10 +160,12 @@ class AlbumDetailViewController: MediaDetailViewController {
             image: UIImage(systemName: "ellipsis.circle"),
             menu: buildAddMenu(),
         )
+        navigationItem.rightBarButtonItem?.isEnabled = !isLoadingTracks
     }
 
     func refreshNavBarMenu() {
         navigationItem.rightBarButtonItem?.menu = buildAddMenu()
+        navigationItem.rightBarButtonItem?.isEnabled = !isLoadingTracks
     }
 
     var areAllTracksDownloaded: Bool {
@@ -342,6 +344,7 @@ class AlbumDetailViewController: MediaDetailViewController {
                 }
                 let artworkURL = environment.apiClient.mediaURL(from: album.attributes.artwork?.url, width: 600, height: 600)
                 cell.configure(album: album, artworkURL: artworkURL)
+                cell.setButtonsEnabled(!isLoadingTracks)
                 cell.onPlayTapped = { [weak self] in self?.playAlbum() }
                 cell.onShuffleTapped = { [weak self] in self?.playAlbum(shuffle: true) }
                 cell.selectionStyle = .none
@@ -413,7 +416,10 @@ class AlbumDetailViewController: MediaDetailViewController {
 
         let animate = hasAppliedInitialData && !isLoadingTracks
         dataSource.apply(snapshot, animatingDifferences: animate)
-        if !isLoadingTracks { hasAppliedInitialData = true }
+        if !isLoadingTracks {
+            hasAppliedInitialData = true
+            navigationItem.rightBarButtonItem?.isEnabled = true
+        }
     }
 
     func reloadHeader() {
@@ -437,6 +443,7 @@ class AlbumDetailViewController: MediaDetailViewController {
         }
         fillAlbumArtworkFromTracksIfNeeded()
         refreshNavBarMenu()
+        reloadHeader()
     }
 
     private func fillAlbumArtworkFromTracksIfNeeded() {
@@ -476,8 +483,8 @@ class AlbumDetailViewController: MediaDetailViewController {
         let needsEnrichment = album.attributes.artwork == nil && !album.id.isEmpty
 
         if hasExistingTracks {
-            setTracks(album.relationships!.tracks!.data)
             isLoadingTracks = false
+            setTracks(album.relationships!.tracks!.data)
             applySnapshot()
             scrollToHighlightedSongIfNeeded()
             if !needsEnrichment { return }
@@ -547,7 +554,7 @@ class AlbumDetailViewController: MediaDetailViewController {
             guard case let .track(_, id, _) = item, highlightSongIDs.contains(id),
                   let indexPath = dataSource.indexPath(for: item)
             else { continue }
-            InterfaceAnimate.springAnimate {
+            Interface.springAnimate {
                 self.tableView.scrollToRow(at: indexPath, at: .middle, animated: false)
             }
             return

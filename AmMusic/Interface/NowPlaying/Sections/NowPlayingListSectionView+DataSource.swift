@@ -228,6 +228,7 @@ extension NowPlayingListSectionView {
         cell.contentView.backgroundColor = isCurrentTrack
             ? UIColor.white.withAlphaComponent(0.08)
             : .clear
+        cell.contentView.layer.cornerRadius = traitCollection.horizontalSizeClass == .regular ? 8 : 0
         cell.contentView.alpha = isPlayedTrack ? 0.58 : 1
         cell.selectionStyle = .none
         cell.separatorInset = .zero

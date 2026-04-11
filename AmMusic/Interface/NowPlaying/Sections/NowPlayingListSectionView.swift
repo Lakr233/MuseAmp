@@ -154,8 +154,7 @@ final class NowPlayingListSectionView: UIView {
         addSubview(queueTableView)
 
         queueTableView.snp.makeConstraints { make in
-            make.top.bottom.equalToSuperview()
-            make.leading.trailing.equalToSuperview().inset(16)
+            make.edges.equalToSuperview()
         }
 
         updateQueue(queue: [], playerIndex: nil, repeatMode: .off)
@@ -424,7 +423,7 @@ final class NowPlayingQueueHeaderCell: TableBaseCell {
         shuffleButton.layer.removeAnimation(forKey: "queueShuffleFade")
         shuffleButton.alpha = 1
 
-        InterfaceAnimate.keyframeAnimate(duration: 0.26) {
+        Interface.keyframeAnimate(duration: 0.26) {
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.5) {
                 self.shuffleButton.alpha = 0.35
             }

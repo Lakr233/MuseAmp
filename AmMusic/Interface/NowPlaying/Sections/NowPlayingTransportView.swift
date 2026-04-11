@@ -273,7 +273,7 @@ class NowPlayingTransportView: UIView {
             return
         }
 
-        InterfaceAnimate.springAnimate(
+        Interface.springAnimate(
             duration: 0.42,
             dampingRatio: 0.9,
             initialVelocity: 1,
@@ -419,7 +419,7 @@ class NowPlayingTransportView: UIView {
             return
         }
 
-        InterfaceAnimate.springAnimate(
+        Interface.springAnimate(
             duration: 0.32,
             dampingRatio: 0.92,
             initialVelocity: 0.9,
@@ -480,7 +480,7 @@ class NowPlayingTransportView: UIView {
         scrubbingFeedbackGenerator.prepare()
         scrubbingFeedbackGenerator.impactOccurred(intensity: 0.8)
 
-        InterfaceAnimate.quickAnimate(duration: 0.18) {
+        Interface.quickAnimate(duration: 0.18) {
             self.progressTrackView.transform = CGAffineTransform(scaleX: 1, y: Layout.scrubbingTrackScaleY)
             self.progressFillView.transform = CGAffineTransform(scaleX: 1, y: Layout.scrubbingTrackScaleY)
             self.elapsedLabel.transform = CGAffineTransform(scaleX: Layout.scrubbingLabelScale, y: Layout.scrubbingLabelScale)
@@ -501,7 +501,7 @@ class NowPlayingTransportView: UIView {
         isScrubbing = false
         currentProgress = scrubbingProgress
 
-        InterfaceAnimate.quickAnimate {
+        Interface.quickAnimate {
             self.progressTrackView.transform = .identity
             self.progressFillView.transform = .identity
             self.elapsedLabel.transform = .identity

@@ -16,9 +16,6 @@ extension AlbumDetailViewController: UITableViewDelegate {
         guard let item = dataSource.itemIdentifier(for: indexPath),
               case let .track(position, _, _) = item
         else { return }
-        if let cell = tableView.cellForRow(at: indexPath) as? AlbumTrackCell {
-            cell.animateTapHighlight()
-        }
         playTrack(at: position)
     }
 

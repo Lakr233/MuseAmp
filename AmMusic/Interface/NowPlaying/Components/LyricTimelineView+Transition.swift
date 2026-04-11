@@ -173,7 +173,7 @@ extension LyricTimelineView {
             return
         }
 
-        InterfaceAnimate.animate(
+        Interface.animate(
             duration: LyricTimelineAnimation.plainRevealDuration,
             options: LyricTimelineAnimation.easeOutOptions,
         ) {
@@ -235,7 +235,7 @@ extension LyricTimelineView {
         }
 
         for (index, snapshot) in snapshots.enumerated() {
-            InterfaceAnimate.animate(
+            Interface.animate(
                 duration: LyricTimelineAnimation.outgoingFadeDuration,
                 delay: Double(index) * LyricTimelineAnimation.outgoingFadeStagger,
                 options: LyricTimelineAnimation.easeOutOptions,
@@ -247,7 +247,7 @@ extension LyricTimelineView {
         let totalDuration = LyricTimelineAnimation.outgoingFadeDuration
             + (Double(max(snapshots.count - 1, 0)) * LyricTimelineAnimation.outgoingFadeStagger)
 
-        InterfaceAnimate.animate(
+        Interface.animate(
             duration: totalDuration,
         ) {} completion: { _ in
             guard transitionSequence == self.lineTransitionSequence else {
@@ -297,7 +297,7 @@ extension LyricTimelineView {
 
         if !isBlurHiddenByInteraction {
             isBlurHiddenByInteraction = true
-            InterfaceAnimate.smoothSpringAnimate {
+            Interface.smoothSpringAnimate {
                 self.topBlurView.alpha = 0
                 self.bottomBlurView.alpha = 0
             }
@@ -309,7 +309,7 @@ extension LyricTimelineView {
     @objc
     func endBlurHideCooldown() {
         isBlurHiddenByInteraction = false
-        InterfaceAnimate.smoothSpringAnimate {
+        Interface.smoothSpringAnimate {
             self.topBlurView.alpha = 1
             self.bottomBlurView.alpha = 1
         }

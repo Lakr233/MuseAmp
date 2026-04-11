@@ -214,7 +214,7 @@ extension NowPlayingListSectionView {
     func animateScroll(to targetOffsetY: CGFloat) {
         let clampedOffsetY = clampedOffsetY(targetOffsetY)
 
-        InterfaceAnimate.smoothSpringAnimate {
+        Interface.smoothSpringAnimate {
             self.queueTableView.setContentOffset(CGPoint(x: 0, y: clampedOffsetY), animated: false)
             self.layoutIfNeeded()
         }

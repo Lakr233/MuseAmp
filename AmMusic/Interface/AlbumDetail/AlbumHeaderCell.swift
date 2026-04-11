@@ -123,6 +123,11 @@ final class AlbumHeaderCell: TableBaseCell {
         updateLayoutForSizeClass()
     }
 
+    func setButtonsEnabled(_ enabled: Bool) {
+        playButton.isEnabled = enabled
+        shuffleButton.isEnabled = enabled
+    }
+
     // MARK: - Adaptive Layout
 
     private func updateLayoutForSizeClass() {

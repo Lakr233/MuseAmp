@@ -39,7 +39,7 @@ final class NowPlayingCompactTransportView: NowPlayingTransportView {
         let hasLine = line != nil && !line!.isEmpty
         currentLyricLabel.text = line
         currentLyricLabel.isHidden = !hasLine
-        InterfaceAnimate.smoothSpringAnimate {
+        Interface.smoothSpringAnimate {
             self.layoutAnimationContainerView().layoutIfNeeded()
         }
     }

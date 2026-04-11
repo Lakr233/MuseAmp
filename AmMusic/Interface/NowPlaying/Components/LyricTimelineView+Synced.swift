@@ -141,7 +141,7 @@ extension LyricTimelineView {
             return
         }
 
-        InterfaceAnimate.smoothSpringAnimate(animations: updates)
+        Interface.smoothSpringAnimate(animations: updates)
     }
 
     func changedLineRange(from previousActiveIndex: Int?, to nextActiveIndex: Int?) -> ClosedRange<Int>? {
@@ -182,7 +182,7 @@ extension LyricTimelineView {
         }
 
         if fadingOutMessage {
-            InterfaceAnimate.animate(
+            Interface.animate(
                 duration: LyricTimelineAnimation.initialRevealDuration,
                 options: LyricTimelineAnimation.easeOutOptions,
             ) {
@@ -204,7 +204,7 @@ extension LyricTimelineView {
                 continue
             }
             cell.alpha = 0
-            InterfaceAnimate.animate(
+            Interface.animate(
                 duration: LyricTimelineAnimation.initialRevealDuration,
                 delay: Double(index) * LyricTimelineAnimation.initialRevealStagger,
                 options: LyricTimelineAnimation.easeOutOptions,
@@ -224,7 +224,7 @@ extension LyricTimelineView {
 
         let clampedOffsetY = clampedOffsetY(targetOffsetY)
 
-        InterfaceAnimate.smoothSpringAnimate {
+        Interface.smoothSpringAnimate {
             self.tableView.setContentOffset(CGPoint(x: 0, y: clampedOffsetY), animated: false)
             self.layoutIfNeeded()
         }

@@ -237,7 +237,7 @@ class MainController: UIViewController {
         installContentNavigationController(nav)
 
         if rootSplitViewController.displayMode == .oneOverSecondary {
-            InterfaceAnimate.quickAnimate(duration: 0.25) {
+            Interface.quickAnimate(duration: 0.25) {
                 self.rootSplitViewController.preferredDisplayMode = .secondaryOnly
             } completion: { _ in
                 self.rootSplitViewController.preferredDisplayMode = .automatic
@@ -257,7 +257,7 @@ class MainController: UIViewController {
         installContentNavigationController(nav)
 
         if rootSplitViewController.displayMode == .oneOverSecondary {
-            InterfaceAnimate.quickAnimate(duration: 0.25) {
+            Interface.quickAnimate(duration: 0.25) {
                 self.rootSplitViewController.preferredDisplayMode = .secondaryOnly
             } completion: { _ in
                 self.rootSplitViewController.preferredDisplayMode = .automatic

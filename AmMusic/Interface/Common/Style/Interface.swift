@@ -1,5 +1,5 @@
 //
-//  InterfaceAnimate.swift
+//  Interface.swift
 //  AmMusic
 //
 //  Created by @Lakr233 on 2026/04/11.
@@ -7,7 +7,7 @@
 
 import UIKit
 
-enum InterfaceAnimate {
+enum Interface {
     static let interruptibleOptions: UIView.AnimationOptions = [
         .beginFromCurrentState, .allowUserInteraction,
     ]

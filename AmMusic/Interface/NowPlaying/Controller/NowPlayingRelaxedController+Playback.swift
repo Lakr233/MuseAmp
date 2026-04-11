@@ -240,7 +240,7 @@ extension NowPlayingRelaxedController {
 
         if presentation.shouldAnimateTransition {
             view.setNeedsLayout()
-            InterfaceAnimate.springAnimate(
+            Interface.springAnimate(
                 duration: 0.42,
                 dampingRatio: 0.9,
                 initialVelocity: 0.8,

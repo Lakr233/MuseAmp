@@ -87,7 +87,7 @@ final class DownloadProgressCell: TableBaseCell {
         currentProgress = task.progress
         setNeedsLayout()
         if animated {
-            InterfaceAnimate.smoothSpringAnimate { self.layoutIfNeeded() }
+            Interface.smoothSpringAnimate { self.layoutIfNeeded() }
         }
     }
 

@@ -82,7 +82,7 @@ class NowPlayingCompactController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         updatePopupCloseButtonAppearance(for: controlIslandViewModel.selectedContentSelector)
-        InterfaceAnimate.smoothSpringAnimate {
+        Interface.smoothSpringAnimate {
             self.pageViewController.view.transform = .identity
             var candidates: [UIView] = [self.view]
             while let first = candidates.first {
