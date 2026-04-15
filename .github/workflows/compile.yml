@@ -5,6 +5,8 @@ on:
     branches:
       - main
   pull_request:
+    branches:
+      - main
 
 jobs:
   build:
@@ -14,10 +16,26 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
+    - name: Set up Xcode
+      run: sudo xcode-select -s /Applications/Xcode.app
+
     - name: Install dependencies
       run: |
         brew install make
 
-    - name: Build project
+    - name: Build for all platforms
       run: |
-        make
+        make build
+        make build-ios
+        make build-catalyst
+        make build-tvos
+
+    - name: Run Tests
+      run: |
+        make test
+        make test-unit
+
+    - name: Format and Lint Check
+      run: |
+        make format
+        make format-lint
