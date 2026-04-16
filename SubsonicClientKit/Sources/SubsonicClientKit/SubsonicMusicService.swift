@@ -22,6 +22,7 @@ public final class SubsonicMusicService: Sendable {
     private nonisolated(unsafe) var authMode: SubsonicAuthenticationMode = .token
 
     private let searchCache = ResponseCache<SearchResponse>()
+    private let artistCache = ResponseCache<ArtistResponse?>()
     private let songCache = ResponseCache<SongResponse>()
     private let albumCache = ResponseCache<AlbumResponse>()
     private let playbackCache = ResponseCache<PlaybackInfo>()
@@ -97,6 +98,26 @@ public final class SubsonicMusicService: Sendable {
                 artworkURL: self.artworkTemplateURL(coverArtID: album.coverArt),
             )
             return AlbumResponse(href: nil, next: nil, data: [mapped])
+        }
+    }
+
+    public func artist(id: String) async throws -> ArtistResponse? {
+        try await perform(.artist(id: id), cache: artistCache) { (payload: SubsonicArtistPayload) in
+            guard let artist = payload.artist else {
+                return nil
+            }
+
+            let artistArtworkURL = artist.artistImageUrl ?? self.artworkTemplateURL(coverArtID: artist.coverArt)
+            let mappedArtist = Self.mapArtist(artist, artworkURL: artistArtworkURL)
+            let mappedAlbums = artist.albums.map { album in
+                Self.mapAlbum(album, artworkURL: self.artworkTemplateURL(coverArtID: album.coverArt))
+            }
+
+            return ArtistResponse(
+                artist: mappedArtist,
+                albums: mappedAlbums,
+                albumCount: artist.albumCount ?? (mappedAlbums.isEmpty ? nil : mappedAlbums.count),
+            )
         }
     }
 
@@ -569,7 +590,12 @@ private extension SubsonicMusicService {
                 ResourceList(
                     href: nil,
                     next: result.artists.count >= limit ? "offset:\(nextOffset)" : nil,
-                    data: result.artists.map { mapArtist($0, artworkURL: artworkBuilder($0.coverArt)) },
+                    data: result.artists.map {
+                        mapArtist(
+                            $0,
+                            artworkURL: $0.artistImageUrl ?? artworkBuilder($0.coverArt),
+                        )
+                    },
                 )
             } else {
                 nil

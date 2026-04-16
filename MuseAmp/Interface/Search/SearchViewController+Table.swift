@@ -55,10 +55,12 @@ extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
 
         let title: String
         switch diffableDataSource.snapshot().sectionIdentifiers[section] {
+        case .artists:
+            title = SearchType.artist.title
         case .albums:
-            title = String(localized: "Albums")
+            title = SearchType.album.title
         case .songs:
-            title = String(localized: "Songs")
+            title = SearchType.song.title
         case .loading:
             return nil
         }
@@ -91,6 +93,9 @@ extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
             break
         case let .showMore(section):
             loadMore(section: section)
+        case let .artist(id):
+            guard let artist = searchState.artists.items.first(where: { $0.id == id }) else { return }
+            artistNavigationHelper.pushArtistDetail(artist: artist)
         case let .album(id):
             guard let album = searchState.albums.items.first(where: { $0.id == id }) else { return }
             navigationController?.pushViewController(AlbumDetailViewController(album: album, environment: environment), animated: true)

@@ -40,6 +40,7 @@ struct SubsonicAuthorization: Sendable {
 enum SubsonicEndpoint: Sendable {
     case ping
     case search(query: String, type: SearchType, limit: Int, offset: Int)
+    case artist(id: String)
     case album(id: String)
     case song(id: String)
     case lyrics(id: String)
@@ -55,6 +56,8 @@ enum SubsonicEndpoint: Sendable {
             "ping"
         case let .search(query, type, limit, offset):
             "search:\(type.rawValue):\(query):\(limit):\(offset)"
+        case let .artist(id):
+            "artist:\(id)"
         case let .album(id):
             "album:\(id)"
         case let .song(id):
@@ -96,6 +99,8 @@ private extension SubsonicEndpoint {
             "ping"
         case .search:
             "search3"
+        case .artist:
+            "getArtist"
         case .album:
             "getAlbum"
         case .song:
@@ -156,7 +161,7 @@ private extension SubsonicEndpoint {
                     URLQueryItem(name: "albumCount", value: "0"),
                 ]
             }
-        case let .album(id), let .song(id), let .lyrics(id), let .stream(id):
+        case let .artist(id), let .album(id), let .song(id), let .lyrics(id), let .stream(id):
             return [URLQueryItem(name: "id", value: id)]
         case let .coverArt(id, size):
             var items = [URLQueryItem(name: "id", value: id)]

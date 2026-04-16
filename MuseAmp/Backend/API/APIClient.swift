@@ -103,6 +103,39 @@ final class APIClient: @unchecked Sendable {
         }
     }
 
+    nonisolated func searchArtists(query: String, limit: Int, offset: Int) async throws -> [CatalogArtist] {
+        AppLog.verbose(self, "searchArtists query=\(query) limit=\(limit) offset=\(offset)")
+        let service = synchronizedState().service
+        do {
+            let response = try await service.search(
+                query: query,
+                type: .artist,
+                limit: limit,
+                offset: offset,
+                cacheSearchResponses: true,
+                prefetchSongMetadata: false,
+            )
+            let artists = response.results.artists?.data ?? []
+            AppLog.info(self, "searchArtists returned \(artists.count) results")
+            return artists
+        } catch {
+            AppLog.error(self, "searchArtists failed query=\(query) error=\(error)")
+            throw error
+        }
+    }
+
+    nonisolated func artist(id: String) async throws -> ArtistResponse? {
+        AppLog.verbose(self, "artist id=\(id)")
+        do {
+            let response = try await synchronizedState().service.artist(id: id)
+            AppLog.info(self, "artist id=\(id) found=\(response != nil)")
+            return response
+        } catch {
+            AppLog.error(self, "artist failed id=\(id) error=\(error)")
+            throw error
+        }
+    }
+
     nonisolated func album(id: String) async throws -> CatalogAlbum? {
         AppLog.verbose(self, "album id=\(id)")
         do {

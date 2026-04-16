@@ -9,6 +9,7 @@ import SubsonicClientKit
 import UIKit
 
 enum SearchResult {
+    case artists([CatalogArtist])
     case songs([CatalogSong])
     case albums([CatalogAlbum])
 }
@@ -52,6 +53,7 @@ extension SearchViewController {
             guard let self else { return }
             do {
                 let results = try await withThrowingTaskGroup(of: SearchResult.self) { group in
+                    group.addTask { try await .artists(self.apiClient.searchArtists(query: trimmed, limit: self.mediaPageSize, offset: 0)) }
                     group.addTask { try await .songs(self.apiClient.searchSongs(query: trimmed, limit: self.songPageSize, offset: 0)) }
                     group.addTask { try await .albums(self.apiClient.searchAlbums(query: trimmed, limit: self.mediaPageSize, offset: 0)) }
                     var collected: [SearchResult] = []
@@ -61,16 +63,17 @@ extension SearchViewController {
                     return collected
                 }
                 guard !Task.isCancelled else { return }
-                var newSongs: [CatalogSong] = []; var newAlbums: [CatalogAlbum] = []
+                var newArtists: [CatalogArtist] = []; var newSongs: [CatalogSong] = []; var newAlbums: [CatalogAlbum] = []
                 for result in results {
                     switch result {
+                    case let .artists(artists): newArtists = artists
                     case let .songs(s): newSongs = s
                     case let .albums(a): newAlbums = a
                     }
                 }
                 await MainActor.run {
                     let hadPreviousResults = self.searchState.hasResults
-                    self.updateInitialResults(query: trimmed, songs: newSongs, albums: newAlbums)
+                    self.updateInitialResults(query: trimmed, artists: newArtists, songs: newSongs, albums: newAlbums)
 
                     if hadPreviousResults {
                         Interface.transition(with: self.tableView, duration: 0.2) {
@@ -102,13 +105,17 @@ extension SearchViewController {
 
     func updateInitialResults(
         query: String,
+        artists: [CatalogArtist],
         songs: [CatalogSong],
         albums: [CatalogAlbum],
     ) {
-        searchState.songs.items = deduplicated(songs, label: "song", source: "initial")
+        searchState.artists.items = deduplicated(artists, id: \.id, label: "artist", source: "initial")
+        searchState.artists.offset = artists.count
+        searchState.artists.hasMore = artists.count >= mediaPageSize
+        searchState.songs.items = deduplicated(songs, id: \.id, label: "song", source: "initial")
         searchState.songs.offset = songs.count
         searchState.songs.hasMore = songs.count >= songPageSize
-        searchState.albums.items = deduplicated(albums, label: "album", source: "initial")
+        searchState.albums.items = deduplicated(albums, id: \.id, label: "album", source: "initial")
         searchState.albums.offset = albums.count
         searchState.albums.hasMore = albums.count >= mediaPageSize
         searchState.currentQuery = query
@@ -120,12 +127,16 @@ extension SearchViewController {
 
     func updatePaginatedResults(section: SearchSection, items: SearchResult) {
         switch items {
+        case let .artists(artists):
+            searchState.artists.items = deduplicated(searchState.artists.items + artists, id: \.id, label: "artist", source: "pagination")
+            searchState.artists.offset += artists.count
+            searchState.artists.hasMore = artists.count >= mediaPageSize
         case let .songs(songs):
-            searchState.songs.items = deduplicated(searchState.songs.items + songs, label: "song", source: "pagination")
+            searchState.songs.items = deduplicated(searchState.songs.items + songs, id: \.id, label: "song", source: "pagination")
             searchState.songs.offset += songs.count
             searchState.songs.hasMore = songs.count >= songPageSize
         case let .albums(albums):
-            searchState.albums.items = deduplicated(searchState.albums.items + albums, label: "album", source: "pagination")
+            searchState.albums.items = deduplicated(searchState.albums.items + albums, id: \.id, label: "album", source: "pagination")
             searchState.albums.offset += albums.count
             searchState.albums.hasMore = albums.count >= mediaPageSize
         }
@@ -133,23 +144,7 @@ extension SearchViewController {
     }
 
     func reorderSections() {
-        let query = searchState.currentQuery.lowercased()
-        func score(names: [String]) -> Int {
-            var best = 0
-            for n in names {
-                let l = n.lowercased(); if l == query { return 3 }; if l.hasPrefix(query) { best = max(best, 2) } else if l.contains(query) { best = max(best, 1) }
-            }
-            return best
-        }
-        let songScore = score(names: searchState.songs.items.map(\.attributes.name))
-        let albumScore = score(names: searchState.albums.items.map(\.attributes.name))
-        let tb: [SearchSection: Int] = [.songs: 0, .albums: 1, .loading: 2]
-        searchState.sectionOrder = SearchSection.resultSections.sorted { a, b in
-            let sa: Int; let sb: Int
-            switch a { case .songs: sa = songScore; case .albums: sa = albumScore; case .loading: sa = -1 }
-            switch b { case .songs: sb = songScore; case .albums: sb = albumScore; case .loading: sb = -1 }
-            if sa != sb { return sa > sb }; return tb[a]! < tb[b]!
-        }
+        searchState.sectionOrder = SearchSection.resultSections
     }
 
     func loadMore(section: SearchSection) {
@@ -162,6 +157,8 @@ extension SearchViewController {
         let query = searchState.currentQuery
         let offset: Int
         switch section {
+        case .artists:
+            offset = searchState.artists.offset
         case .songs:
             offset = searchState.songs.offset
         case .albums:
@@ -173,6 +170,13 @@ extension SearchViewController {
             guard let self else { return }
             do {
                 switch section {
+                case .artists:
+                    let items = try await apiClient.searchArtists(query: query, limit: mediaPageSize, offset: offset)
+                    await MainActor.run {
+                        guard self.searchState.currentQuery == query else { return }
+                        self.updatePaginatedResults(section: section, items: .artists(items))
+                        self.applySnapshot()
+                    }
                 case .songs:
                     let items = try await apiClient.searchSongs(query: query, limit: songPageSize, offset: offset)
                     await MainActor.run {
@@ -200,12 +204,12 @@ extension SearchViewController {
         }
     }
 
-    func deduplicated<T: Identifiable>(_ items: [T], label: String, source: String) -> [T] where T.ID == String {
+    func deduplicated<T>(_ items: [T], id: KeyPath<T, String>, label: String, source: String) -> [T] {
         var seen = Set<String>()
         var uniqueItems: [T] = []
         uniqueItems.reserveCapacity(items.count)
 
-        for item in items where seen.insert(item.id).inserted {
+        for item in items where seen.insert(item[keyPath: id]).inserted {
             uniqueItems.append(item)
         }
 

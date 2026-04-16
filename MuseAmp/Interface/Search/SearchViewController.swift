@@ -14,14 +14,16 @@ import Then
 import UIKit
 
 nonisolated enum SearchSection: Hashable {
-    case albums
     case songs
+    case albums
+    case artists
     case loading
 
-    static let resultSections: [SearchSection] = [.albums, .songs]
+    static let resultSections: [SearchSection] = [.songs, .albums, .artists]
 }
 
 nonisolated enum SearchItem: Hashable {
+    case artist(String)
     case song(String)
     case album(String)
     case showMore(SearchSection)
@@ -61,6 +63,10 @@ class SearchViewController: UIViewController {
         lyricsReloadPresenter: lyricsReloadPresenter,
     )
     lazy var albumNavigationHelper = AlbumNavigationHelper(
+        environment: environment,
+        viewController: self,
+    )
+    lazy var artistNavigationHelper = ArtistNavigationHelper(
         environment: environment,
         viewController: self,
     )
@@ -117,7 +123,7 @@ class SearchViewController: UIViewController {
     private func configureSearchController() {
         searchController.searchResultsUpdater = self
         searchController.obscuresBackgroundDuringPresentation = false
-        searchController.searchBar.placeholder = String(localized: "Songs, Albums")
+        searchController.searchBar.placeholder = String(localized: "Songs, Albums, Artists")
         searchController.searchBar.accessibilityIdentifier = "search.bar"
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
@@ -156,6 +162,30 @@ class SearchViewController: UIViewController {
 
     private func cell(for tableView: UITableView, at indexPath: IndexPath, item: SearchItem) -> UITableViewCell {
         switch item {
+        case let .artist(id):
+            let cell = tableView.dequeueReusableCell(withIdentifier: AmMediaCell.reuseID, for: indexPath) as! AmMediaCell
+            if let artist = searchState.artists.items.first(where: { $0.id == id }) {
+                cell.configure(
+                    content: MediaRowContent(
+                        title: artist.attributes.name,
+                        artwork: ArtworkContent(
+                            placeholderIcon: "person.fill",
+                            cornerRadius: 22,
+                        ),
+                    ),
+                )
+                cell.loadArtwork(url: apiClient.mediaURL(from: artist.attributes.artwork?.url, width: 88, height: 88))
+                cell.setAttributedTitle(
+                    SearchHighlightHelper.attributedString(
+                        text: artist.attributes.name,
+                        query: searchState.currentQuery,
+                        font: .systemFont(ofSize: 16),
+                        color: .label,
+                    ),
+                )
+            }
+            cell.accessibilityIdentifier = "search.result.artists.\(indexPath.row)"
+            return cell
         case let .song(id):
             let cell = tableView.dequeueReusableCell(withIdentifier: AmSongCell.reuseID, for: indexPath) as! AmSongCell
             if let song = searchState.songs.items.first(where: { $0.id == id }) {
@@ -251,6 +281,10 @@ class SearchViewController: UIViewController {
         } else {
             for section in searchState.sectionOrder {
                 switch section {
+                case .artists where !searchState.artists.items.isEmpty:
+                    snapshot.appendSections([.artists])
+                    snapshot.appendItems(searchState.artists.items.map { .artist($0.id) }, toSection: .artists)
+                    if searchState.artists.hasMore { snapshot.appendItems([.showMore(.artists)], toSection: .artists) }
                 case .albums where !searchState.albums.items.isEmpty:
                     snapshot.appendSections([.albums])
                     snapshot.appendItems(searchState.albums.items.map { .album($0.id) }, toSection: .albums)

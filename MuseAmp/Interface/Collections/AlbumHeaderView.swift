@@ -7,6 +7,7 @@ final class AlbumHeaderView: UIView {
 
     var onPlayTapped: () -> Void = {}
     var onShuffleTapped: () -> Void = {}
+    var onArtistTapped: () -> Void = {}
 
     private let shadowContainer: UIView = {
         let view = UIView()
@@ -78,6 +79,7 @@ final class AlbumHeaderView: UIView {
         metaLabel.text = nil
         onPlayTapped = {}
         onShuffleTapped = {}
+        onArtistTapped = {}
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -93,6 +95,10 @@ final class AlbumHeaderView: UIView {
 
     @objc private func shuffleButtonTapped() {
         onShuffleTapped()
+    }
+
+    @objc private func artistNameTapped() {
+        onArtistTapped()
     }
 
     private func setup() {
@@ -135,6 +141,9 @@ final class AlbumHeaderView: UIView {
 
         playButton.addTarget(self, action: #selector(playButtonTapped), for: .touchUpInside)
         shuffleButton.addTarget(self, action: #selector(shuffleButtonTapped), for: .touchUpInside)
+        artistNameLabel.addGestureRecognizer(
+            UITapGestureRecognizer(target: self, action: #selector(artistNameTapped)),
+        )
         updateLayoutForSizeClass()
     }
 

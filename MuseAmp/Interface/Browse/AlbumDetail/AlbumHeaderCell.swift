@@ -25,6 +25,11 @@ final class AlbumHeaderCell: TableBaseCell {
         set { headerView.onShuffleTapped = newValue }
     }
 
+    var onArtistTapped: () -> Void {
+        get { headerView.onArtistTapped }
+        set { headerView.onArtistTapped = newValue }
+    }
+
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
 

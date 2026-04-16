@@ -59,6 +59,10 @@ class AlbumDetailViewController: MediaDetailViewController {
         exportPresenter: songExportPresenter,
         lyricsReloadPresenter: lyricsReloadPresenter,
     )
+    lazy var artistNavigationHelper = ArtistNavigationHelper(
+        environment: environment,
+        viewController: self,
+    )
 
     init(album: CatalogAlbum, environment: AppEnvironment, highlightSongs: [String] = []) {
         self.album = album
@@ -378,6 +382,12 @@ class AlbumDetailViewController: MediaDetailViewController {
                 cell.setButtonsEnabled(!isLoadingTracks)
                 cell.onPlayTapped = { [weak self] in self?.playAlbum() }
                 cell.onShuffleTapped = { [weak self] in self?.playAlbum(shuffle: true) }
+                cell.onArtistTapped = { [weak self] in
+                    guard let self, let artist = album.relationships?.artists?.data.first else {
+                        return
+                    }
+                    artistNavigationHelper.pushArtistDetail(artist: artist)
+                }
                 cell.selectionStyle = .none
                 cell.isUserInteractionEnabled = true
                 return cell

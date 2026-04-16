@@ -21,6 +21,7 @@ struct SearchPage<Item> {
 }
 
 struct SearchResultsState {
+    var artists = SearchPage<CatalogArtist>()
     var songs = SearchPage<CatalogSong>()
     var albums = SearchPage<CatalogAlbum>()
     var loadingMore: Set<SearchSection> = []
@@ -30,10 +31,11 @@ struct SearchResultsState {
     var searchError: String?
 
     var hasResults: Bool {
-        !songs.items.isEmpty || !albums.items.isEmpty
+        !artists.items.isEmpty || !songs.items.isEmpty || !albums.items.isEmpty
     }
 
     mutating func reset() {
+        artists.reset()
         songs.reset()
         albums.reset()
         loadingMore = []

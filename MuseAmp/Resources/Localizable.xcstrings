@@ -1,6 +1,22 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "... and %lld more" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "... and %lld more"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "……还有 %lld 项"
+          }
+        }
+      }
+    },
     "%@\nTap to enter the transfer password and start importing songs from this device." : {
       "localizations" : {
         "en" : {
@@ -61,22 +77,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld"
-          }
-        }
-      }
-    },
-    "%lld Songs" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld Songs"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 首歌曲"
           }
         }
       }
@@ -241,6 +241,22 @@
         }
       }
     },
+    "%lld Songs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Songs"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 首歌曲"
+          }
+        }
+      }
+    },
     "%lld songs, %lld minutes" : {
       "localizations" : {
         "en" : {
@@ -269,22 +285,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已排队 %lld 首曲目"
-          }
-        }
-      }
-    },
-    "... and %lld more" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "... and %lld more"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "……还有 %lld 项"
           }
         }
       }
@@ -577,22 +577,6 @@
         }
       }
     },
-    "All Song Names" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All Song Names"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "所有歌曲名称"
-          }
-        }
-      }
-    },
     "All prepared tracks were served successfully to the receiving device." : {
       "localizations" : {
         "en" : {
@@ -605,6 +589,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "所有已准备的曲目已成功传输至接收设备。"
+          }
+        }
+      }
+    },
+    "All Song Names" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Song Names"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有歌曲名称"
           }
         }
       }
@@ -641,22 +641,6 @@
         }
       }
     },
-    "Allow Cellular Download" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Allow Cellular Download"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "允许使用蜂窝网络下载"
-          }
-        }
-      }
-    },
     "Allow camera access in Settings or choose an Apple TV from nearby discovery instead." : {
       "localizations" : {
         "en" : {
@@ -685,6 +669,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "请在设置中允许相机访问，或改用手动输入地址。"
+          }
+        }
+      }
+    },
+    "Allow Cellular Download" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow Cellular Download"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允许使用蜂窝网络下载"
+          }
+        }
+      }
+    },
+    "already existed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "already existed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已存在"
           }
         }
       }
@@ -737,38 +753,6 @@
         }
       }
     },
-    "Apple TV Connected" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apple TV Connected"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apple TV 已连接"
-          }
-        }
-      }
-    },
-    "Apple TV Session" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apple TV Session"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apple TV 会话"
-          }
-        }
-      }
-    },
     "Apple TV authenticated successfully and is about to request the playlist manifest." : {
       "localizations" : {
         "en" : {
@@ -801,6 +785,22 @@
         }
       }
     },
+    "Apple TV Connected" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV Connected"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV 已连接"
+          }
+        }
+      }
+    },
     "Apple TV is actively downloading the transferable tracks for this playlist." : {
       "localizations" : {
         "en" : {
@@ -829,6 +829,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apple TV 正在加载播放列表元数据并准备拉取音频文件。"
+          }
+        }
+      }
+    },
+    "Apple TV Session" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV Session"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV 会话"
           }
         }
       }
@@ -1889,22 +1905,6 @@
         }
       }
     },
-    "Download Now (Use Cellular)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Download Now (Use Cellular)"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "立即下载（使用蜂窝网络）"
-          }
-        }
-      }
-    },
     "Download all songs before playing this album." : {
       "localizations" : {
         "en" : {
@@ -1917,6 +1917,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "播放此专辑前先下载所有歌曲。"
+          }
+        }
+      }
+    },
+    "Download Now (Use Cellular)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download Now (Use Cellular)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "立即下载（使用蜂窝网络）"
           }
         }
       }
@@ -2033,38 +2049,6 @@
         }
       }
     },
-    "Enter Address" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enter Address"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "输入地址"
-          }
-        }
-      }
-    },
-    "Enter Password" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enter Password"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "输入密码"
-          }
-        }
-      }
-    },
     "Enter a name for your playlist." : {
       "localizations" : {
         "en" : {
@@ -2097,6 +2081,22 @@
         }
       }
     },
+    "Enter Address" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter Address"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入地址"
+          }
+        }
+      }
+    },
     "Enter an address in the form host:port." : {
       "localizations" : {
         "en" : {
@@ -2109,6 +2109,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "请输入 host:port 格式的地址。"
+          }
+        }
+      }
+    },
+    "Enter Password" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter Password"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入密码"
           }
         }
       }
@@ -2209,6 +2225,22 @@
         }
       }
     },
+    "Export is not available because the local library services are not ready." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export is not available because the local library services are not ready."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "由于本地资料库服务尚未就绪，导出功能暂不可用。"
+          }
+        }
+      }
+    },
     "Export Lyrics" : {
       "localizations" : {
         "en" : {
@@ -2237,22 +2269,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "导出选取项"
-          }
-        }
-      }
-    },
-    "Export is not available because the local library services are not ready." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Export is not available because the local library services are not ready."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "由于本地资料库服务尚未就绪，导出功能暂不可用。"
           }
         }
       }
@@ -2529,22 +2545,6 @@
         }
       }
     },
-    "Import Playlist" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Import Playlist"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "导入歌单"
-          }
-        }
-      }
-    },
     "Import from File" : {
       "localizations" : {
         "en" : {
@@ -2557,6 +2557,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "从文件导入"
+          }
+        }
+      }
+    },
+    "Import Playlist" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import Playlist"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入歌单"
           }
         }
       }
@@ -2753,22 +2769,6 @@
         }
       }
     },
-    "Invalid QR Code" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invalid QR Code"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无效的二维码"
-          }
-        }
-      }
-    },
     "Invalid address format \"%@\". Use hostname:port, IPv4:port, or [IPv6]:port." : {
       "localizations" : {
         "en" : {
@@ -2817,6 +2817,22 @@
         }
       }
     },
+    "Invalid QR Code" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid QR Code"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无效的二维码"
+          }
+        }
+      }
+    },
     "Invalid request." : {
       "localizations" : {
         "en" : {
@@ -2829,6 +2845,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "无效请求。"
+          }
+        }
+      }
+    },
+    "iPhone" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone"
+          }
+        }
+      }
+    },
+    "iPhone Transfer Complete" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone Transfer Complete"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone 传输完成"
           }
         }
       }
@@ -3427,102 +3475,6 @@
         }
       }
     },
-    "No Endpoint" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Endpoint"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无地址"
-          }
-        }
-      }
-    },
-    "No Playlists Yet" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Playlists Yet"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "这里还没有歌单"
-          }
-        }
-      }
-    },
-    "No Results" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Results"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无结果"
-          }
-        }
-      }
-    },
-    "No Selection" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Selection"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未选择"
-          }
-        }
-      }
-    },
-    "No Songs Yet" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Songs Yet"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "这里还没有歌曲"
-          }
-        }
-      }
-    },
-    "No Subsonic server profile is configured." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Subsonic server profile is configured."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前未配置 Subsonic 服务器。"
-          }
-        }
-      }
-    },
     "No categories" : {
       "localizations" : {
         "en" : {
@@ -3535,6 +3487,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "无类别"
+          }
+        }
+      }
+    },
+    "No Endpoint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Endpoint"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无地址"
           }
         }
       }
@@ -3619,6 +3587,22 @@
         }
       }
     },
+    "No Playlists Yet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Playlists Yet"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这里还没有歌单"
+          }
+        }
+      }
+    },
     "No reachable address was available for the selected device." : {
       "localizations" : {
         "en" : {
@@ -3631,6 +3615,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "所选设备没有可用的可达地址。"
+          }
+        }
+      }
+    },
+    "No Results" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Results"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无结果"
+          }
+        }
+      }
+    },
+    "No Selection" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Selection"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未选择"
+          }
+        }
+      }
+    },
+    "No Songs Yet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Songs Yet"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这里还没有歌曲"
+          }
+        }
+      }
+    },
+    "No Subsonic server profile is configured." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Subsonic server profile is configured."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前未配置 Subsonic 服务器。"
           }
         }
       }
@@ -3971,22 +4019,6 @@
         }
       }
     },
-    "Paste JSON" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Paste JSON"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "粘贴 JSON"
-          }
-        }
-      }
-    },
     "Paste a JSON object containing serverURL, username, and password." : {
       "localizations" : {
         "en" : {
@@ -3999,6 +4031,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "粘贴一个包含 serverURL、username 和 password 的 JSON 对象。"
+          }
+        }
+      }
+    },
+    "Paste JSON" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste JSON"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "粘贴 JSON"
           }
         }
       }
@@ -4083,38 +4131,6 @@
         }
       }
     },
-    "Play Next" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Play Next"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "下一首播放"
-          }
-        }
-      }
-    },
-    "Play Pause" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Play Pause"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "播放/暂停"
-          }
-        }
-      }
-    },
     "Play from Beginning" : {
       "localizations" : {
         "en" : {
@@ -4143,6 +4159,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "从此处播放"
+          }
+        }
+      }
+    },
+    "Play Next" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play Next"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一首播放"
+          }
+        }
+      }
+    },
+    "Play Pause" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play Pause"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放/暂停"
           }
         }
       }
@@ -4211,6 +4259,22 @@
         }
       }
     },
+    "Playlist import is not available because the local library services are not ready." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playlist import is not available because the local library services are not ready."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本地资料库服务尚未就绪，暂时无法导入歌单。"
+          }
+        }
+      }
+    },
     "Playlist Imported" : {
       "localizations" : {
         "en" : {
@@ -4255,22 +4319,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "分享歌单失败"
-          }
-        }
-      }
-    },
-    "Playlist import is not available because the local library services are not ready." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Playlist import is not available because the local library services are not ready."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "本地资料库服务尚未就绪，暂时无法导入歌单。"
           }
         }
       }
@@ -5411,6 +5459,22 @@
         }
       }
     },
+    "Search again for Apple TVs on the same local network." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search again for Apple TVs on the same local network."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新搜索同一局域网中的 Apple TV。"
+          }
+        }
+      }
+    },
     "Search Local Library" : {
       "localizations" : {
         "en" : {
@@ -5455,22 +5519,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "搜索本地歌曲"
-          }
-        }
-      }
-    },
-    "Search again for Apple TVs on the same local network." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search again for Apple TVs on the same local network."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新搜索同一局域网中的 Apple TV。"
           }
         }
       }
@@ -5635,22 +5683,6 @@
         }
       }
     },
-    "Send Songs" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Send Songs"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "发送歌曲"
-          }
-        }
-      }
-    },
     "Send or receive songs with another device on the same network." : {
       "localizations" : {
         "en" : {
@@ -5663,6 +5695,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在同一本地网络上与另一台设备互传歌曲。"
+          }
+        }
+      }
+    },
+    "Send Songs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send Songs"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发送歌曲"
           }
         }
       }
@@ -5747,6 +5795,22 @@
         }
       }
     },
+    "Sending music to Apple TV requires local network access. Enable it in Settings for Muse Amp." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sending music to Apple TV requires local network access. Enable it in Settings for Muse Amp."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向 Apple TV 发送音乐需要本地网络访问权限。请在设置中为 Muse Amp 开启此权限。"
+          }
+        }
+      }
+    },
     "Sending Playlist Info..." : {
       "localizations" : {
         "en" : {
@@ -5791,22 +5855,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在发送歌曲…"
-          }
-        }
-      }
-    },
-    "Sending music to Apple TV requires local network access. Enable it in Settings for Muse Amp." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sending music to Apple TV requires local network access. Enable it in Settings for Muse Amp."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "向 Apple TV 发送音乐需要本地网络访问权限。请在设置中为 Muse Amp 开启此权限。"
           }
         }
       }
@@ -5875,22 +5923,6 @@
         }
       }
     },
-    "Server Verified" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Server Verified"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "服务器已验证"
-          }
-        }
-      }
-    },
     "Server profile import is unavailable because the app services are not ready." : {
       "localizations" : {
         "en" : {
@@ -5903,6 +5935,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "服务器配置导入当前不可用，因为应用服务尚未准备完成。"
+          }
+        }
+      }
+    },
+    "Server Verified" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server Verified"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器已验证"
           }
         }
       }
@@ -5987,6 +6035,22 @@
         }
       }
     },
+    "Show in Album" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show in Album"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在专辑中显示"
+          }
+        }
+      }
+    },
     "Show Lyrics" : {
       "localizations" : {
         "en" : {
@@ -6031,22 +6095,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "显示播放队列"
-          }
-        }
-      }
-    },
-    "Show in Album" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show in Album"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在专辑中显示"
           }
         }
       }
@@ -6212,6 +6260,7 @@
       }
     },
     "Songs, Albums" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6223,6 +6272,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "歌曲，专辑"
+          }
+        }
+      }
+    },
+    "Songs, Albums, Artists" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Songs, Albums, Artists"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歌曲，专辑，歌手"
           }
         }
       }
@@ -6435,6 +6500,22 @@
         }
       }
     },
+    "Stop sending this playlist to Apple TV." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop sending this playlist to Apple TV."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停止向 Apple TV 发送此播放列表。"
+          }
+        }
+      }
+    },
     "Stop Server" : {
       "localizations" : {
         "en" : {
@@ -6463,22 +6544,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "停止共享"
-          }
-        }
-      }
-    },
-    "Stop sending this playlist to Apple TV." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stop sending this playlist to Apple TV."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "停止向 Apple TV 发送此播放列表。"
           }
         }
       }
@@ -6563,22 +6628,6 @@
         }
       }
     },
-    "The Subsonic server profile was imported and verified." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The Subsonic server profile was imported and verified."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Subsonic 服务器配置已导入并验证成功。"
-          }
-        }
-      }
-    },
     "The device currently pulling this transfer." : {
       "localizations" : {
         "en" : {
@@ -6591,6 +6640,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "当前正在拉取此传输的设备。"
+          }
+        }
+      }
+    },
+    "The imported file must contain a valid JSON object." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The imported file must contain a valid JSON object."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入文件必须包含有效的 JSON 对象。"
           }
         }
       }
@@ -6639,22 +6704,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "导入的 JSON 必须包含 username 字段。"
-          }
-        }
-      }
-    },
-    "The imported file must contain a valid JSON object." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The imported file must contain a valid JSON object."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "导入文件必须包含有效的 JSON 对象。"
           }
         }
       }
@@ -6867,22 +6916,6 @@
         }
       }
     },
-    "The scanned QR code could not be read." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The scanned QR code could not be read."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无法读取扫描的二维码。"
-          }
-        }
-      }
-    },
     "The scanned or selected Apple TV has not appeared nearby yet. Keep Muse Amp open on its receive screen and refresh if needed." : {
       "localizations" : {
         "en" : {
@@ -6895,6 +6928,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "扫描或选择的 Apple TV 尚未出现在附近。请保持 Muse Amp 在其接收页面打开，并在需要时刷新。"
+          }
+        }
+      }
+    },
+    "The scanned QR code could not be read." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The scanned QR code could not be read."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法读取扫描的二维码。"
           }
         }
       }
@@ -6959,6 +7008,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "当前正在传输的歌曲文件。"
+          }
+        }
+      }
+    },
+    "The Subsonic server profile was imported and verified." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Subsonic server profile was imported and verified."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subsonic 服务器配置已导入并验证成功。"
           }
         }
       }
@@ -7139,6 +7204,22 @@
         }
       }
     },
+    "This album still has %lld songs that are not downloaded. Download all songs before playing." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This album still has %lld songs that are not downloaded. Download all songs before playing."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此专辑仍有 %lld 首歌曲未下载。请先下载所有歌曲再播放。"
+          }
+        }
+      }
+    },
     "This Apple TV is using an incompatible transfer protocol version." : {
       "localizations" : {
         "en" : {
@@ -7155,18 +7236,18 @@
         }
       }
     },
-    "This album still has %lld songs that are not downloaded. Download all songs before playing." : {
+    "This artist has no albums yet." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This album still has %lld songs that are not downloaded. Download all songs before playing."
+            "value" : "This artist has no albums yet."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "此专辑仍有 %lld 首歌曲未下载。请先下载所有歌曲再播放。"
+            "value" : "这位歌手还没有专辑。"
           }
         }
       }
@@ -7507,22 +7588,6 @@
         }
       }
     },
-    "URL: %@\nUsername: %@\nPassword: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "URL: %@\nUsername: %@\nPassword: %@"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "地址：%@\n用户名：%@\n密码：%@"
-          }
-        }
-      }
-    },
     "Unable to Share Playlist" : {
       "localizations" : {
         "en" : {
@@ -7663,6 +7728,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "不支持的发送方"
+          }
+        }
+      }
+    },
+    "URL: %@\nUsername: %@\nPassword: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL: %@\nUsername: %@\nPassword: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地址：%@\n用户名：%@\n密码：%@"
           }
         }
       }
@@ -7871,54 +7952,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在把已下载完成的歌曲写入本地资料库数据库。"
-          }
-        }
-      }
-    },
-    "already existed" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "already existed"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已存在"
-          }
-        }
-      }
-    },
-    "iPhone" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "iPhone"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "iPhone"
-          }
-        }
-      }
-    },
-    "iPhone Transfer Complete" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "iPhone Transfer Complete"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "iPhone 传输完成"
           }
         }
       }

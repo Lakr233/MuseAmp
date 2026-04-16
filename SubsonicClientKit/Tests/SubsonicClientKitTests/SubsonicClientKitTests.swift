@@ -107,6 +107,7 @@ private enum FixtureServer {
                         "id": "artist-1",
                         "name": "Artist One",
                         "coverArt": "cover-artist-1",
+                        "artistImageUrl": "https://cdn.example.com/search-artist-one.jpg",
                     ],
                 ],
             ],
@@ -183,6 +184,40 @@ private enum FixtureServer {
         ]
     }
 
+    static func artistPayload() -> [String: Any] {
+        [
+            "artist": [
+                "id": "artist-1",
+                "name": "Artist One",
+                "coverArt": "cover-artist-1",
+                "artistImageUrl": "https://cdn.example.com/artist-one.jpg",
+                "albumCount": 2,
+                "album": [
+                    [
+                        "id": "album-1",
+                        "name": "Album One",
+                        "artist": "Artist One",
+                        "artistId": "artist-1",
+                        "coverArt": "cover-album-1",
+                        "songCount": 1,
+                        "year": 2024,
+                        "genre": "J-Pop",
+                    ],
+                    [
+                        "id": "album-2",
+                        "name": "Album Two",
+                        "artist": "Artist One",
+                        "artistId": "artist-1",
+                        "coverArt": "cover-album-2",
+                        "songCount": 3,
+                        "year": 2023,
+                        "genre": "Pop",
+                    ],
+                ],
+            ],
+        ]
+    }
+
     static func lyricsPayload() -> [String: Any] {
         [
             "lyrics": [
@@ -224,6 +259,11 @@ struct SubsonicMusicServiceTests {
         let artworkURL = try #require(song.attributes.artwork?.imageURL())
         #expect(artworkURL.absoluteString.contains("getCoverArt.view"))
         #expect(artworkURL.absoluteString.contains("size=%7Bw%7D") == false)
+
+        let artist = try #require(response.results.artists?.data.first)
+        #expect(artist.id == "artist-1")
+        let artistArtworkURL = try #require(artist.attributes.artwork?.imageURL())
+        #expect(artistArtworkURL.absoluteString == "https://cdn.example.com/search-artist-one.jpg")
     }
 
     @Test
@@ -245,6 +285,31 @@ struct SubsonicMusicServiceTests {
         #expect(album.attributes.name == "Album One")
         #expect(album.attributes.artistName == "Artist One")
         #expect(album.relationships?.tracks?.data.count == 2)
+    }
+
+    @Test
+    func `artist maps nested albums`() async throws {
+        FixtureURLProtocol.handler = { request in
+            let data = try FixtureServer.wrappedResponse(payload: FixtureServer.artistPayload())
+            return (FixtureServer.httpResponse(for: request), data)
+        }
+
+        let service = SubsonicMusicService(
+            baseURL: FixtureServer.baseURL,
+            username: "demo",
+            password: "secret",
+            session: FixtureServer.makeSession(),
+        )
+
+        let response = try #require(try await service.artist(id: "artist-1"))
+        #expect(response.artist.id == "artist-1")
+        #expect(response.artist.attributes.name == "Artist One")
+        #expect(response.albumCount == 2)
+        #expect(response.albums.count == 2)
+        #expect(response.albums[0].id == "album-1")
+
+        let artworkURL = try #require(response.artist.attributes.artwork?.imageURL())
+        #expect(artworkURL.absoluteString == "https://cdn.example.com/artist-one.jpg")
     }
 
     @Test

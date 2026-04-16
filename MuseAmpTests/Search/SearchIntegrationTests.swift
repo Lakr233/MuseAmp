@@ -87,6 +87,24 @@ struct SearchIntegrationTests {
     }
 
     @Test
+    func `Artist detail screen loads from mock catalog artist`() {
+        let sandbox = TestLibrarySandbox()
+        let artist = CatalogArtist(
+            id: "artist-1",
+            type: "artists",
+            href: nil,
+            attributes: CatalogArtistAttributes(
+                name: "Mock Artist",
+                artwork: Artwork(width: nil, height: nil, url: nil),
+            ),
+        )
+        let vc = ArtistDetailViewController(artist: artist, environment: sandbox.makeEnvironment())
+        vc.loadViewIfNeeded()
+
+        #expect(vc.view.accessibilityIdentifier == "detail.artist")
+    }
+
+    @Test
     func `Album detail with explicit content rating decodes correctly`() {
         let song = CatalogSongAttributes(
             name: "Explicit Track",

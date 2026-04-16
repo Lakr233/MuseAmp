@@ -56,6 +56,7 @@
 - `Interface/Browse/Albums/`: album-library entry screens and their responsibility-based extensions.
 - `Interface/Browse/Songs/`: song-library entry screens and their responsibility-based extensions.
 - `Interface/Browse/AlbumDetail/`: album detail screens, album-only cells, and related presentation helpers.
+- `Interface/Browse/ArtistDetail/`: artist detail screens, artist header cells, and artist-specific album list presentation.
 - `Interface/Browse/Downloads/`: downloads browse UI and download-list presentation.
 - `Interface/Browse/Support/`: browse-only helpers that are shared across album/song/download flows.
 - `Interface/Search/`, `NowPlaying/`, `Playlist/`, `Settings/`: feature-owned UI outside the browse domain.
