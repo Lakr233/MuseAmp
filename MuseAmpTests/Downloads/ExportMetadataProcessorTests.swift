@@ -112,6 +112,7 @@ struct ExportMetadataProcessorTests {
         title: String? = nil,
         artistName: String? = nil,
         albumName: String? = nil,
+        albumArtistName: String? = nil,
         artworkData: Data? = nil,
     ) async throws {
         let asset = AVURLAsset(url: fileURL)
@@ -157,6 +158,7 @@ struct ExportMetadataProcessorTests {
             tagMetadata.title = title ?? ""
             tagMetadata.artist = artistName ?? ""
             tagMetadata.album = albumName ?? ""
+            tagMetadata.albumArtist = albumArtistName ?? ""
             tagMetadata.artworkData = artworkData
             try TagLibMetadataManager.writeMetadataWithVerification(tagMetadata, to: fileURL)
         } catch {
@@ -526,6 +528,48 @@ struct ExportMetadataProcessorTests {
         #expect(importedTrack.hasEmbeddedArtwork)
         #expect(importedTrack.hasEmbeddedLyrics == false)
         #expect(try Data(contentsOf: database.paths.artworkCacheURL(for: importedTrack.trackID)) == artworkData)
+    }
+
+    @MainActor
+    @Test
+    func `imports compilation m4a tracks with album artist into one album`() async throws {
+        let sandbox = TestLibrarySandbox()
+        let database = try makeImportDatabase(sandbox: sandbox)
+        let importer = try makeImporter(database: database)
+        let dir = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let firstURL = dir.appendingPathComponent("compilation-a.m4a")
+        let secondURL = dir.appendingPathComponent("compilation-b.m4a")
+        try makeSilentM4A(at: firstURL)
+        try makeSilentM4A(at: secondURL)
+        try await embedPlainMetadata(
+            into: firstURL,
+            title: "Compilation Song A",
+            artistName: "Track Artist A",
+            albumName: "Shared Compilation",
+            albumArtistName: "Various Artists",
+        )
+        try await embedPlainMetadata(
+            into: secondURL,
+            title: "Compilation Song B",
+            artistName: "Track Artist B",
+            albumName: "Shared Compilation",
+            albumArtistName: "Various Artists",
+        )
+
+        let result = await importer.importFiles(urls: [firstURL, secondURL])
+
+        #expect(result.succeeded == 2)
+        #expect(result.noMetadata == 0)
+        #expect(result.errors == 0)
+
+        let tracks = try database.allTracks()
+        #expect(tracks.count == 2)
+        let albumIDs = Set(tracks.map(\.albumID))
+        #expect(albumIDs.count == 1)
+        #expect(Set(tracks.map(\.artistName)) == ["Track Artist A", "Track Artist B"])
+        #expect(Set(tracks.compactMap(\.albumArtistName)) == ["Various Artists"])
     }
 
     @MainActor

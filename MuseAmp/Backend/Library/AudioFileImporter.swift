@@ -188,9 +188,18 @@ private extension AudioFileImporter {
             "importSingleFile inspecting file='\(fileName)' ext=\(ext) durationSeconds=\(String(format: "%.2f", durationSeconds)) metadataItems=\(metadataItems.count) fileSize=\(fileSizeForLog)",
         )
 
-        let title = await extractString(in: metadataItems, matching: ["title", "songName"]) ?? fileName
-        let artist = await extractString(in: metadataItems, matching: ["artist"]) ?? String(localized: "Unknown Artist")
-        let album = await extractString(in: metadataItems, matching: ["albumName", "album"]) ?? String(localized: "Unknown Album")
+        let sourceAttributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
+        let fileSize = (sourceAttributes[.size] as? NSNumber)?.int64Value ?? 0
+        let modifiedAt = sourceAttributes[.modificationDate] as? Date ?? .init()
+
+        let previewRecord = try await metadataReader.makeTrackRecord(
+            fileURL: fileURL,
+            relativePath: fileName,
+            trackID: "0",
+            albumID: nil,
+            fileSize: fileSize,
+            modifiedAt: modifiedAt,
+        )
 
         let catalogIDs: EmbeddedCatalogIDs
         if let embedded = await extractCatalogIDs(from: metadataItems) {
@@ -202,9 +211,10 @@ private extension AudioFileImporter {
         } else {
             catalogIDs = try generatedCatalogIDs(
                 for: fileURL,
-                title: title,
-                artistName: artist,
-                albumTitle: album,
+                title: previewRecord.title,
+                artistName: previewRecord.artistName,
+                albumTitle: previewRecord.albumTitle,
+                albumArtistName: previewRecord.albumArtistName,
             )
             AppLog.info(
                 self,
@@ -225,9 +235,6 @@ private extension AudioFileImporter {
             return .duplicate
         }
 
-        let sourceAttributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
-        let fileSize = (sourceAttributes[.size] as? NSNumber)?.int64Value ?? 0
-        let modifiedAt = sourceAttributes[.modificationDate] as? Date ?? .init()
         let inspectedRecord = try await metadataReader.makeTrackRecord(
             fileURL: fileURL,
             relativePath: destinationRelativePath,
@@ -352,19 +359,22 @@ private extension AudioFileImporter {
         title: String,
         artistName: String,
         albumTitle: String,
+        albumArtistName: String?,
     ) throws -> EmbeddedCatalogIDs {
         let fileData = try Data(contentsOf: fileURL)
+        let albumGroupingArtist = albumArtistName?.nilIfEmpty ?? artistName
         let trackSeed = [
             "track",
             normalizedIdentityText(title),
             normalizedIdentityText(artistName),
             normalizedIdentityText(albumTitle),
+            normalizedIdentityText(albumGroupingArtist),
             SHA256.hash(data: fileData).compactMap { String(format: "%02x", $0) }.joined(),
         ].joined(separator: "|")
         let albumSeed = [
             "album",
             normalizedIdentityText(albumTitle),
-            normalizedIdentityText(artistName),
+            normalizedIdentityText(albumGroupingArtist),
         ].joined(separator: "|")
 
         return EmbeddedCatalogIDs(
