@@ -17,6 +17,12 @@ nonisolated struct SongExportItem {
     let title: String
     let artistName: String
     let albumName: String?
+    let albumArtistName: String?
+    let trackNumber: Int?
+    let discNumber: Int?
+    let genreName: String?
+    let composerName: String?
+    let releaseDate: String?
 
     init(
         sourceURL: URL,
@@ -26,6 +32,12 @@ nonisolated struct SongExportItem {
         albumID: String? = nil,
         albumName: String? = nil,
         artworkURL: URL? = nil,
+        albumArtistName: String? = nil,
+        trackNumber: Int? = nil,
+        discNumber: Int? = nil,
+        genreName: String? = nil,
+        composerName: String? = nil,
+        releaseDate: String? = nil,
         fallbackBaseName: String? = nil,
     ) {
         self.sourceURL = sourceURL
@@ -35,6 +47,12 @@ nonisolated struct SongExportItem {
         self.title = title
         self.artistName = artistName
         self.albumName = albumName
+        self.albumArtistName = albumArtistName
+        self.trackNumber = trackNumber
+        self.discNumber = discNumber
+        self.genreName = genreName
+        self.composerName = composerName
+        self.releaseDate = releaseDate
         let fallbackBaseName = fallbackBaseName ?? sourceURL.deletingPathExtension().lastPathComponent
         preferredFileBaseName = Self.preferredFileBaseName(
             artistName: artistName,

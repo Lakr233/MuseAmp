@@ -6,6 +6,7 @@
 //
 
 import AVFoundation
+import CryptoKit
 import Foundation
 import MuseAmpDatabaseKit
 import UniformTypeIdentifiers
@@ -166,6 +167,7 @@ private extension AudioFileImporter {
         let trackID: String
         let albumID: String
         let artworkURL: URL?
+        let isEmbedded: Bool
     }
 
     func importSingleFile(
@@ -186,51 +188,32 @@ private extension AudioFileImporter {
             "importSingleFile inspecting file='\(fileName)' ext=\(ext) durationSeconds=\(String(format: "%.2f", durationSeconds)) metadataItems=\(metadataItems.count) fileSize=\(fileSizeForLog)",
         )
 
-        guard let catalogIDs = await extractCatalogIDs(from: metadataItems) else {
-            AppLog.warning(
+        let title = await extractString(in: metadataItems, matching: ["title", "songName"]) ?? fileName
+        let artist = await extractString(in: metadataItems, matching: ["artist"]) ?? String(localized: "Unknown Artist")
+        let album = await extractString(in: metadataItems, matching: ["albumName", "album"]) ?? String(localized: "Unknown Album")
+
+        let catalogIDs: EmbeddedCatalogIDs
+        if let embedded = await extractCatalogIDs(from: metadataItems) {
+            catalogIDs = embedded
+            AppLog.info(
                 self,
-                "importSingleFile noCatalogMetadata file='\(fileName)' metadataItems=\(metadataItems.count) (sender likely did not embed catalog comment JSON)",
+                "importSingleFile extracted catalog metadata file='\(fileName)' trackID=\(embedded.trackID) albumID=\(embedded.albumID) hasArtworkURL=\(embedded.artworkURL != nil)",
             )
-            return .noMetadata
+        } else {
+            catalogIDs = try generatedCatalogIDs(
+                for: fileURL,
+                title: title,
+                artistName: artist,
+                albumTitle: album,
+            )
+            AppLog.info(
+                self,
+                "importSingleFile generated catalog metadata file='\(fileName)' trackID=\(catalogIDs.trackID) albumID=\(catalogIDs.albumID)",
+            )
         }
 
         let trackID = catalogIDs.trackID
         let albumID = catalogIDs.albumID
-        AppLog.info(
-            self,
-            "importSingleFile extracted catalog metadata file='\(fileName)' trackID=\(trackID) albumID=\(albumID) hasArtworkURL=\(catalogIDs.artworkURL != nil)",
-        )
-
-        let title = await extractString(in: metadataItems, matching: ["title", "songName"])
-        let artist = await extractString(in: metadataItems, matching: ["artist"])
-        let album = await extractString(in: metadataItems, matching: ["albumName", "album"])
-
-        guard let title, !title.isEmpty, let artist, !artist.isEmpty else {
-            AppLog.warning(
-                self,
-                "importSingleFile noMetadata file='\(fileName)' trackID=\(trackID) hasTitle=\(title?.isEmpty == false) hasArtist=\(artist?.isEmpty == false) hasAlbum=\(album?.isEmpty == false) (catalog IDs present but display strings missing)",
-            )
-            return .noMetadata
-        }
-
-        let albumName = album ?? String(localized: "Unknown Album")
-        let dupKey = DuplicateKey(
-            title: title, artist: artist, album: albumName, duration: durationSeconds,
-        )
-
-        if batchImported.contains(dupKey) {
-            AppLog.verbose(
-                self, "importSingleFile intra-batch duplicate title='\(title)' artist='\(artist)'",
-            )
-            return .duplicate
-        }
-
-        if isDuplicate(
-            title: title, artist: artist, album: albumName, duration: durationSeconds, in: existingTracks,
-        ) {
-            AppLog.verbose(self, "importSingleFile duplicate title='\(title)' artist='\(artist)'")
-            return .duplicate
-        }
 
         let destinationRelativePath =
             "\(sanitizePathComponent(albumID))/\(sanitizePathComponent(trackID)).\(ext.isEmpty ? "m4a" : ext)"
@@ -254,6 +237,35 @@ private extension AudioFileImporter {
             modifiedAt: modifiedAt,
         )
 
+        let dupKey = DuplicateKey(
+            title: inspectedRecord.title,
+            artist: inspectedRecord.artistName,
+            album: inspectedRecord.albumTitle,
+            duration: inspectedRecord.durationSeconds,
+        )
+
+        if batchImported.contains(dupKey) {
+            AppLog.verbose(
+                self,
+                "importSingleFile intra-batch duplicate title='\(inspectedRecord.title)' artist='\(inspectedRecord.artistName)'",
+            )
+            return .duplicate
+        }
+
+        if isDuplicate(
+            title: inspectedRecord.title,
+            artist: inspectedRecord.artistName,
+            album: inspectedRecord.albumTitle,
+            duration: inspectedRecord.durationSeconds,
+            in: existingTracks,
+        ) {
+            AppLog.verbose(
+                self,
+                "importSingleFile duplicate title='\(inspectedRecord.title)' artist='\(inspectedRecord.artistName)'",
+            )
+            return .duplicate
+        }
+
         let stagingURL = paths.incomingDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: false)
             .appendingPathExtension(ext.isEmpty ? "m4a" : ext)
@@ -263,7 +275,7 @@ private extension AudioFileImporter {
         )
         try FileManager.default.copyItem(at: fileURL, to: stagingURL)
 
-        let embeddedLyrics = await metadataReader.extractLyrics(from: metadataItems)
+        let embeddedLyrics = catalogIDs.isEmbedded ? await metadataReader.extractLyrics(from: metadataItems) : nil
 
         let metadata = ImportedTrackMetadata(
             trackID: trackID,
@@ -330,9 +342,54 @@ private extension AudioFileImporter {
                 }
                 return artworkURL
             }
-            return EmbeddedCatalogIDs(trackID: trackID, albumID: albumID, artworkURL: artworkURL)
+            return EmbeddedCatalogIDs(trackID: trackID, albumID: albumID, artworkURL: artworkURL, isEmbedded: true)
         }
         return nil
+    }
+
+    func generatedCatalogIDs(
+        for fileURL: URL,
+        title: String,
+        artistName: String,
+        albumTitle: String,
+    ) throws -> EmbeddedCatalogIDs {
+        let fileData = try Data(contentsOf: fileURL)
+        let trackSeed = [
+            "track",
+            normalizedIdentityText(title),
+            normalizedIdentityText(artistName),
+            normalizedIdentityText(albumTitle),
+            SHA256.hash(data: fileData).compactMap { String(format: "%02x", $0) }.joined(),
+        ].joined(separator: "|")
+        let albumSeed = [
+            "album",
+            normalizedIdentityText(albumTitle),
+            normalizedIdentityText(artistName),
+        ].joined(separator: "|")
+
+        return EmbeddedCatalogIDs(
+            trackID: numericIdentifier(from: trackSeed),
+            albumID: numericIdentifier(from: albumSeed),
+            artworkURL: nil,
+            isEmbedded: false,
+        )
+    }
+
+    func normalizedIdentityText(_ value: String) -> String {
+        value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+            .lowercased()
+    }
+
+    func numericIdentifier(from seed: String) -> String {
+        let digest = SHA256.hash(data: Data(seed.utf8))
+        let value = digest.prefix(8).reduce(UInt64(0)) { partial, byte in
+            (partial << 8) | UInt64(byte)
+        }
+        return String(value)
     }
 
     func isDuplicate(

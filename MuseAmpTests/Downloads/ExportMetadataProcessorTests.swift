@@ -3,6 +3,7 @@ import Dispatch
 import Foundation
 @testable import MuseAmp
 import MuseAmpDatabaseKit
+import TagLibAudioMetadata
 import Testing
 
 @Suite(.serialized)
@@ -47,6 +48,130 @@ struct ExportMetadataProcessorTests {
     private func isLyrics(_ item: AVMetadataItem) -> Bool {
         item.identifier == .iTunesMetadataLyrics
             || AVMetadataHelper.matches(item, tokens: ["lyrics"])
+    }
+
+    private func makeImporter(
+        sandbox: TestLibrarySandbox,
+    ) throws -> AudioFileImporter {
+        let database = try sandbox.makeDatabase()
+        return try makeImporter(database: database)
+    }
+
+    private func makeImportDatabase(
+        sandbox: TestLibrarySandbox,
+    ) throws -> MusicLibraryDatabase {
+        let metadataReader = EmbeddedMetadataReader()
+        return try sandbox.makeDatabase { url in
+            let trackID = url.deletingPathExtension().lastPathComponent
+            let albumID = url.deletingLastPathComponent().lastPathComponent.nilIfEmpty ?? "unknown"
+            return AudioFileInspection(
+                metadata: ImportedTrackMetadata(
+                    trackID: trackID,
+                    albumID: albumID,
+                    title: trackID,
+                    artistName: "Artist",
+                    albumTitle: albumID,
+                    sourceKind: .unknown,
+                ),
+                embeddedArtwork: await metadataReader.extractArtwork(from: url),
+            )
+        }
+    }
+
+    private func makeImporter(
+        database: MusicLibraryDatabase,
+    ) throws -> AudioFileImporter {
+        let metadataReader = EmbeddedMetadataReader()
+        let indexer = SongLibraryIndexer(databaseManager: database.databaseManager)
+        let apiClient = try APIClient(baseURL: #require(URL(string: "https://example.com")))
+        return AudioFileImporter(
+            paths: database.paths,
+            database: database,
+            metadataReader: metadataReader,
+            libraryIndexer: indexer,
+            apiClient: apiClient,
+        )
+    }
+
+    private func tinyArtworkData() -> Data {
+        let base64 = [
+            "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAP//////////////////////////////",
+            "////////////////////////////////////////////////////////2wBDAf//////",
+            "////////////////////////////////////////////////////////////////wAARC",
+            "AABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAX/xAAUEAEAAAAAAA",
+            "AAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAF//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/a",
+            "AAgBAQABBQJ//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAwEBPwF//8QAFBEBAA",
+            "AAAAAAAAAAAAAAAAAAAP/aAAgBAgEBPwF//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/a",
+            "AAgBAQAGPwJ//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPyF//9k=",
+        ].joined()
+        return Data(base64Encoded: base64)!
+    }
+
+    private func embedPlainMetadata(
+        into fileURL: URL,
+        title: String? = nil,
+        artistName: String? = nil,
+        albumName: String? = nil,
+        artworkData: Data? = nil,
+    ) async throws {
+        let asset = AVURLAsset(url: fileURL)
+        guard await (try? asset.load(.isReadable)) == true else {
+            throw NSError(domain: "ExportMetadataProcessorTests", code: 1)
+        }
+        guard let exportSession = AVAssetExportSession(
+            asset: asset,
+            presetName: AVAssetExportPresetPassthrough,
+        ) else {
+            throw NSError(domain: "ExportMetadataProcessorTests", code: 2)
+        }
+
+        var metadata: [AVMetadataItem] = []
+        if let title {
+            metadata.append(metadataItem(identifier: .commonIdentifierTitle, value: title))
+            metadata.append(metadataItem(identifier: .iTunesMetadataSongName, value: title))
+        }
+        if let artistName {
+            metadata.append(metadataItem(identifier: .commonIdentifierArtist, value: artistName))
+            metadata.append(metadataItem(identifier: .iTunesMetadataArtist, value: artistName))
+        }
+        if let albumName {
+            metadata.append(metadataItem(identifier: .commonIdentifierAlbumName, value: albumName))
+            metadata.append(metadataItem(identifier: .iTunesMetadataAlbum, value: albumName))
+        }
+        if let artworkData {
+            metadata.append(contentsOf: DownloadArtworkProcessor.artworkMetadataItems(data: artworkData))
+        }
+
+        let tempURL = fileURL.deletingLastPathComponent()
+            .appendingPathComponent(UUID().uuidString, isDirectory: false)
+            .appendingPathExtension("m4a")
+        exportSession.outputURL = tempURL
+        exportSession.outputFileType = .m4a
+        exportSession.shouldOptimizeForNetworkUse = false
+        exportSession.metadata = metadata
+
+        do {
+            try await DownloadArtworkProcessor.export(exportSession, timeout: 30)
+            _ = try FileManager.default.replaceItemAt(fileURL, withItemAt: tempURL)
+            var tagMetadata = BasicMetadata.empty
+            tagMetadata.title = title ?? ""
+            tagMetadata.artist = artistName ?? ""
+            tagMetadata.album = albumName ?? ""
+            tagMetadata.artworkData = artworkData
+            try TagLibMetadataManager.writeMetadataWithVerification(tagMetadata, to: fileURL)
+        } catch {
+            if FileManager.default.fileExists(atPath: tempURL.path) {
+                try? FileManager.default.removeItem(at: tempURL)
+            }
+            throw error
+        }
+    }
+
+    private func metadataItem(identifier: AVMetadataIdentifier, value: String) -> AVMetadataItem {
+        let item = AVMutableMetadataItem()
+        item.identifier = identifier
+        item.value = value as NSString
+        return item.copy() as! AVMetadataItem
     }
 
     // MARK: - Tests
@@ -309,7 +434,7 @@ struct ExportMetadataProcessorTests {
     @Test
     func `import creates local track without retaining completed download job`() async throws {
         let sandbox = TestLibrarySandbox()
-        let database = try sandbox.makeDatabase()
+        let database = try makeImportDatabase(sandbox: sandbox)
         let paths = database.paths
         let downloadStore = DownloadStore(database: database, paths: paths)
         let metadataReader = EmbeddedMetadataReader()
@@ -363,6 +488,122 @@ struct ExportMetadataProcessorTests {
         #expect(importedTrack.title == "Imported Song")
         #expect(importedTrack.artistName == "Imported Artist")
         #expect(importedTrack.albumTitle == "Imported Album")
+    }
+
+    @MainActor
+    @Test
+    func `imports ordinary m4a without MuseAmp comment metadata`() async throws {
+        let sandbox = TestLibrarySandbox()
+        let database = try makeImportDatabase(sandbox: sandbox)
+        let importer = try makeImporter(database: database)
+        let dir = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let fileURL = dir.appendingPathComponent("ordinary.m4a")
+        let artworkData = tinyArtworkData()
+        try makeSilentM4A(at: fileURL)
+        try await embedPlainMetadata(
+            into: fileURL,
+            title: "Ordinary Song",
+            artistName: "Ordinary Artist",
+            albumName: "Ordinary Album",
+            artworkData: artworkData,
+        )
+
+        let result = await importer.importFiles(urls: [fileURL])
+
+        #expect(result.succeeded == 1)
+        #expect(result.noMetadata == 0)
+        #expect(result.errors == 0)
+
+        let tracks = try database.allTracks()
+        let importedTrack = try #require(tracks.first)
+        #expect(importedTrack.trackID.isCatalogID)
+        #expect(importedTrack.albumID.isCatalogID)
+        #expect(importedTrack.title == "Ordinary Song")
+        #expect(importedTrack.artistName == "Ordinary Artist")
+        #expect(importedTrack.albumTitle == "Ordinary Album")
+        #expect(importedTrack.hasEmbeddedArtwork)
+        #expect(importedTrack.hasEmbeddedLyrics == false)
+        #expect(try Data(contentsOf: database.paths.artworkCacheURL(for: importedTrack.trackID)) == artworkData)
+    }
+
+    @MainActor
+    @Test
+    func `imports m4a with missing display tags using fallbacks`() async throws {
+        let sandbox = TestLibrarySandbox()
+        let database = try sandbox.makeDatabase()
+        let importer = try makeImporter(database: database)
+        let dir = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let fileURL = dir.appendingPathComponent("fallback-title.m4a")
+        try makeSilentM4A(at: fileURL)
+
+        let result = await importer.importFiles(urls: [fileURL])
+
+        #expect(result.succeeded == 1)
+        #expect(result.noMetadata == 0)
+        #expect(result.errors == 0)
+
+        let importedTrack = try #require(try database.allTracks().first)
+        #expect(importedTrack.title == "fallback-title")
+        #expect(importedTrack.artistName == "Unknown Artist")
+        #expect(importedTrack.albumTitle == "Unknown Album")
+        #expect(importedTrack.trackID.isCatalogID)
+        #expect(importedTrack.albumID.isCatalogID)
+    }
+
+    @MainActor
+    @Test
+    func `exported arbitrary m4a round trips with generated catalog IDs`() async throws {
+        let sourceSandbox = TestLibrarySandbox()
+        let sourceDatabase = try makeImportDatabase(sandbox: sourceSandbox)
+        let sourceImporter = try makeImporter(database: sourceDatabase)
+        let dir = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let fileURL = dir.appendingPathComponent("round-trip-source.m4a")
+        try makeSilentM4A(at: fileURL)
+        try await embedPlainMetadata(
+            into: fileURL,
+            title: "Round Trip Song",
+            artistName: "Round Trip Artist",
+            albumName: "Round Trip Album",
+        )
+
+        let sourceResult = await sourceImporter.importFiles(urls: [fileURL])
+        #expect(sourceResult.succeeded == 1)
+        let sourceTrack = try #require(try sourceDatabase.allTracks().first)
+
+        let builder = SyncPreparedTrackBuilder(
+            paths: sourceDatabase.paths,
+            lyricsCacheStore: nil,
+            apiClient: nil,
+        )
+        let batch = try await builder.prepareBatch(
+            deviceName: "Test Device",
+            items: [sourceTrack.exportItem(paths: sourceDatabase.paths)],
+        )
+        defer { builder.cleanup(batch: batch) }
+        let exportedURL = try #require(batch.preparedURLs.first)
+        try await ExportMetadataProcessor.verifyEmbeddedMetadata(in: exportedURL, expectedTrackID: sourceTrack.trackID)
+
+        let destinationSandbox = TestLibrarySandbox()
+        let destinationDatabase = try makeImportDatabase(sandbox: destinationSandbox)
+        let destinationImporter = try makeImporter(database: destinationDatabase)
+        let destinationResult = await destinationImporter.importFiles(
+            urls: [exportedURL],
+            options: .offlineTransfer,
+        )
+
+        #expect(destinationResult.succeeded == 1)
+        #expect(destinationResult.noMetadata == 0)
+        let roundTrippedTrack = try #require(try destinationDatabase.track(byID: sourceTrack.trackID))
+        #expect(roundTrippedTrack.albumID == sourceTrack.albumID)
+        #expect(roundTrippedTrack.title == "Round Trip Song")
+        #expect(roundTrippedTrack.artistName == "Round Trip Artist")
+        #expect(roundTrippedTrack.albumTitle == "Round Trip Album")
     }
 }
 

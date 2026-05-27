@@ -74,6 +74,12 @@ nonisolated extension AudioTrackRecord {
             albumID: albumID,
             albumName: displayAlbumName ?? albumTitle,
             artworkURL: artworkURL,
+            albumArtistName: albumArtistName,
+            trackNumber: trackNumber,
+            discNumber: discNumber,
+            genreName: genreName,
+            composerName: composerName,
+            releaseDate: releaseDate,
         )
     }
 

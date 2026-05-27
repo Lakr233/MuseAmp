@@ -1,5 +1,5 @@
 {
-  "originHash" : "1c894784651da5a3f311c3c2c7e1909ebac5eda315648460ac89a55e7ca01f3e",
+  "originHash" : "b005d6c17c88b56d7af2b75bb9ba1a35487442bd4d86717c4c1d814af6d6472b",
   "pins" : [
     {
       "identity" : "alertcontroller",
@@ -143,6 +143,15 @@
       "state" : {
         "revision" : "5d948a15446bddb6c367bc7e7100cfcbaa0e9b57",
         "version" : "8.0.0"
+      }
+    },
+    {
+      "identity" : "taglibaudiometadata",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ChrisLloydME/TagLibAudioMetadata.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "714321c400775b18c6aa667fe5dfa7253cb7f803"
       }
     },
     {

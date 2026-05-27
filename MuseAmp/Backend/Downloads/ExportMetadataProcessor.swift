@@ -7,6 +7,8 @@
 
 @preconcurrency import AVFoundation
 import Foundation
+import MuseAmpDatabaseKit
+import TagLibAudioMetadata
 
 enum ExportMetadataProcessor {
     nonisolated struct ExportInfo {
@@ -18,6 +20,12 @@ enum ExportMetadataProcessor {
         var title: String?
         var artistName: String?
         var albumName: String?
+        var albumArtistName: String?
+        var trackNumber: Int?
+        var discNumber: Int?
+        var genreName: String?
+        var composerName: String?
+        var releaseDate: String?
 
         init(trackID: String, albumID: String?) {
             self.trackID = trackID
@@ -33,6 +41,12 @@ enum ExportMetadataProcessor {
             title: String?,
             artistName: String?,
             albumName: String?,
+            albumArtistName: String? = nil,
+            trackNumber: Int? = nil,
+            discNumber: Int? = nil,
+            genreName: String? = nil,
+            composerName: String? = nil,
+            releaseDate: String? = nil,
         ) {
             self.trackID = trackID
             self.albumID = albumID
@@ -42,6 +56,12 @@ enum ExportMetadataProcessor {
             self.title = title
             self.artistName = artistName
             self.albumName = albumName
+            self.albumArtistName = albumArtistName
+            self.trackNumber = trackNumber
+            self.discNumber = discNumber
+            self.genreName = genreName
+            self.composerName = composerName
+            self.releaseDate = releaseDate
         }
     }
 
@@ -107,7 +127,10 @@ enum ExportMetadataProcessor {
                   let albumID = json["albumID"] as? String, albumID.isCatalogID
             else {
                 let raw = sanitizedLogText(value, maxLength: 120)
-                AppLog.error(logger, "verifyEmbeddedMetadata comment JSON missing valid IDs trackID=\(expectedTrackID) raw='\(raw)'")
+                AppLog.error(
+                    logger,
+                    "verifyEmbeddedMetadata comment JSON missing valid IDs trackID=\(expectedTrackID) raw='\(raw)'",
+                )
                 throw ExportError.verificationFailed(expectedTrackID, reason: "comment JSON missing valid trackID/albumID")
             }
             AppLog.verbose(logger, "verifyEmbeddedMetadata passed trackID=\(trackID) albumID=\(albumID)")
@@ -129,6 +152,21 @@ private extension ExportMetadataProcessor {
             AppLog.warning(logger, "file not readable trackID=\(info.trackID)")
             throw ExportError.fileUnreadable
         }
+        if fileURL.pathExtension.lowercased() == "m4a",
+           TagLibMetadataManager.isWritableFormat(fileURL.pathExtension)
+        {
+            do {
+                try performEmbedExportMetadataWithTagLib(info, into: fileURL)
+                AppLog.info(logger, "success taglib trackID=\(info.trackID)")
+                return
+            } catch {
+                AppLog.warning(
+                    logger,
+                    "taglib export failed trackID=\(info.trackID) error=\(error.localizedDescription); falling back to AVFoundation",
+                )
+            }
+        }
+
         let asset = AVURLAsset(url: fileURL)
         guard await (try? asset.load(.isReadable)) == true else {
             AppLog.warning(logger, "asset not readable trackID=\(info.trackID)")
@@ -199,6 +237,58 @@ private extension ExportMetadataProcessor {
         }
     }
 
+    static func performEmbedExportMetadataWithTagLib(
+        _ info: ExportInfo,
+        into fileURL: URL,
+    ) throws {
+        var metadata = (try? TagLibMetadataManager.readMetadataResult(from: fileURL)) ?? .empty
+        metadata.comment = commentJSON(for: info)
+        metadata.lyrics = info.lyrics?.nilIfEmpty ?? ""
+
+        if let title = info.title?.nilIfEmpty {
+            metadata.title = title
+        }
+        if let artist = info.artistName?.nilIfEmpty {
+            metadata.artist = artist
+        }
+        if let album = info.albumName?.nilIfEmpty {
+            metadata.album = album
+        }
+        if let albumArtist = info.albumArtistName?.nilIfEmpty {
+            metadata.albumArtist = albumArtist
+        }
+        if let trackNumber = info.trackNumber, trackNumber > 0 {
+            metadata.track = trackNumber
+            metadata.trackNumberText = String(trackNumber)
+        }
+        if let discNumber = info.discNumber, discNumber > 0 {
+            metadata.disc = discNumber
+            metadata.discNumberText = String(discNumber)
+        }
+        if let genre = info.genreName?.nilIfEmpty {
+            metadata.genre = genre
+        }
+        if let composer = info.composerName?.nilIfEmpty {
+            metadata.composer = composer
+        }
+        if let releaseDate = info.releaseDate?.nilIfEmpty {
+            metadata.releaseDate = releaseDate
+            metadata.year = releaseDate
+        }
+        if let artworkData = info.artworkData, !artworkData.isEmpty {
+            metadata.artworkData = artworkData
+        }
+
+        let result = try TagLibMetadataManager.writeMetadataWithVerification(
+            metadata,
+            to: fileURL,
+            failurePolicy: .warn,
+        )
+        for warning in result.warnings {
+            AppLog.warning(logger, "taglib verification warning trackID=\(info.trackID) warning='\(warning)'")
+        }
+    }
+
     static func existingMetadataContainsArtwork(_ items: [AVMetadataItem]) async -> Bool {
         for item in items {
             guard DownloadArtworkProcessor.matchesArtwork(item) else { continue }
@@ -241,6 +331,15 @@ private extension ExportMetadataProcessor {
     }
 
     static func commentMetadataItem(for info: ExportInfo) -> AVMetadataItem {
+        let jsonString = commentJSON(for: info)
+
+        let item = AVMutableMetadataItem()
+        item.identifier = .iTunesMetadataUserComment
+        item.value = jsonString as NSString
+        return item.copy() as! AVMetadataItem
+    }
+
+    static func commentJSON(for info: ExportInfo) -> String {
         var payload: [String: Any] = [
             "v": 1,
             "trackID": info.trackID,
@@ -253,12 +352,7 @@ private extension ExportMetadataProcessor {
         }
 
         let jsonData = (try? JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys])) ?? Data()
-        let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
-
-        let item = AVMutableMetadataItem()
-        item.identifier = .iTunesMetadataUserComment
-        item.value = jsonString as NSString
-        return item.copy() as! AVMetadataItem
+        return String(data: jsonData, encoding: .utf8) ?? "{}"
     }
 
     static func lyricsMetadataItem(_ lyrics: String) -> AVMetadataItem {

@@ -108,6 +108,12 @@ nonisolated extension SyncPreparedTrackBuilder {
                 title: item.title,
                 artistName: item.artistName,
                 albumName: item.albumName,
+                albumArtistName: item.albumArtistName,
+                trackNumber: item.trackNumber,
+                discNumber: item.discNumber,
+                genreName: item.genreName,
+                composerName: item.composerName,
+                releaseDate: item.releaseDate,
             )
             try ExportMetadataProcessor.validateExportInfo(exportInfo)
 
@@ -162,6 +168,12 @@ nonisolated extension SyncPreparedTrackBuilder {
                     title: item.title,
                     artistName: item.artistName,
                     albumName: item.albumName,
+                    albumArtistName: item.albumArtistName,
+                    trackNumber: item.trackNumber,
+                    discNumber: item.discNumber,
+                    genreName: item.genreName,
+                    composerName: item.composerName,
+                    releaseDate: item.releaseDate,
                 )
                 try ExportMetadataProcessor.validateExportInfo(exportInfo)
 

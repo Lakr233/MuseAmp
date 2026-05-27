@@ -8,6 +8,7 @@
 import AVFoundation
 import Foundation
 import MuseAmpDatabaseKit
+import TagLibAudioMetadata
 
 enum EmbeddedMetadataReaderError: Error {
     case unableToLoadMetadata
@@ -15,16 +16,23 @@ enum EmbeddedMetadataReaderError: Error {
 
 final nonisolated class EmbeddedMetadataReader: @unchecked Sendable {
     func extractArtwork(from fileURL: URL) async -> Data? {
+        if let metadata = readTagLibMetadata(from: fileURL),
+           let artwork = metadata.artworkData,
+           !artwork.isEmpty
+        {
+            return artwork
+        }
+
         let asset = AVURLAsset(url: fileURL)
-        guard let items = try? await asset.load(.commonMetadata) else {
-            AppLog.warning(self, "extractArtwork unable to load commonMetadata for '\(fileURL.path)'")
+        guard let items = try? await collectMetadataItems(from: asset) else {
+            AppLog.warning(self, "extractArtwork unable to load metadata for '\(fileURL.path)'")
             return nil
         }
         for item in items {
             let identifier = item.identifier?.rawValue.lowercased() ?? ""
             let commonKey = item.commonKey?.rawValue.lowercased() ?? ""
             let key = (item.key as? String)?.lowercased() ?? (item.key as? NSString)?.lowercased ?? ""
-            let isArtwork = ["artwork", "coverart"].contains { token in
+            let isArtwork = ["artwork", "coverart", "covr"].contains { token in
                 identifier.contains(token) || commonKey.contains(token) || key.contains(token)
             }
             guard isArtwork else { continue }
@@ -33,6 +41,9 @@ final nonisolated class EmbeddedMetadataReader: @unchecked Sendable {
             }
             if let value = try? await item.load(.value) as? Data, !value.isEmpty {
                 return value
+            }
+            if let value = try? await item.load(.value) as? NSData, value.length > 0 {
+                return value as Data
             }
         }
         return nil
@@ -51,6 +62,18 @@ final nonisolated class EmbeddedMetadataReader: @unchecked Sendable {
         fileSize: Int64,
         modifiedAt: Date,
     ) async throws -> AudioTrackRecord {
+        if let metadata = readTagLibMetadata(from: fileURL) {
+            return try await makeTagLibTrackRecord(
+                metadata: metadata,
+                fileURL: fileURL,
+                relativePath: relativePath,
+                trackID: trackID,
+                albumID: albumID,
+                fileSize: fileSize,
+                modifiedAt: modifiedAt,
+            )
+        }
+
         let asset = AVURLAsset(url: fileURL)
         let duration = try await asset.load(.duration)
         let durationSeconds = max(CMTimeGetSeconds(duration), 0)
@@ -96,6 +119,89 @@ final nonisolated class EmbeddedMetadataReader: @unchecked Sendable {
 }
 
 private nonisolated extension EmbeddedMetadataReader {
+    func readTagLibMetadata(from fileURL: URL) -> BasicMetadata? {
+        let fileExtension = fileURL.pathExtension.lowercased()
+        guard fileExtension == "m4a",
+              TagLibMetadataManager.isReadableFormat(fileExtension)
+        else {
+            return nil
+        }
+
+        do {
+            return try TagLibMetadataManager.readMetadataResult(from: fileURL)
+        } catch {
+            AppLog.warning(
+                self,
+                "TagLib metadata read failed for '\(fileURL.lastPathComponent)': \(error.localizedDescription)",
+            )
+            return nil
+        }
+    }
+
+    func makeTagLibTrackRecord(
+        metadata: BasicMetadata,
+        fileURL: URL,
+        relativePath: String,
+        trackID: String,
+        albumID: String?,
+        fileSize: Int64,
+        modifiedAt: Date,
+    ) async throws -> AudioTrackRecord {
+        let fileName = fileURL.deletingPathExtension().lastPathComponent
+        let title = metadata.title.normalizedTagText ?? fileName
+        let artist = metadata.artist.normalizedTagText ?? String(localized: "Unknown Artist")
+        let album = metadata.album.normalizedTagText ?? String(localized: "Unknown Album")
+        let durationSeconds = try await resolvedDurationSeconds(metadata.duration, fileURL: fileURL)
+        let hasEmbeddedArtwork: Bool
+        if metadata.artworkData?.isEmpty == false {
+            hasEmbeddedArtwork = true
+        } else {
+            hasEmbeddedArtwork = await hasAVArtwork(fileURL: fileURL)
+        }
+
+        return AudioTrackRecord(
+            trackID: trackID,
+            albumID: albumID ?? "unknown",
+            fileExtension: fileURL.pathExtension,
+            relativePath: relativePath,
+            fileSizeBytes: fileSize,
+            fileModifiedAt: modifiedAt,
+            durationSeconds: durationSeconds,
+            title: title,
+            artistName: artist,
+            albumTitle: album,
+            albumArtistName: metadata.albumArtist.normalizedTagText,
+            trackNumber: metadata.track.positiveValue,
+            discNumber: metadata.disc.positiveValue,
+            genreName: metadata.genre.normalizedTagText,
+            composerName: metadata.composer.normalizedTagText,
+            releaseDate: metadata.releaseDate.normalizedTagText ?? metadata.year.normalizedTagText,
+            hasEmbeddedLyrics: metadata.lyrics.normalizedTagText != nil,
+            hasEmbeddedArtwork: hasEmbeddedArtwork,
+            sourceKind: .unknown,
+            createdAt: .init(),
+            updatedAt: .init(),
+        )
+    }
+
+    func hasAVArtwork(fileURL: URL) async -> Bool {
+        let asset = AVURLAsset(url: fileURL)
+        guard let items = try? await collectMetadataItems(from: asset) else {
+            return false
+        }
+        return await hasArtwork(in: items)
+    }
+
+    func resolvedDurationSeconds(_ tagLibDuration: Double, fileURL: URL) async throws -> Double {
+        if tagLibDuration > 0 {
+            return tagLibDuration
+        }
+
+        let asset = AVURLAsset(url: fileURL)
+        let duration = try await asset.load(.duration)
+        return max(CMTimeGetSeconds(duration), 0)
+    }
+
     func collectMetadataItems(from asset: AVURLAsset) async throws -> [AVMetadataItem] {
         try await AVMetadataHelper.collectMetadataItems(from: asset)
     }
@@ -171,7 +277,7 @@ private nonisolated extension EmbeddedMetadataReader {
 
     func hasArtwork(in items: [AVMetadataItem]) async -> Bool {
         for item in items {
-            if matches(item: item, tokens: ["artwork", "coverart"]) {
+            if matches(item: item, tokens: ["artwork", "coverart", "covr"]) {
                 let hasData = await (try? item.load(.dataValue)) != nil
                 let hasValue = await (try? item.load(.value)) != nil
                 if hasData || hasValue {
@@ -184,5 +290,40 @@ private nonisolated extension EmbeddedMetadataReader {
 
     func matches(item: AVMetadataItem, tokens: [String]) -> Bool {
         AVMetadataHelper.matches(item, tokens: tokens)
+    }
+}
+
+private nonisolated extension Int {
+    var positiveValue: Int? {
+        self > 0 ? self : nil
+    }
+}
+
+private nonisolated extension String {
+    var normalizedTagText: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return nil
+        }
+
+        var seen = Set<String>()
+        let uniqueParts = trimmed
+            .split(separator: ";")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { part in
+                guard !part.isEmpty else {
+                    return false
+                }
+                let key = part.folding(
+                    options: [.caseInsensitive, .diacriticInsensitive],
+                    locale: .current,
+                )
+                return seen.insert(key).inserted
+            }
+
+        guard !uniqueParts.isEmpty else {
+            return nil
+        }
+        return uniqueParts.joined(separator: "; ")
     }
 }

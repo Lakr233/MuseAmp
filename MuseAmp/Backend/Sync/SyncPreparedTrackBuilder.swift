@@ -70,6 +70,12 @@ final nonisolated class SyncPreparedTrackBuilder: @unchecked Sendable {
                     trackID: track.trackID,
                     albumID: track.albumID,
                     albumName: track.albumTitle.nilIfEmpty,
+                    albumArtistName: track.albumArtistName,
+                    trackNumber: track.trackNumber,
+                    discNumber: track.discNumber,
+                    genreName: track.genreName,
+                    composerName: track.composerName,
+                    releaseDate: track.releaseDate,
                 )
             }
             return try await prepareBatch(
@@ -120,7 +126,9 @@ nonisolated extension SyncPreparedTrackBuilder {
             var sawMismatchedTrackID: String?
             var sawInvalidAlbumID: String?
             var sawJSONFailure = false
-            for item in items where item.identifier == .iTunesMetadataUserComment {
+            for item in items where item.identifier == .iTunesMetadataUserComment
+                || AVMetadataHelper.matches(item, tokens: ["comment", "cmt"])
+            {
                 commentCount += 1
                 guard let value = try? await item.load(.stringValue),
                       let data = value.data(using: .utf8),
