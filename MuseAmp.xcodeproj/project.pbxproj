@@ -947,8 +947,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/ChrisLloydME/TagLibAudioMetadata.git";
 			requirement = {
-				branch = main;
-				kind = branch;
+				kind = exactVersion;
+				version = 0.3;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
