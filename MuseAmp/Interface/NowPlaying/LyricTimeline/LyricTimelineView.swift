@@ -191,8 +191,4 @@ final class LyricTimelineView: UIView {
     required init?(coder _: NSCoder) {
         fatalError()
     }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-    }
 }

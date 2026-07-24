@@ -47,7 +47,9 @@ final class LyricsSearchService {
                 guard let lyricsText = store.lyrics(for: track.trackID) else { continue }
                 guard let line = Self.firstMatchingLine(in: lyricsText, needle: needle) else { continue }
                 collected.append(Match(track: track, matchedLine: line))
-                if collected.count >= limit { break }
+                if collected.count >= limit {
+                    break
+                }
             }
             return collected
         }.value

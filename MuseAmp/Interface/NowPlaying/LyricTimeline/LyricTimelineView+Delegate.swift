@@ -48,7 +48,9 @@ extension LyricTimelineView: UITableViewDataSource, UITableViewDelegate {
         let item = items[indexPath.row]
         if case .message = item {
             let spacerTotal = items.reduce(CGFloat(0)) { sum, item in
-                if case let .spacer(h) = item { return sum + h }
+                if case let .spacer(h) = item {
+                    return sum + h
+                }
                 return sum
             }
             return max(44, tableView.bounds.height - spacerTotal)
@@ -133,7 +135,9 @@ extension LyricTimelineView: UITableViewDataSource, UITableViewDelegate {
         }
 
         guard let activeRow = items.firstIndex(where: {
-            if case let .line(_, _, isActive) = $0 { return isActive }
+            if case let .line(_, _, isActive) = $0 {
+                return isActive
+            }
             return false
         }) else {
             AppLog.verbose(self, "focusCurrentLine no active line")

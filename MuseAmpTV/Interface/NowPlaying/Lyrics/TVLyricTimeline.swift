@@ -15,19 +15,14 @@ nonisolated struct TVLyricTimeline: Sendable, Equatable {
 
         let line = lines[index]
         let elapsed = max(0, currentTime - line.time)
-        let nextLine = lines.indices.contains(index + 1) ? lines[index + 1] : nil
 
-        if let nextLine {
-            let duration = max(nextLine.time - line.time, 0)
-            let progress: Double = if duration > 0 {
-                min(max(elapsed / duration, 0), 1)
-            } else {
-                1
-            }
-            return TVLyricProgress(line: line, index: index, elapsed: elapsed, duration: duration, progress: progress)
+        guard index + 1 < lines.count else {
+            return TVLyricProgress(line: line, index: index, elapsed: elapsed, duration: nil, progress: 1)
         }
 
-        return TVLyricProgress(line: line, index: index, elapsed: elapsed, duration: nil, progress: 1)
+        let duration = max(lines[index + 1].time - line.time, 0)
+        let progress = duration > 0 ? min(max(elapsed / duration, 0), 1) : 1
+        return TVLyricProgress(line: line, index: index, elapsed: elapsed, duration: duration, progress: progress)
     }
 
     private func activeLineIndex(at currentTime: TimeInterval) -> Int {

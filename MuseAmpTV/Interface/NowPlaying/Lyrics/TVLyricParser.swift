@@ -37,7 +37,7 @@ nonisolated enum TVLyricParser {
                     continue
                 }
 
-                let adjustedTime = time + offset
+                let adjustedTime = max(0, time - offset)
                 lastAdjustedTime = adjustedTime
                 parsedLines.append((
                     order: parsedLines.count,
@@ -89,19 +89,15 @@ private nonisolated extension TVLyricParser {
         }
     }
 
+    /// LRC `[offset:]` is in milliseconds; a positive value shifts lyrics
+    /// earlier (display time = tag time - offset). The last tag wins.
     static func parseOffset(from lrc: String) -> TimeInterval {
-        var offsetInMilliseconds = 0
-
-        for rawLine in lrc.components(separatedBy: .newlines) {
-            guard let match = rawLine.firstMatch(of: offsetPattern),
-                  let value = Int(match.output.1)
-            else {
-                continue
-            }
-            offsetInMilliseconds = value
+        guard let match = lrc.matches(of: offsetPattern).last,
+              let value = Int(match.output.1)
+        else {
+            return 0
         }
-
-        return TimeInterval(offsetInMilliseconds) / 1000
+        return TimeInterval(value) / 1000
     }
 
     static func parseTime(

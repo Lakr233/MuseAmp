@@ -16,11 +16,37 @@ struct LyricTimelineTests {
         [invalid]
         """)
 
+        // Positive offset shifts lyrics earlier: display time = tag time - offset.
+        #expect(timeline.lines == [
+            LyricLine(time: 0, text: ""),
+            LyricLine(time: 9.5, text: "Verse"),
+            LyricLine(time: 15.0, text: "Chorus"),
+            LyricLine(time: 20.05 - 0.5, text: "Chorus"),
+        ])
+    }
+
+    @Test
+    func `LRC timeline delays lyrics for negative offset`() {
+        let timeline = LyricTimeline(lrc: """
+        [offset:-500]
+        [00:10.00]Verse
+        """)
+
         #expect(timeline.lines == [
             LyricLine(time: 0, text: ""),
             LyricLine(time: 10.5, text: "Verse"),
-            LyricLine(time: 16.0, text: "Chorus"),
-            LyricLine(time: 20.55, text: "Chorus"),
+        ])
+    }
+
+    @Test
+    func `LRC timeline clamps offset-adjusted times at zero`() {
+        let timeline = LyricTimeline(lrc: """
+        [offset:2000]
+        [00:01.00]Line
+        """)
+
+        #expect(timeline.lines == [
+            LyricLine(time: 0, text: "Line"),
         ])
     }
 
