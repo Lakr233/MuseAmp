@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Lakr233/AlertController.git",
       "state" : {
-        "revision" : "c42a45ca3c81689f2e94490c78c9f48c024ef7cc",
-        "version" : "2.2.2"
+        "revision" : "181eb46caf4ec799043148f0ea45d7b1ac2f0836",
+        "version" : "2.2.3"
       }
     },
     {
