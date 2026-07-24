@@ -301,7 +301,13 @@ final class SyncTransferSession {
         let client = apiClient
         var downloadedURLs: [URL] = []
         for (index, entry) in entries.enumerated() {
-            try Task.checkCancellation()
+            if Task.isCancelled {
+                AppLog.warning(
+                    self,
+                    "downloadEntries cancelled after \(downloadedURLs.count)/\(entries.count) file(s)",
+                )
+                throw PartialDownloadError(downloadedURLs: downloadedURLs)
+            }
 
             let destinationURL = directoryURL.appendingPathComponent(
                 "\(entry.trackID).\(entry.fileExtension.nilIfEmpty ?? "m4a")",
@@ -323,6 +329,12 @@ final class SyncTransferSession {
                     "downloadEntries cancelled after \(downloadedURLs.count)/\(entries.count) file(s)",
                 )
                 throw PartialDownloadError(downloadedURLs: downloadedURLs)
+            } catch let error as URLError where Self.isConnectionInterruption(error) {
+                AppLog.warning(
+                    self,
+                    "downloadEntries connection interrupted after \(downloadedURLs.count)/\(entries.count) file(s) code=\(error.code.rawValue)",
+                )
+                throw PartialDownloadError(downloadedURLs: downloadedURLs)
             } catch {
                 AppLog.warning(
                     self,
@@ -342,11 +354,16 @@ final class SyncTransferSession {
         progress: (@MainActor (_ current: Int, _ total: Int) -> Void)? = nil,
     ) async -> AudioImportResult {
         AppLog.info(self, "importDownloadedFiles begin files=\(urls.count)")
-        let result = await audioFileImporter.importFiles(
-            urls: urls,
-            options: .offlineTransfer,
-            progressCallback: progress,
-        )
+        // Run in a fresh unstructured task: interrupted transfers import from a
+        // cancelled task, and inherited cancellation would fail every file.
+        let importer = audioFileImporter
+        let result = await Task {
+            await importer.importFiles(
+                urls: urls,
+                options: .offlineTransfer,
+                progressCallback: progress,
+            )
+        }.value
         AppLog.info(
             self,
             "importDownloadedFiles finished succeeded=\(result.succeeded) duplicates=\(result.duplicates) errors=\(result.errors) noMetadata=\(result.noMetadata)",
@@ -367,6 +384,20 @@ final class SyncTransferSession {
 }
 
 private extension SyncTransferSession {
+    nonisolated static func isConnectionInterruption(_ error: URLError) -> Bool {
+        switch error.code {
+        case .cancelled,
+             .cannotConnectToHost,
+             .cannotFindHost,
+             .networkConnectionLost,
+             .notConnectedToInternet,
+             .timedOut:
+            return true
+        default:
+            return false
+        }
+    }
+
     func publishSenderProgress(_ progress: SyncSenderTransferProgress) {
         senderProgress = progress
         onSenderProgressChanged(progress)
