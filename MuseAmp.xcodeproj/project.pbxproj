@@ -911,7 +911,7 @@
 				minimumVersion = 8.8.1;
 			};
 		};
-	/* End XCRemoteSwiftPackageReference section */
+/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		505A0E172F8C046900FCC2A7 /* LNPopupController-Static */ = {
