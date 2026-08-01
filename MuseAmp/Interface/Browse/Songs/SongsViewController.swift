@@ -113,6 +113,7 @@ final class SongsViewController: UIViewController {
         lyricsStore: environment.lyricsCacheStore,
         locations: environment.paths,
         apiClient: environment.apiClient,
+        trackRemovalService: environment.musicLibraryTrackRemovalService,
     )
     lazy var lyricsReloadPresenter = LyricsReloadPresenter(
         reloadService: environment.lyricsReloadService,
@@ -358,31 +359,43 @@ final class SongsViewController: UIViewController {
         case .title:
             allTracks.sort {
                 let titleOrder = $0.title.localizedCaseInsensitiveCompare($1.title)
-                if titleOrder != .orderedSame { return titleOrder == .orderedAscending }
+                if titleOrder != .orderedSame {
+                    return titleOrder == .orderedAscending
+                }
                 return $0.artistName.localizedCaseInsensitiveCompare($1.artistName) == .orderedAscending
             }
         case .artist:
             allTracks.sort {
                 let artistOrder = $0.artistName.localizedCaseInsensitiveCompare($1.artistName)
-                if artistOrder != .orderedSame { return artistOrder == .orderedAscending }
+                if artistOrder != .orderedSame {
+                    return artistOrder == .orderedAscending
+                }
                 let albumOrder = $0.albumTitle.localizedCaseInsensitiveCompare($1.albumTitle)
-                if albumOrder != .orderedSame { return albumOrder == .orderedAscending }
+                if albumOrder != .orderedSame {
+                    return albumOrder == .orderedAscending
+                }
                 return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
             }
         case .album:
             allTracks.sort {
                 let albumOrder = $0.albumTitle.localizedCaseInsensitiveCompare($1.albumTitle)
-                if albumOrder != .orderedSame { return albumOrder == .orderedAscending }
+                if albumOrder != .orderedSame {
+                    return albumOrder == .orderedAscending
+                }
                 let num0 = $0.trackNumber ?? Int.max
                 let num1 = $1.trackNumber ?? Int.max
-                if num0 != num1 { return num0 < num1 }
+                if num0 != num1 {
+                    return num0 < num1
+                }
                 return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
             }
         case .recentlyModified:
             allTracks.sort { $0.fileModifiedAt > $1.fileModifiedAt }
         case .duration:
             allTracks.sort {
-                if $0.durationSeconds != $1.durationSeconds { return $0.durationSeconds > $1.durationSeconds }
+                if $0.durationSeconds != $1.durationSeconds {
+                    return $0.durationSeconds > $1.durationSeconds
+                }
                 return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
             }
         }

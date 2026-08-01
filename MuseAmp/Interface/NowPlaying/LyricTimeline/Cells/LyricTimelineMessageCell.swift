@@ -42,6 +42,7 @@ final class LyricTimelineMessageCell: UITableViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         messageLabel.text = nil
+        alpha = 1
     }
 
     func configure(text: String) {

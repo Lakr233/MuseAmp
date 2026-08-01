@@ -73,13 +73,14 @@ struct DatabaseIntegrityTests {
         #expect(tracksBeforeRebuild.isEmpty)
 
         let rebuildResult = try await reloadedManager.send(.rebuildIndex(pruneInvalidFiles: true))
-        guard case let .rebuild(scanned, upserted, deleted) = rebuildResult else {
+        guard case let .rebuild(scanned, upserted, deleted, removedInvalidFiles) = rebuildResult else {
             Issue.record("Expected rebuild result after index reset")
             return
         }
         #expect(scanned == 1)
         #expect(upserted == 1)
         #expect(deleted == 0)
+        #expect(removedInvalidFiles.isEmpty)
 
         let restoredTracks = try reloadedManager.searchTracks(query: "Library Title", limit: 10)
         #expect(restoredTracks.count == 1)
@@ -100,13 +101,20 @@ struct DatabaseIntegrityTests {
         await fixture.setInspectionFailure(trackID: "bad-track", enabled: true)
 
         let firstRebuild = try await manager.send(.rebuildIndex(pruneInvalidFiles: true))
-        guard case let .rebuild(scanned, upserted, deleted) = firstRebuild else {
+        guard case let .rebuild(scanned, upserted, deleted, removedInvalidFiles) = firstRebuild else {
             Issue.record("Expected rebuild result")
             return
         }
         #expect(scanned == 4)
         #expect(upserted == 1)
         #expect(deleted == 0)
+        #expect(removedInvalidFiles.count == 3)
+        #expect(Set(removedInvalidFiles.map(\.relativePath)) == [
+            "orphan.m4a",
+            "album-a/temp-track.m4a.tmp",
+            "album-b/bad-track.m4a",
+        ])
+        #expect(removedInvalidFiles.allSatisfy { !$0.reason.isEmpty })
 
         #expect(!FileManager.default.fileExists(atPath: invalidAtRoot.path))
         #expect(!FileManager.default.fileExists(atPath: tempResidue.path))
@@ -120,7 +128,7 @@ struct DatabaseIntegrityTests {
         try FileManager.default.removeItem(at: validPath)
 
         let secondRebuild = try await manager.send(.rebuildIndex(pruneInvalidFiles: true))
-        guard case let .rebuild(secondScanned, secondUpserted, secondDeleted) = secondRebuild
+        guard case let .rebuild(secondScanned, secondUpserted, secondDeleted, _) = secondRebuild
         else {
             Issue.record("Expected rebuild result")
             return
@@ -131,6 +139,49 @@ struct DatabaseIntegrityTests {
 
         let tracksAfterDeletion = try manager.searchTracks(query: "good-track", limit: 10)
         #expect(tracksAfterDeletion.isEmpty)
+    }
+
+    @Test
+    func `Merged album adopts artwork from newly imported track`() async throws {
+        let fixture = try DatabaseIntegrityFixture()
+        defer { try? fixture.cleanup() }
+
+        let manager = await fixture.makeManager(inspectAudioFile: { fileURL in
+            let trackID = fileURL.deletingPathExtension().lastPathComponent
+            let metadata = ImportedTrackMetadata(
+                trackID: trackID,
+                albumID: "album-merge",
+                title: "Title \(trackID)",
+                artistName: "Artist",
+                albumTitle: "Album Merge",
+                sourceKind: .downloaded,
+            )
+            let artwork = trackID == "with-art" ? Data([0xFF, 0xD8, 0xFF, 0xE0]) : nil
+            return AudioFileInspection(metadata: metadata, embeddedArtwork: artwork)
+        })
+        try await manager.initialize()
+
+        _ = try fixture.createLibraryAudioFile(relativePath: "album-merge/no-art.m4a")
+        _ = try await manager.send(.rebuildIndex(pruneInvalidFiles: true))
+        let albumsBefore = try manager.listAlbums()
+        #expect(albumsBefore.count == 1)
+        #expect(albumsBefore.first?.artworkTrackID == nil)
+
+        let incoming = try fixture.createIncomingAudioFile(name: "with-art.m4a")
+        let metadata = ImportedTrackMetadata(
+            trackID: "with-art",
+            albumID: "album-merge",
+            title: "With Art",
+            artistName: "Artist",
+            albumTitle: "Album Merge",
+            sourceKind: .downloaded,
+        )
+        _ = try await manager.send(.ingestAudioFile(url: incoming, metadata: metadata))
+
+        let albumsAfter = try manager.listAlbums()
+        #expect(albumsAfter.count == 1)
+        #expect(albumsAfter.first?.trackCount == 2)
+        #expect(albumsAfter.first?.artworkTrackID == "with-art")
     }
 
     @Test

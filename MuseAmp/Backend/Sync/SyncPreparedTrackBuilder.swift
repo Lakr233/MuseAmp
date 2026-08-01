@@ -9,11 +9,19 @@
 import Foundation
 import MuseAmpDatabaseKit
 
+nonisolated struct PreparedTransferSkippedItem: Hashable, Sendable {
+    let trackID: String
+    let title: String
+    let artistName: String
+    let reason: String
+}
+
 nonisolated struct PreparedTransferBatch {
     let manifest: SyncManifest
     let filesByTrackID: [String: URL]
     let companionFilesByTrackID: [String: [URL]]
     let cleanupDirectoryURL: URL
+    let skippedItems: [PreparedTransferSkippedItem]
 
     var preparedURLs: [URL] {
         manifest.entries.flatMap { entry in

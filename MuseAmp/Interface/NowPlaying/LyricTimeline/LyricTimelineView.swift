@@ -134,9 +134,10 @@ final class LyricTimelineView: UIView {
         let structureChanged = items.count != newItems.count
             || zip(items, newItems).contains { old, new in
                 switch (old, new) {
-                case (.spacer, .spacer), (.message, .message): false
-                case let (.line(a, _, _), .line(b, _, _)): a != b
-                case let (.staticLine(a, _), .staticLine(b, _)): a != b
+                case (.spacer, .spacer): false
+                case let (.message(a), .message(b)): a != b
+                case let (.line(a, oldText, _), .line(b, newText, _)): a != b || oldText != newText
+                case let (.staticLine(a, oldText), .staticLine(b, newText)): a != b || oldText != newText
                 default: true
                 }
             }
@@ -173,7 +174,7 @@ final class LyricTimelineView: UIView {
             cell.alpha = 0
             Interface.animate(
                 duration: 0.5,
-                delay: Double(order) * 0.1,
+                delay: min(Double(order) * 0.1, 0.5),
                 options: [.allowUserInteraction],
                 animations: { cell.alpha = 1 },
             )

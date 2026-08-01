@@ -13,7 +13,7 @@ extension SongLibraryIndexer {
         let filesScanned: Int
         let upserts: Int
         let deletions: Int
-        let purged: Int
+        let removedInvalidFiles: [RemovedInvalidFile]
     }
 }
 
@@ -33,20 +33,20 @@ final class SongLibraryIndexer: @unchecked Sendable {
             .rebuildIndex(pruneInvalidFiles: true, forceArtwork: forceArtwork),
             progressCallback: progressCallback,
         )
-        if case let .rebuild(scanned, upserted, deleted) = result {
+        if case let .rebuild(scanned, upserted, deleted, removedInvalidFiles) = result {
             AppLog.info(
                 self,
-                "syncLibrary finished files=\(scanned) upserts=\(upserted) deletions=\(deleted)",
+                "syncLibrary finished files=\(scanned) upserts=\(upserted) deletions=\(deleted) invalid=\(removedInvalidFiles.count)",
             )
             return SyncResult(
                 filesScanned: scanned,
                 upserts: upserted,
                 deletions: deleted,
-                purged: 0,
+                removedInvalidFiles: removedInvalidFiles,
             )
         }
 
         AppLog.warning(self, "syncLibrary returned unexpected result")
-        return SyncResult(filesScanned: 0, upserts: 0, deletions: 0, purged: 0)
+        return SyncResult(filesScanned: 0, upserts: 0, deletions: 0, removedInvalidFiles: [])
     }
 }

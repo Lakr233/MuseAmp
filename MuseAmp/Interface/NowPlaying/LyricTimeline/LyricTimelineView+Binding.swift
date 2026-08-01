@@ -41,26 +41,42 @@ extension LyricTimelineView {
                     return Just(LyricsPhase.loaded(.empty)).eraseToAnyPublisher()
                 }
                 let fetch = Deferred {
-                    Future<LyricsPhase, Never> { promise in
+                    Future<LyricsPhase, any Error> { promise in
                         Task {
-                            let text = await lyricsService.loadLyrics(for: trackID)
-                            let parsed = Self.parseLyrics(from: text)
-                            AppLog.info("LyricTimelineView", "lyrics fetched trackID=\(trackID) lines=\(parsed.lines.count) timeline=\(parsed.timeline != nil)")
-                            promise(.success(.loaded(parsed)))
+                            do {
+                                let text = try await lyricsService.loadLyricsThrowing(for: trackID)
+                                let parsed = Self.parseLyrics(from: text)
+                                AppLog.info("LyricTimelineView", "lyrics fetched trackID=\(trackID) lines=\(parsed.lines.count) timeline=\(parsed.timeline != nil)")
+                                promise(.success(.loaded(parsed)))
+                            } catch {
+                                AppLog.error("LyricTimelineView", "lyrics fetch failed trackID=\(trackID) error=\(error)")
+                                promise(.failure(error))
+                            }
                         }
                     }
                 }
+                .retry(2)
+                .replaceError(with: LyricsPhase.loaded(.empty))
                 return Just(LyricsPhase.pending)
                     .append(fetch)
                     .eraseToAnyPublisher()
             }
             .switchToLatest()
 
-        let dataSource = phase
-            .combineLatest(
-                environment.playbackController.playbackTimeSubject
-                    .map(\.currentTime),
+        // A track change must invalidate the previous track's cached playback
+        // time, otherwise the first snapshot of the new song is built against
+        // the old song's position and the list parks at the bottom.
+        let playbackTime = environment.playbackController.playbackTimeSubject
+            .map(\.currentTime)
+            .merge(
+                with: environment.playbackController.$snapshot
+                    .map(\.currentTrack?.id)
+                    .removeDuplicates()
+                    .map { _ in TimeInterval.zero },
             )
+
+        let dataSource = phase
+            .combineLatest(playbackTime)
             .receive(on: DispatchQueue.main)
             .map { phase, currentTime in
                 (phase, Self.buildSnapshot(phase: phase, currentTime: currentTime))

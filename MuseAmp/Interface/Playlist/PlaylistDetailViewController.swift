@@ -54,6 +54,7 @@ final class PlaylistDetailViewController: MediaDetailViewController, UITableView
         lyricsStore: environment?.lyricsCacheStore,
         locations: environment?.paths,
         apiClient: environment?.apiClient,
+        trackRemovalService: environment?.musicLibraryTrackRemovalService,
     )
     lazy var lyricsReloadPresenter: LyricsReloadPresenter? = environment.map {
         LyricsReloadPresenter(reloadService: $0.lyricsReloadService, viewController: self)
@@ -338,7 +339,9 @@ final class PlaylistDetailViewController: MediaDetailViewController, UITableView
         guard let dataSource else { return }
         var snapshot = dataSource.snapshot()
         let songItems = snapshot.itemIdentifiers(inSection: .tracks).filter {
-            if case .song = $0 { return true }
+            if case .song = $0 {
+                return true
+            }
             return false
         }
         guard !songItems.isEmpty else { return }
@@ -382,7 +385,9 @@ final class PlaylistDetailViewController: MediaDetailViewController, UITableView
 
     func tableView(_: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
         guard let item = dataSource.itemIdentifier(for: indexPath) else { return false }
-        if case .song = item { return true }
+        if case .song = item {
+            return true
+        }
         return false
     }
 
@@ -568,13 +573,17 @@ final class PlaylistDetailDiffableDataSource: UITableViewDiffableDataSource<Play
 
     override func tableView(_: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
         guard let item = itemIdentifier(for: indexPath) else { return false }
-        if case .song = item { return true }
+        if case .song = item {
+            return true
+        }
         return false
     }
 
     override func tableView(_: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
         guard let item = itemIdentifier(for: indexPath) else { return false }
-        if case .song = item { return true }
+        if case .song = item {
+            return true
+        }
         return false
     }
 

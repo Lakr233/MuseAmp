@@ -9,7 +9,7 @@ import Foundation
 
 public enum LibraryCommandResult: Sendable, Hashable {
     case none
-    case rebuild(scanned: Int, upserted: Int, deleted: Int)
+    case rebuild(scanned: Int, upserted: Int, deleted: Int, removedInvalidFiles: [RemovedInvalidFile])
     case ingestedTrack(AudioTrackRecord)
     case createdPlaylist(Playlist)
     case duplicatedPlaylist(Playlist)

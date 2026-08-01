@@ -42,7 +42,7 @@ public extension DatabaseManager {
         guard let indexStore else {
             return []
         }
-        return try indexStore.listAlbums()
+        return try indexStore.listAlbums(artworkFileExists: cacheCoordinator.hasArtwork)
     }
 
     func tracks(inAlbumID albumID: String) throws -> [AudioTrackRecord] {

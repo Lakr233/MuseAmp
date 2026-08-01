@@ -49,6 +49,7 @@ class AlbumDetailViewController: MediaDetailViewController {
         lyricsStore: environment.lyricsCacheStore,
         locations: environment.paths,
         apiClient: environment.apiClient,
+        trackRemovalService: environment.musicLibraryTrackRemovalService,
     )
     lazy var lyricsReloadPresenter = LyricsReloadPresenter(
         reloadService: environment.lyricsReloadService,
@@ -470,7 +471,9 @@ class AlbumDetailViewController: MediaDetailViewController {
         guard hasAppliedInitialData, let dataSource else { return }
         var snapshot = dataSource.snapshot()
         let trackItems = snapshot.itemIdentifiers(inSection: .tracks).filter {
-            if case .track = $0 { return true }
+            if case .track = $0 {
+                return true
+            }
             return false
         }
         guard !trackItems.isEmpty else { return }

@@ -51,6 +51,9 @@ class LyricTimelineCell: UITableViewCell {
         isActive = nil
         lyricLabel.text = nil
         lyricLabel.alpha = 0
+        // The content fade-in animates the cell's own alpha; recycled cells
+        // must not inherit a half-finished fade from the previous row.
+        alpha = 1
     }
 
     func configure(text: String, horizontalInset: CGFloat, isActive: Bool) {

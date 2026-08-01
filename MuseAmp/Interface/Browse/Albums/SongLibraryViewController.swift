@@ -128,6 +128,7 @@ final class SongLibraryViewController: UIViewController {
         lyricsStore: environment.lyricsCacheStore,
         locations: environment.paths,
         apiClient: environment.apiClient,
+        trackRemovalService: environment.musicLibraryTrackRemovalService,
     )
     lazy var albumNavigationHelper = AlbumNavigationHelper(
         environment: environment,
@@ -383,30 +384,40 @@ final class SongLibraryViewController: UIViewController {
         case .album:
             albums.sort {
                 let titleOrder = $0.albumTitle.localizedCaseInsensitiveCompare($1.albumTitle)
-                if titleOrder != .orderedSame { return titleOrder == .orderedAscending }
+                if titleOrder != .orderedSame {
+                    return titleOrder == .orderedAscending
+                }
                 return $0.artistName.localizedCaseInsensitiveCompare($1.artistName) == .orderedAscending
             }
         case .artist:
             albums.sort {
                 let artistOrder = $0.artistName.localizedCaseInsensitiveCompare($1.artistName)
-                if artistOrder != .orderedSame { return artistOrder == .orderedAscending }
+                if artistOrder != .orderedSame {
+                    return artistOrder == .orderedAscending
+                }
                 return $0.albumTitle.localizedCaseInsensitiveCompare($1.albumTitle) == .orderedAscending
             }
         case .recentlyModified:
             albums.sort {
                 let lhs = $0.latestModifiedAt ?? .distantPast
                 let rhs = $1.latestModifiedAt ?? .distantPast
-                if lhs != rhs { return lhs > rhs }
+                if lhs != rhs {
+                    return lhs > rhs
+                }
                 return $0.albumTitle.localizedCaseInsensitiveCompare($1.albumTitle) == .orderedAscending
             }
         case .trackCount:
             albums.sort {
-                if $0.trackCount != $1.trackCount { return $0.trackCount > $1.trackCount }
+                if $0.trackCount != $1.trackCount {
+                    return $0.trackCount > $1.trackCount
+                }
                 return $0.albumTitle.localizedCaseInsensitiveCompare($1.albumTitle) == .orderedAscending
             }
         case .duration:
             albums.sort {
-                if $0.totalDurationSeconds != $1.totalDurationSeconds { return $0.totalDurationSeconds > $1.totalDurationSeconds }
+                if $0.totalDurationSeconds != $1.totalDurationSeconds {
+                    return $0.totalDurationSeconds > $1.totalDurationSeconds
+                }
                 return $0.albumTitle.localizedCaseInsensitiveCompare($1.albumTitle) == .orderedAscending
             }
         }

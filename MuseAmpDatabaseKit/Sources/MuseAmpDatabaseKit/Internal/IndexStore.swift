@@ -110,19 +110,24 @@ struct IndexStore {
         return rows.map { $0.toModel() }
     }
 
-    func listAlbums() throws -> [AlbumGroup] {
+    func listAlbums(artworkFileExists: (String) -> Bool) throws -> [AlbumGroup] {
         let grouped = try Dictionary(grouping: allTracks(), by: \.albumID)
         return grouped.values.compactMap { tracks in
             guard let first = tracks.first else {
                 return nil
             }
+            // Prefer a track whose artwork cache actually exists on disk: after
+            // merging new songs into an album, a freshly imported cover must win
+            // over tracks that claim embedded artwork but have no usable file.
+            let artworkTrackID = tracks.first(where: { artworkFileExists($0.trackID) })?.trackID
+                ?? tracks.first(where: \.hasEmbeddedArtwork)?.trackID
             return AlbumGroup(
                 albumID: first.albumID,
                 albumTitle: first.albumTitle,
                 artistName: first.albumArtistName ?? first.artistName,
                 albumArtistName: first.albumArtistName,
                 trackCount: tracks.count,
-                artworkTrackID: tracks.first(where: \.hasEmbeddedArtwork)?.trackID,
+                artworkTrackID: artworkTrackID,
                 totalDurationSeconds: tracks.reduce(0) { $0 + $1.durationSeconds },
                 latestModifiedAt: tracks.map(\.updatedAt).max(),
             )

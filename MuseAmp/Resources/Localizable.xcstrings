@@ -1,6 +1,38 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%1$lld of %2$lld songs could not be read and were excluded from this transfer." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld of %2$lld songs could not be read and were excluded from this transfer."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共 %2$lld 首歌曲中有 %1$lld 首无法读取,已从本次传输中排除。"
+          }
+        }
+      }
+    },
+    "%1$lld of %2$lld songs could not be read and won't be included." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld of %2$lld songs could not be read and won't be included."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共 %2$lld 首歌曲中有 %1$lld 首无法读取,将不会包含在分享中。"
+          }
+        }
+      }
+    },
     "%@\nTap to enter the transfer password and start importing songs from this device." : {
       "localizations" : {
         "en" : {
@@ -285,6 +317,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已排队 %lld 首曲目"
+          }
+        }
+      }
+    },
+    "%lld unreadable files were detected and deleted." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld unreadable files were detected and deleted."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "检测到 %lld 个无法读取的文件,已将其删除。"
           }
         }
       }
@@ -1457,6 +1505,22 @@
         }
       }
     },
+    "Continue" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "继续"
+          }
+        }
+      }
+    },
     "Copy" : {
       "localizations" : {
         "en" : {
@@ -1885,6 +1949,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "删除歌曲"
+          }
+        }
+      }
+    },
+    "Deleted Files" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deleted Files"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已删除的文件"
           }
         }
       }
@@ -5427,6 +5507,38 @@
         }
       }
     },
+    "Remove %lld songs from the library? Their files will be deleted from this device." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove %lld songs from the library? Their files will be deleted from this device."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要从曲库中移除 %lld 首歌曲吗?它们的文件将从此设备中删除。"
+          }
+        }
+      }
+    },
+    "Remove (%lld)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove (%lld)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除(%lld)"
+          }
+        }
+      }
+    },
     "Remove Duplicates" : {
       "localizations" : {
         "en" : {
@@ -5455,6 +5567,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "要移出\"%@\"中的所有歌曲吗？此操作不可撤销。"
+          }
+        }
+      }
+    },
+    "Remove from Library" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from Library"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从曲库中移除"
           }
         }
       }
@@ -5747,18 +5875,18 @@
         }
       }
     },
-    "Scanned %d, updated %d, removed %d, purged %d" : {
+    "Scanned %1$lld, updated %2$lld, removed %3$lld." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Scanned %d, updated %d, removed %d, purged %d"
+            "value" : "Scanned %1$lld, updated %2$lld, removed %3$lld."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "扫描 %1$d 个，更新 %2$d 个，移除 %3$d 个，清除 %4$d 个"
+            "value" : "已扫描 %1$lld,更新 %2$lld,移除 %3$lld。"
           }
         }
       }
@@ -6531,6 +6659,38 @@
         }
       }
     },
+    "Skipped Songs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skipped Songs"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已跳过的歌曲"
+          }
+        }
+      }
+    },
+    "Some Songs Skipped" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Some Songs Skipped"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "部分歌曲已跳过"
+          }
+        }
+      }
+    },
     "Song" : {
       "localizations" : {
         "en" : {
@@ -6607,6 +6767,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已准备歌曲"
+          }
+        }
+      }
+    },
+    "Songs that could not be read and were left out of this transfer." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Songs that could not be read and were left out of this transfer."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法读取而被排除在本次传输之外的歌曲。"
           }
         }
       }
@@ -7523,6 +7699,22 @@
         }
       }
     },
+    "These songs could not be read from local storage and were left out." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "These songs could not be read from local storage and were left out."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这些歌曲无法从本地存储读取,已被排除。"
+          }
+        }
+      }
+    },
     "These tracks were already in your library, so they were left untouched." : {
       "localizations" : {
         "en" : {
@@ -8067,6 +8259,22 @@
         }
       }
     },
+    "Unreadable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unreadable"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法读取"
+          }
+        }
+      }
+    },
     "Unsupported Apple TV" : {
       "localizations" : {
         "en" : {
@@ -8163,6 +8371,22 @@
         }
       }
     },
+    "View Deleted Files" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View Deleted Files"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看已删除的文件"
+          }
+        }
+      }
+    },
     "View Logs" : {
       "localizations" : {
         "en" : {
@@ -8175,6 +8399,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "查看日志"
+          }
+        }
+      }
+    },
+    "View Skipped Songs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View Skipped Songs"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看已跳过的歌曲"
           }
         }
       }
