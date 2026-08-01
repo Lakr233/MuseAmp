@@ -30,17 +30,23 @@ final class LyricsService {
     /// Loads lyrics for a track: tries cache first, falls back to network fetch.
     /// Designed to be passed as the `lyricsLoader` closure to `LyricTimelineView.bindDataSource`.
     func loadLyrics(for trackID: String) async -> String? {
-        if let cached = cachedLyrics(for: trackID) {
-            return cached
-        }
         do {
-            let lyrics = try await fetchLyrics(for: trackID)
-            persistLyricsIfDownloaded(lyrics, for: trackID)
-            return lyrics
+            return try await loadLyricsThrowing(for: trackID)
         } catch {
             AppLog.error(self, "loadLyrics failed trackID=\(trackID) error=\(error)")
             return nil
         }
+    }
+
+    /// Same as `loadLyrics(for:)` but surfaces fetch failures to the caller so a
+    /// transient network error can be retried instead of rendering as "no lyrics".
+    func loadLyricsThrowing(for trackID: String) async throws -> String {
+        if let cached = cachedLyrics(for: trackID) {
+            return cached
+        }
+        let lyrics = try await fetchLyrics(for: trackID)
+        persistLyricsIfDownloaded(lyrics, for: trackID)
+        return lyrics
     }
 
     func persistLyricsIfDownloaded(_ lyrics: String, for trackID: String) {

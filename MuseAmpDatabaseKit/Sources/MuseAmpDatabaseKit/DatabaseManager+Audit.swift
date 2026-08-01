@@ -63,7 +63,7 @@ public extension DatabaseManager {
             ),
             counts: .init(
                 tracks: indexStore.allTracks().count,
-                albums: indexStore.listAlbums().count,
+                albums: indexStore.listAlbums(artworkFileExists: cacheCoordinator.hasArtwork).count,
                 playlists: stateStore.playlistCount(),
                 playlistEntries: stateStore.playlistEntryCount(),
                 activeDownloads: stateStore.activeDownloads().count,

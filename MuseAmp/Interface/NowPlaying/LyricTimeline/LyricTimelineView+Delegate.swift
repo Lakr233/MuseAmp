@@ -140,12 +140,36 @@ extension LyricTimelineView: UITableViewDataSource, UITableViewDelegate {
             }
             return false
         }) else {
-            AppLog.verbose(self, "focusCurrentLine no active line")
+            // Timed lyrics with no active line means playback sits before the
+            // first timestamp (e.g. right after a track change). Reset to the
+            // top instead of staying wherever the previous song left the list.
+            let hasTimedLines = items.contains {
+                if case .line = $0 {
+                    return true
+                }
+                return false
+            }
+            if hasTimedLines {
+                AppLog.verbose(self, "focusCurrentLine no active line, resetting to top")
+                scrollToTop()
+            } else {
+                AppLog.verbose(self, "focusCurrentLine no active line")
+            }
             return
         }
 
         AppLog.verbose(self, "focusCurrentLine activeRow=\(activeRow) userInitiated=\(isUserInitialed)")
         scrollToRow(activeRow)
+    }
+
+    func scrollToTop() {
+        guard tableView.contentOffset.y > 5 else {
+            return
+        }
+        Interface.smoothSpringAnimate {
+            self.tableView.setContentOffset(.zero, animated: false)
+            self.layoutIfNeeded()
+        }
     }
 
     func scrollToRow(_ row: Int) {

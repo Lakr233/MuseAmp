@@ -113,6 +113,22 @@
         }
       }
     },
+    "File is outside the expected album folder layout" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File is outside the expected album folder layout"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件不在预期的专辑目录结构中"
+          }
+        }
+      }
+    },
     "Found %ld invalid library paths" : {
       "localizations" : {
         "en" : {
@@ -173,6 +189,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "发现 %ld 个播放列表条目缺少 backing 文件"
+          }
+        }
+      }
+    },
+    "Leftover temporary download file" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leftover temporary download file"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "残留的临时下载文件"
           }
         }
       }

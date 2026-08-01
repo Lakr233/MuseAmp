@@ -8,6 +8,7 @@
 import AlertController
 import ConfigurableKit
 import Kingfisher
+import MuseAmpDatabaseKit
 import UIKit
 
 extension SettingsViewController {
@@ -177,16 +178,7 @@ extension SettingsViewController {
                 )
                 progressAlert.dismiss(animated: true) {
                     guard let self else { return }
-                    let alert = AlertViewController(
-                        title: String(localized: "Rebuild Complete"),
-                        message: String(
-                            format: String(localized: "Scanned %d, updated %d, removed %d, purged %d"),
-                            result.filesScanned, result.upserts, result.deletions, result.purged,
-                        ),
-                    ) { context in
-                        context.addAction(title: String(localized: "OK"), attribute: .accent) { context.dispose() }
-                    }
-                    self.present(alert, animated: true)
+                    self.presentRebuildResult(result)
                 }
             } catch {
                 AppLog.error("SettingsViewController", "rebuildDatabase failed: \(error.localizedDescription)")
@@ -202,6 +194,52 @@ extension SettingsViewController {
                 }
             }
         }
+    }
+
+    func presentRebuildResult(_ result: SongLibraryIndexer.SyncResult) {
+        var message = String(
+            format: String(localized: "Scanned %1$lld, updated %2$lld, removed %3$lld."),
+            result.filesScanned, result.upserts, result.deletions,
+        )
+        if !result.removedInvalidFiles.isEmpty {
+            message += "\n" + String(
+                format: String(localized: "%lld unreadable files were detected and deleted."),
+                result.removedInvalidFiles.count,
+            )
+        }
+        let alert = AlertViewController(
+            title: String(localized: "Rebuild Complete"),
+            message: message,
+        ) { [weak self] context in
+            if !result.removedInvalidFiles.isEmpty {
+                context.addAction(title: String(localized: "View Deleted Files")) {
+                    context.dispose {
+                        self?.presentRemovedInvalidFiles(result.removedInvalidFiles)
+                    }
+                }
+            }
+            context.addAction(title: String(localized: "OK"), attribute: .accent) { context.dispose() }
+        }
+        present(alert, animated: true)
+    }
+
+    func presentRemovedInvalidFiles(_ removedFiles: [RemovedInvalidFile]) {
+        let items = removedFiles.map { file in
+            PreparedTransferSkippedItem(
+                trackID: file.trackID ?? file.relativePath,
+                title: file.title ?? URL(fileURLWithPath: file.relativePath).lastPathComponent,
+                artistName: file.artistName ?? "",
+                reason: file.reason,
+            )
+        }
+        let listController = SkippedSongsViewController(
+            items: items,
+            trackRemovalService: nil,
+            title: String(localized: "Deleted Files"),
+        )
+        let navigationController = UINavigationController(rootViewController: listController)
+        navigationController.modalPresentationStyle = .formSheet
+        present(navigationController, animated: true)
     }
 
     func rebuildAllLyricsIndex() {

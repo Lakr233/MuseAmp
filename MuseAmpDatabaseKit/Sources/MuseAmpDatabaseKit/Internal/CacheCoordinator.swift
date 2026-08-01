@@ -12,9 +12,15 @@ struct CacheCoordinator {
     let lyricsStore: LyricsCacheStore
     let logger: DatabaseLogger
 
+    func hasArtwork(trackID: String) -> Bool {
+        FileManager.default.fileExists(atPath: paths.artworkCacheURL(for: trackID).path)
+    }
+
     func writeArtwork(data: Data, trackID: String) throws {
         let url = paths.artworkCacheURL(for: trackID)
-        if FileManager.default.fileExists(atPath: url.path) { return }
+        if FileManager.default.fileExists(atPath: url.path) {
+            return
+        }
         do {
             try data.write(to: url, options: .atomic)
             DBLog.verbose(logger, "CacheCoordinator", "writeArtwork trackID=\(trackID)")

@@ -15,7 +15,7 @@ extension DatabaseManager {
         progressCallback: (@Sendable (Int, Int) -> Void)? = nil,
     ) async throws -> LibraryCommandResult {
         guard let indexStore else {
-            return .rebuild(scanned: 0, upserted: 0, deleted: 0)
+            return .rebuild(scanned: 0, upserted: 0, deleted: 0, removedInvalidFiles: [])
         }
 
         eventSubject.send(.indexRebuildStarted)
@@ -29,8 +29,8 @@ extension DatabaseManager {
             schema: DatabaseFormat.indexSchemaVersion,
             format: DatabaseFormat.indexFormatVersion,
         )
-        if !result.invalidRelativePaths.isEmpty {
-            eventSubject.send(.invalidFilesRemoved(relativePaths: result.invalidRelativePaths))
+        if !result.removedInvalidFiles.isEmpty {
+            eventSubject.send(.invalidFilesRemoved(relativePaths: result.removedInvalidFiles.map(\.relativePath)))
         }
         if !result.transientFailureRelativePaths.isEmpty {
             DBLog.warning(logger, "DatabaseManager", "rebuild skipped \(result.transientFailureRelativePaths.count) file(s) after transient inspect failures; they remain on disk for the next rebuild")
@@ -42,7 +42,12 @@ extension DatabaseManager {
                 deleted: result.deleted,
             ),
         )
-        return .rebuild(scanned: result.scanned, upserted: result.upserted, deleted: result.deleted)
+        return .rebuild(
+            scanned: result.scanned,
+            upserted: result.upserted,
+            deleted: result.deleted,
+            removedInvalidFiles: result.removedInvalidFiles,
+        )
     }
 
     @DatabaseActor

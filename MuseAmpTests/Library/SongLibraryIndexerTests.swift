@@ -34,7 +34,7 @@ struct SongLibraryIndexerTests {
         #expect(result.filesScanned == 1)
         #expect(result.upserts == 0)
         #expect(result.deletions == 0)
-        #expect(result.purged == 0)
+        #expect(result.removedInvalidFiles.count == 1)
         #expect(!FileManager.default.fileExists(atPath: fileURL.path))
         #expect(!FileManager.default.fileExists(atPath: artworkURL.path))
         #expect(!FileManager.default.fileExists(atPath: fileURL.deletingLastPathComponent().path))
@@ -64,7 +64,7 @@ struct SongLibraryIndexerTests {
         #expect(result.filesScanned == 0)
         #expect(result.upserts == 0)
         #expect(result.deletions == 1)
-        #expect(result.purged == 0)
+        #expect(result.removedInvalidFiles.isEmpty)
         #expect(try database.allTracks().isEmpty)
     }
 }

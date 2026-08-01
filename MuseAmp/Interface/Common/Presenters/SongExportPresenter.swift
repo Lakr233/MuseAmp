@@ -15,17 +15,20 @@ final class SongExportPresenter {
     private let lyricsStore: LyricsCacheStore?
     private let locations: LibraryPaths?
     private let apiClient: APIClient?
+    private let trackRemovalService: MusicLibraryTrackRemovalService?
 
     init(
         viewController: UIViewController?,
         lyricsStore: LyricsCacheStore? = nil,
         locations: LibraryPaths? = nil,
         apiClient: APIClient? = nil,
+        trackRemovalService: MusicLibraryTrackRemovalService? = nil,
     ) {
         self.viewController = viewController
         self.lyricsStore = lyricsStore
         self.locations = locations
         self.apiClient = apiClient
+        self.trackRemovalService = trackRemovalService
     }
 
     func present(
@@ -74,14 +77,26 @@ final class SongExportPresenter {
                     )
 
                     progressAlert.dismiss(animated: true) {
-                        self.presentShareSheet(
-                            urls: batch.preparedURLs,
-                            cleanupDirectoryURL: batch.cleanupDirectoryURL,
-                            from: viewController,
-                            barButtonItem: barButtonItem,
-                            sourceView: sourceView,
-                            sourceRect: sourceRect,
-                        )
+                        let presentShare = {
+                            self.presentShareSheet(
+                                urls: batch.preparedURLs,
+                                cleanupDirectoryURL: batch.cleanupDirectoryURL,
+                                from: viewController,
+                                barButtonItem: barButtonItem,
+                                sourceView: sourceView,
+                                sourceRect: sourceRect,
+                            )
+                        }
+                        guard batch.skippedItems.isEmpty else {
+                            self.presentSkippedNotice(
+                                skippedItems: batch.skippedItems,
+                                totalCount: items.count,
+                                from: viewController,
+                                onContinue: presentShare,
+                            )
+                            return
+                        }
+                        presentShare()
                     }
                 } catch {
                     AppLog.error("SongExportPresenter", "prepareBatch failed: \(error.localizedDescription)")
@@ -232,6 +247,44 @@ private extension SongExportPresenter {
             lyricsCacheStore: lyricsStore,
             apiClient: apiClient,
         )
+    }
+
+    func presentSkippedNotice(
+        skippedItems: [PreparedTransferSkippedItem],
+        totalCount: Int,
+        from viewController: UIViewController,
+        onContinue: @escaping () -> Void,
+    ) {
+        let alert = AlertViewController(
+            title: String(localized: "Some Songs Skipped"),
+            message: String(
+                format: String(localized: "%1$lld of %2$lld songs could not be read and won't be included."),
+                skippedItems.count,
+                totalCount,
+            ),
+        ) { [weak viewController, trackRemovalService] context in
+            context.addAction(title: String(localized: "View Skipped Songs")) {
+                context.dispose {
+                    guard let viewController else {
+                        return
+                    }
+                    let listController = SkippedSongsViewController(
+                        items: skippedItems,
+                        trackRemovalService: trackRemovalService,
+                    )
+                    listController.onDismiss = onContinue
+                    let navigationController = UINavigationController(rootViewController: listController)
+                    navigationController.modalPresentationStyle = .formSheet
+                    viewController.present(navigationController, animated: true)
+                }
+            }
+            context.addAction(title: String(localized: "Continue"), attribute: .accent) {
+                context.dispose {
+                    onContinue()
+                }
+            }
+        }
+        viewController.present(alert, animated: true)
     }
 
     func presentExportError(from viewController: UIViewController, message: String) {

@@ -27,6 +27,7 @@ nonisolated extension SyncPreparedTrackBuilder {
             var entries: [SyncManifestEntry] = []
             var filesByTrackID: [String: URL] = [:]
             var companionFilesByTrackID: [String: [URL]] = [:]
+            var skippedItems: [PreparedTransferSkippedItem] = []
             var usedFileNames = Set<String>()
 
             for (index, item) in items.enumerated() {
@@ -48,6 +49,12 @@ nonisolated extension SyncPreparedTrackBuilder {
                         self,
                         "prepareBatch skipped trackID=\(item.trackID) title='\(sanitizedLogText(item.title, maxLength: 80))' error=\(error.localizedDescription)",
                     )
+                    skippedItems.append(PreparedTransferSkippedItem(
+                        trackID: item.trackID,
+                        title: item.title,
+                        artistName: item.artistName,
+                        reason: error.localizedDescription,
+                    ))
                 }
             }
 
@@ -56,17 +63,32 @@ nonisolated extension SyncPreparedTrackBuilder {
                 throw SyncTransferError.noPreparedSongs
             }
 
+            var effectiveSession = session
+            if let session, !skippedItems.isEmpty {
+                let preparedTrackIDs = Set(entries.map(\.trackID))
+                effectiveSession = SyncPlaylistSession(
+                    playlistName: session.playlistName,
+                    sessionID: session.sessionID,
+                    orderedTrackIDs: session.orderedTrackIDs.filter { preparedTrackIDs.contains($0) },
+                    createdAt: session.createdAt,
+                )
+                AppLog.info(
+                    self,
+                    "prepareBatch filtered session tracks \(session.orderedTrackIDs.count) -> \(effectiveSession?.orderedTrackIDs.count ?? 0) after skips",
+                )
+            }
             let manifest = SyncManifest(
                 deviceName: deviceName,
-                session: session,
+                session: effectiveSession,
                 entries: entries,
             )
-            AppLog.info(self, "prepareBatch prepared \(entries.count)/\(items.count) track(s)")
+            AppLog.info(self, "prepareBatch prepared \(entries.count)/\(items.count) track(s) skipped=\(skippedItems.count)")
             return PreparedTransferBatch(
                 manifest: manifest,
                 filesByTrackID: filesByTrackID,
                 companionFilesByTrackID: companionFilesByTrackID,
                 cleanupDirectoryURL: cleanupDirectoryURL,
+                skippedItems: skippedItems,
             )
         }
 

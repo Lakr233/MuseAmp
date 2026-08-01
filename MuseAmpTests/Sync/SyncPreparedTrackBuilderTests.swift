@@ -89,6 +89,101 @@ struct SyncPreparedTrackBuilderTests {
         #expect(batch.filesByTrackID["1234567890"] != nil)
     }
 
+    @Test
+    func `prepare batch records skipped items and filters session for unreadable sources`() async throws {
+        let sandbox = TestLibrarySandbox()
+        let environment = sandbox.makeEnvironment()
+        let builder = SyncPreparedTrackBuilder(
+            paths: environment.paths,
+            lyricsCacheStore: environment.lyricsCacheStore,
+            apiClient: environment.apiClient,
+        )
+
+        let goodURL = sandbox.baseDirectory.appendingPathComponent("good.m4a")
+        try makeSilentM4A(at: goodURL)
+        let missingURL = sandbox.baseDirectory.appendingPathComponent("missing.m4a")
+
+        let goodItem = SongExportItem(
+            sourceURL: goodURL,
+            artistName: "Artist",
+            title: "Good Song",
+            trackID: "1111111111",
+            albumID: "9988776655",
+            albumName: "Album",
+            artworkURL: nil,
+        )
+        let brokenItem = SongExportItem(
+            sourceURL: missingURL,
+            artistName: "Artist",
+            title: "Broken Song",
+            trackID: "2222222222",
+            albumID: "9988776655",
+            albumName: "Album",
+            artworkURL: nil,
+        )
+        let session = SyncPlaylistSession(
+            playlistName: "Playlist",
+            orderedTrackIDs: ["1111111111", "2222222222"],
+        )
+
+        let batch = try await builder.prepareBatch(
+            deviceName: "Device",
+            items: [goodItem, brokenItem],
+            session: session,
+        )
+        defer { builder.cleanup(batch: batch) }
+
+        #expect(batch.manifest.entries.map(\.trackID) == ["1111111111"])
+        #expect(batch.skippedItems.map(\.trackID) == ["2222222222"])
+        #expect(batch.skippedItems.first?.title == "Broken Song")
+        #expect(batch.skippedItems.first?.reason.isEmpty == false)
+
+        let manifestSession = try #require(batch.manifest.session)
+        #expect(manifestSession.playlistName == "Playlist")
+        #expect(manifestSession.sessionID == session.sessionID)
+        #expect(manifestSession.orderedTrackIDs == ["1111111111"])
+        #expect(manifestSession.expectedTrackCount == 1)
+        #expect(manifestSession.expectedUniqueTrackCount == 1)
+    }
+
+    @Test
+    func `prepare batch keeps session untouched when nothing is skipped`() async throws {
+        let sandbox = TestLibrarySandbox()
+        let environment = sandbox.makeEnvironment()
+        let builder = SyncPreparedTrackBuilder(
+            paths: environment.paths,
+            lyricsCacheStore: environment.lyricsCacheStore,
+            apiClient: environment.apiClient,
+        )
+
+        let sourceURL = sandbox.baseDirectory.appendingPathComponent("source.m4a")
+        try makeSilentM4A(at: sourceURL)
+
+        let item = SongExportItem(
+            sourceURL: sourceURL,
+            artistName: "Artist",
+            title: "Song",
+            trackID: "1234567890",
+            albumID: "9988776655",
+            albumName: "Album",
+            artworkURL: nil,
+        )
+        let session = SyncPlaylistSession(
+            playlistName: "Playlist",
+            orderedTrackIDs: ["1234567890"],
+        )
+
+        let batch = try await builder.prepareBatch(
+            deviceName: "Device",
+            items: [item],
+            session: session,
+        )
+        defer { builder.cleanup(batch: batch) }
+
+        #expect(batch.skippedItems.isEmpty)
+        #expect(batch.manifest.session == session)
+    }
+
     // MARK: - Metadata Presence Check
 
     @Test

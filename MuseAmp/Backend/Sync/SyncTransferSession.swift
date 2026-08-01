@@ -100,6 +100,10 @@ final class SyncTransferSession {
         preparedBatch?.manifest.entries.count ?? 0
     }
 
+    var preparedSkippedItems: [PreparedTransferSkippedItem] {
+        preparedBatch?.skippedItems ?? []
+    }
+
     func prepareSender(
         tracks: [AudioTrackRecord],
         session: SyncPlaylistSession? = nil,
@@ -392,9 +396,9 @@ private extension SyncTransferSession {
              .networkConnectionLost,
              .notConnectedToInternet,
              .timedOut:
-            return true
+            true
         default:
-            return false
+            false
         }
     }
 

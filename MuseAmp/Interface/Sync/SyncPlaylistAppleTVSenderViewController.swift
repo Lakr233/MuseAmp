@@ -155,6 +155,15 @@ final class SyncPlaylistAppleTVSenderViewController: StackScrollController {
                     description: String(localized: "These tracks were not locally available on iPhone, so they were excluded from transfer."),
                 )
             }
+            if !session.preparedSkippedItems.isEmpty {
+                addInfoView(
+                    title: "Unreadable",
+                    rawValue: "\(session.preparedSkippedItems.count)",
+                    description: String(localized: "These songs could not be read from local storage and were left out."),
+                )
+                stackView.addArrangedSubviewWithMargin(makeViewSkippedObject().createView())
+                stackView.addArrangedSubview(SeparatorView())
+            }
 
             addSenderTransferSection(progress: progress)
 
@@ -300,6 +309,7 @@ private extension SyncPlaylistAppleTVSenderViewController {
                     ),
                 )
                 refreshUI()
+                presentSkippedNoticeIfNeeded()
             } catch {
                 AppLog.error(self, "startSession failed playlistID=\(playlistID?.uuidString ?? "nil") error=\(error.localizedDescription)")
                 await session.stopSender()
@@ -345,6 +355,7 @@ private extension SyncPlaylistAppleTVSenderViewController {
                     ),
                 )
                 refreshUI()
+                presentSkippedNoticeIfNeeded()
             } catch {
                 AppLog.error(self, "startSession tracks failed error=\(error.localizedDescription)")
                 await session.stopSender()
@@ -360,6 +371,52 @@ private extension SyncPlaylistAppleTVSenderViewController {
         }
         state = .interrupted(String(localized: "Sending was interrupted because the app moved to the background."))
         refreshUI()
+    }
+
+    func presentSkippedNoticeIfNeeded() {
+        let skippedItems = session.preparedSkippedItems
+        guard !skippedItems.isEmpty else {
+            return
+        }
+        let alert = AlertViewController(
+            title: String(localized: "Some Songs Skipped"),
+            message: String(
+                format: String(localized: "%1$lld of %2$lld songs could not be read and were excluded from this transfer."),
+                skippedItems.count,
+                skippedItems.count + session.preparedSongCount,
+            ),
+        ) { [weak self] context in
+            context.addAction(title: String(localized: "View Skipped Songs")) {
+                context.dispose {
+                    self?.presentSkippedSongsList()
+                }
+            }
+            context.addAction(title: String(localized: "OK"), attribute: .accent) {
+                context.dispose()
+            }
+        }
+        present(alert, animated: true)
+    }
+
+    func presentSkippedSongsList() {
+        let listController = SkippedSongsViewController(
+            items: session.preparedSkippedItems,
+            trackRemovalService: environment.musicLibraryTrackRemovalService,
+        )
+        let navigationController = UINavigationController(rootViewController: listController)
+        navigationController.modalPresentationStyle = .formSheet
+        present(navigationController, animated: true)
+    }
+
+    func makeViewSkippedObject() -> ConfigurableObject {
+        ConfigurableObject(
+            icon: "exclamationmark.triangle",
+            title: "View Skipped Songs",
+            explain: "Songs that could not be read and were left out of this transfer.",
+            ephemeralAnnotation: .action { [weak self] _ in
+                await MainActor.run { self?.presentSkippedSongsList() }
+            },
+        )
     }
 
     func refreshUI() {
