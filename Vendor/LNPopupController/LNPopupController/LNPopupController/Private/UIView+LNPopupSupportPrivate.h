@@ -14,7 +14,20 @@
 CF_EXTERN_C_BEGIN
 NS_ASSUME_NONNULL_BEGIN
 
-extern UIEdgeInsets LNPopupEnvironmentLayoutInsets(UIView* containerView, BOOL limitToSafeAreas);
+typedef struct {
+	CGSize leftBottom;
+	CGSize rightBottom;
+	CGSize rightTop;
+	CGSize leftTop;
+} LNPopupViewCorners;
+
+extern UIEdgeInsets __LNPopupEnvironmentLayoutInsets(UIView* containerView, BOOL limitToSafeAreas);
+
+#if TARGET_OS_MACCATALYST
+#define __LNPopupScaledFloat(value, t) (value * 0.77)
+#else
+#define __LNPopupScaledFloat(value, t) (value)
+#endif
 
 typedef void (^LNInWindowBlock)(dispatch_block_t);
 
@@ -25,8 +38,17 @@ typedef void (^LNInWindowBlock)(dispatch_block_t);
 @end
 
 UIEdgeInsets _LNEdgeInsetsFromDirectionalEdgeInsets(UIView* forView, NSDirectionalEdgeInsets edgeInsets);
+NSDirectionalEdgeInsets _LNDirectionalEdgeInsetsFromEdgeInsets(UIView* forView, UIEdgeInsets edgeInsets);
+
+@interface UIView ()
+
+- (void)_ln_updateSafeAreaInsets:(UIEdgeInsets)newSafeAreaInsets;
+
+@end
 
 @interface UIView (LNPopupSupportPrivate)
+
+@property (nonatomic, readonly, nullable) UIViewController* _ln_closestController;
 
 - (void)_ln_triggerBarAppearanceRefreshIfNeededTriggeringLayout:(BOOL)layout;
 - (BOOL)_ln_scrollEdgeAppearanceRequiresFadeForPopupBar:(LNPopupBar*)popupBar;
@@ -38,7 +60,13 @@ UIEdgeInsets _LNEdgeInsetsFromDirectionalEdgeInsets(UIView* forView, NSDirection
 - (void)_ln_freezeInsets;
 
 - (BOOL)_ln_isAncestorOfView:(UIView *)view;
+- (nullable UIView*)_ln_firstSubviewPassingTest:(BOOL(^)(UIView* viewToTest))test includingSelf:(BOOL)includeSelf;
+- (nullable UIView*)_ln_lastSubviewPassingTest:(BOOL(^)(UIView* viewToTest))test includingSelf:(BOOL)includeSelf;
+- (nullable UIView*)_ln_firstDescendantPassingTest:(BOOL(^)(UIView* viewToTest))test includingSelf:(BOOL)includeSelf;
 
+- (void)_ln_removeInteractionsFromSubviewTree;
+
+@property (nonatomic, getter=_ln_corners, setter=_ln_setCorners:) LNPopupViewCorners corners;
 @property (nonatomic, readonly) CGFloat _ln_simulatedCornerRadiusFromCorners;
 
 @end
@@ -51,7 +79,7 @@ UIEdgeInsets _LNEdgeInsetsFromDirectionalEdgeInsets(UIView* forView, NSDirection
 
 @interface UITabBar ()
 
-@property (nonatomic, getter=_ignoringLayoutDuringTransition, setter=_setIgnoringLayoutDuringTransition:) BOOL ignoringLayoutDuringTransition;
+@property (nonatomic, getter=_ln_ignoringLayoutDuringTransition, setter=_ln_setIgnoringLayoutDuringTransition:) BOOL _ln_ignoringLayoutDuringTransition;
 
 @end
 
@@ -85,6 +113,7 @@ UIEdgeInsets _LNEdgeInsetsFromDirectionalEdgeInsets(UIView* forView, NSDirection
 
 + (void)_ln_fixUIHostingViewHitTest;
 + (void)_ln_animateUsingSwiftUIWithDuration:(NSTimeInterval)duration animations:(void(^)(void))animations completion:(void(^ __nullable)(void))completion;
++ (void)_ln_animateUsingSwiftUIWithDuration:(NSTimeInterval)duration delay:(NSTimeInterval)delay animations:(void(^)(void))animations completion:(void(^ __nullable)(void))completion;
 + (void)_ln_animateInteractiveUsingSwiftUIWithDuration:(NSTimeInterval)duration animations:(void(^)(void))animations completion:(void(^ __nullable)(void))completion;
 
 @end

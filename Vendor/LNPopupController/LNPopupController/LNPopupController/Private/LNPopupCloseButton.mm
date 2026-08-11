@@ -14,6 +14,7 @@
 #import "LNPopupContentView+Private.h"
 #import "_LNPopupGlassUtils.h"
 #import "_LNPopupSwizzlingUtils.h"
+#import "_LNPopupCatalystHelper.h"
 
 BOOL _LNPopupCloseButtonStyleIsGlass(LNPopupCloseButtonStyle style)
 {
@@ -28,14 +29,11 @@ void _LNPopupResolveCloseButtonStyleAndPositioning(LNPopupCloseButtonStyle style
 	{
 		if(LNPopupEnvironmentHasGlass())
 		{
-			if([LNPopupBar isCatalystApp])
-			{
-				*resolvedStyle = LNPopupCloseButtonStyleProminentGlass;
-			}
-			else
-			{
-				*resolvedStyle = LNPopupCloseButtonStyleGrabber;
-			}
+#if TARGET_OS_MACCATALYST
+			*resolvedStyle = LNPopupCloseButtonStyleGlass;
+#else
+			*resolvedStyle = LNPopupCloseButtonStyleProminentGlass;
+#endif
 		}
 		else
 		{
@@ -103,8 +101,6 @@ __attribute__((objc_direct_members))
 
 @synthesize style=__style;
 
-#ifndef LNPopupControllerEnforceStrictClean
-
 + (void)load
 {
 	@autoreleasepool
@@ -120,14 +116,17 @@ __attribute__((objc_direct_members))
 	return _popupContentView.currentPopupContentViewController.view;
 }
 
-#endif
-
 - (instancetype)initWithContainingContentView:(LNPopupContentView*)contentView
 {
 	self = [super init];
 	
 	if(self)
 	{
+		if(@available(iOS 15.0, *))
+		{
+			self.preferredBehavioralStyle = UIBehavioralStylePad;
+		}
+		
 		_popupContentView = contentView;
 		
 		self.accessibilityLabel = NSLocalizedString(@"Close", @"");
@@ -143,12 +142,6 @@ __attribute__((objc_direct_members))
 		if(@available(iOS 13.4, *))
 		{
 			self.pointerInteractionEnabled = YES;
-			self.pointerStyleProvider = ^UIPointerStyle * _Nullable(UIButton * _Nonnull button, UIPointerEffect * _Nonnull proposedEffect, UIPointerShape * _Nonnull proposedShape) {
-				UIPointerLiftEffect* effect = [UIPointerLiftEffect effectWithPreview:[[UITargetedPreview alloc] initWithView:button]];
-				UIPointerShape* shape = nil;//[UIPointerShape shapeWithRoundedRect:interaction.view.frame];
-				
-				return [UIPointerStyle styleWithEffect:effect shape:shape];
-			};
 		}
 	}
 	
@@ -268,6 +261,7 @@ static CGFloat LNPopupCloseButtonGrabberWidth(void)
 
 - (void)_setupForCircularButton
 {
+#if !TARGET_OS_MACCATALYST
 	UIBlurEffectStyle blurStyle = UIBlurEffectStyleSystemChromeMaterial;
 	
 	_effectView = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:blurStyle]];
@@ -283,6 +277,14 @@ static CGFloat LNPopupCloseButtonGrabberWidth(void)
 	_highlightView.alpha = 0.0;
 	[highlightEffectView.contentView addSubview:_highlightView];
 	[_effectView.contentView addSubview:highlightEffectView];
+#else
+	if(@available(iOS 15.0, *))
+	{
+		UIButtonConfiguration* config = [UIButtonConfiguration grayButtonConfiguration];
+		config.image = [UIImage systemImageNamed:@"chevron.down"];
+		self.configuration = config;
+	}
+#endif
 	
 	[self addTarget:self action:@selector(_didTouchDown) forControlEvents:UIControlEventTouchDown];
 	[self addTarget:self action:@selector(_didTouchDragExit) forControlEvents:UIControlEventTouchDragExit];
@@ -290,19 +292,24 @@ static CGFloat LNPopupCloseButtonGrabberWidth(void)
 	[self addTarget:self action:@selector(_didTouchUp) forControlEvents:UIControlEventTouchUpInside];
 	[self addTarget:self action:@selector(_didTouchUp) forControlEvents:UIControlEventTouchUpOutside];
 	[self addTarget:self action:@selector(_didTouchCancel) forControlEvents:UIControlEventTouchCancel];
-	
+
+#if !TARGET_OS_MACCATALYST
 	self.layer.shadowColor = [UIColor blackColor].CGColor;
 	self.layer.shadowOpacity = 0.15;
 	self.layer.shadowRadius = 4.0;
 	self.layer.shadowOffset = CGSizeMake(0, 0);
 	self.layer.masksToBounds = NO;
+#endif
 	
 	self.tintColor = [UIColor labelColor];
 	[self setTitleColor:self.tintColor forState:UIControlStateNormal];
 	
-	UIImageSymbolConfiguration* config = [UIImageSymbolConfiguration configurationWithPointSize:15 weight:UIImageSymbolWeightHeavy scale:UIImageSymbolScaleSmall];
-	UIImage* image = [[UIImage systemImageNamed:@"chevron.down" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-	[self setImage:image forState:UIControlStateNormal];
+	if(ln_unavailable(iOS 15.0, *))
+	{
+		UIImageSymbolConfiguration* config = [UIImageSymbolConfiguration configurationWithPointSize:15 weight:UIImageSymbolWeightHeavy scale:UIImageSymbolScaleSmall];
+		UIImage* image = [[UIImage systemImageNamed:@"chevron.down" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+		[self setImage:image forState:UIControlStateNormal];
+	}
 }
 
 - (void)_setupForGlassButton API_AVAILABLE(ios(26.0))
@@ -337,8 +344,14 @@ static CGFloat LNPopupCloseButtonGrabberWidth(void)
 			return;
 			break;
 	}
+	
+	UIFont* fontToUse = [UIFont preferredFontForTextStyle:UIFontTextStyleBody];
+	fontToUse = [UIFont fontWithDescriptor:[fontToUse.fontDescriptor fontDescriptorByAddingAttributes:@{
+		UIFontDescriptorTraitsAttribute: @{ UIFontWeightTrait: @(UIFontWeightMedium) }
+	}] size:fontToUse.pointSize];
+	
 	glassConfig.image = [UIImage systemImageNamed:@"xmark"];
-	glassConfig.preferredSymbolConfigurationForImage = [UIImageSymbolConfiguration configurationWithPointSize:17];
+	glassConfig.preferredSymbolConfigurationForImage = [UIImageSymbolConfiguration configurationWithFont:fontToUse scale:UIImageSymbolScaleLarge];
 	self.configuration = glassConfig;
 }
 
@@ -418,22 +431,36 @@ static CGFloat LNPopupCloseButtonGrabberWidth(void)
 
 - (CGSize)sizeThatFits:(CGSize)size
 {
+	CGSize rv;
 	if(_LNPopupCloseButtonStyleIsGlass(self.effectiveStyle))
 	{
-		return CGSizeMake(44, 44);
+#if TARGET_OS_MACCATALYST
+		rv = [_LNPopupCatalystHelper metricsForScene:self.window.windowScene].glassButtonSize;
+#else
+		rv = CGSizeMake(44, 44);
+#endif
 	}
 	else if(self.effectiveStyle == LNPopupCloseButtonStyleRound)
 	{
-		return CGSizeMake(24, 24);
+#if TARGET_OS_MACCATALYST
+		rv = CGSizeMake(30, 30);
+#else
+		rv = CGSizeMake(24, 24);
+#endif
 	}
 	else if(self.effectiveStyle == LNPopupCloseButtonStyleChevron)
 	{
-		return CGSizeMake(42, 25);
+		rv = CGSizeMake(42, 25);
 	}
 	else
 	{
-		return CGSizeMake(LNPopupCloseButtonGrabberWidth(), 25);
+		rv = CGSizeMake(LNPopupCloseButtonGrabberWidth(), 25);
 	}
+	
+	rv.width = __LNPopupScaledFloat(rv.width, self.traitCollection);
+	rv.height = __LNPopupScaledFloat(rv.height, self.traitCollection);
+	
+	return rv;
 }
 
 - (CGSize)intrinsicContentSize
@@ -476,6 +503,14 @@ static CGFloat LNPopupCloseButtonGrabberWidth(void)
 	{
 		[self setTitleColor:self.tintColor forState:UIControlStateNormal];
 	}
+}
+
+- (nullable UIPointerStyle *)pointerInteraction:(UIPointerInteraction *)interaction styleForRegion:(UIPointerRegion *)region  API_AVAILABLE(ios(13.4))
+{
+	UIPointerLiftEffect* effect = [UIPointerLiftEffect effectWithPreview:[[UITargetedPreview alloc] initWithView:self]];
+	UIPointerShape* shape = nil;//[UIPointerShape shapeWithRoundedRect:interaction.view.frame];
+	
+	return [UIPointerStyle styleWithEffect:effect shape:shape];
 }
 
 @end

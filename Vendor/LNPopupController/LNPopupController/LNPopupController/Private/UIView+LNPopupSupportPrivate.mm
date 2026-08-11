@@ -16,24 +16,26 @@
 #import "_LNWeakRef.h"
 #import <objc/runtime.h>
 
-UIEdgeInsets LNPopupEnvironmentLayoutInsets(UIView* containerView, BOOL limitToSafeAreas)
+UIEdgeInsets __LNPopupEnvironmentLayoutInsets(UIView* containerView, BOOL limitToSafeAreas)
 {
 	if(@available(iOS 26.0, *))
-	if(LNPopupEnvironmentHasGlass() && !limitToSafeAreas)
+	if(LNPopupEnvironmentHasGlass() && limitToSafeAreas == NO)
 	{
 		//TODO: Find out where to get these constants from the system.
 		if(UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPhone)
 		{
 			if(containerView.traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassCompact)
 			{
-				return UIEdgeInsetsMake(containerView.safeAreaInsets.top, 20, 20, 20);
+				BOOL isCompactButHasSafeArea = containerView.safeAreaInsets.left > 10;
+				
+				return UIEdgeInsetsMake(isCompactButHasSafeArea ? 20 : containerView.safeAreaInsets.top, isCompactButHasSafeArea ? 38 : 2, 20, isCompactButHasSafeArea ? 38 : 20);
 			}
 			else
 			{
 				return UIEdgeInsetsMake(20, 38, 20, 38);
 			}
 		}
-		else if(UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad)
+		else if(UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad || LNPopupBar.isCatalystApp)
 		{
 			UIEdgeInsets safeArea = [containerView edgeInsetsForLayoutRegion:[UIViewLayoutRegion safeAreaLayoutRegionWithCornerAdaptation:UIViewLayoutRegionAdaptivityAxisHorizontal]];
 			
@@ -59,7 +61,12 @@ UIEdgeInsets LNPopupEnvironmentLayoutInsets(UIView* containerView, BOOL limitToS
 			}
 		}
 	}
-
+	
+	if(LNPopupEnvironmentHasGlass() && UIDevice.currentDevice.userInterfaceIdiom != UIUserInterfaceIdiomPhone)
+	{
+		return UIEdgeInsetsMake(0, 10, 0, 10);
+	}
+	
 	return containerView.layoutMargins;
 }
 
@@ -135,10 +142,9 @@ static const void* LNPopupBarBackgroundViewForceAnimatedKey = &LNPopupBarBackgro
 {
 	@autoreleasepool 
 	{
-#if ! LNPopupControllerEnforceStrictClean
 		{
 			SEL sel = NSSelectorFromString(LNPopupHiddenString("setSafeAreaInsets:"));
-			Method m = __LNSwizzleClassGetInstanceMethod(UIView.class, sel);
+			Method m = LNSwizzleClassGetInstanceMethod(UIView.class, sel);
 			void (*orig)(id, SEL, UIEdgeInsets) = reinterpret_cast<decltype(orig)>(method_getImplementation(m));
 			class_addMethod(LNPopupBar.class, sel, imp_implementationWithBlock(^(id _self, UIEdgeInsets insets) {
 				orig(_self, sel, UIEdgeInsetsMake(0, insets.left, 0, insets.right));
@@ -147,7 +153,7 @@ static const void* LNPopupBarBackgroundViewForceAnimatedKey = &LNPopupBarBackgro
 		
 		{
 			SEL sel = NSSelectorFromString(LNPopupHiddenString("setSafeAreaInsets:"));
-			Method m = __LNSwizzleClassGetInstanceMethod(UIView.class, sel);
+			Method m = LNSwizzleClassGetInstanceMethod(UIView.class, sel);
 			class_addMethod(_LNPopupToolbar.class, sel, imp_implementationWithBlock(^(id _self, UIEdgeInsets insets) {
 			}), method_getTypeEncoding(m));
 		}
@@ -199,16 +205,22 @@ static const void* LNPopupBarBackgroundViewForceAnimatedKey = &LNPopupBarBackgro
 			method_setImplementation(m, imp_implementationWithBlock(trampoline(orig)));
 		}
 		
+		{
+			Method m = LNSwizzleClassGetInstanceMethod(self, NSSelectorFromString(LNPopupHiddenString("setSafeAreaInsets:")));
+			class_addMethod(self, @selector(_ln_updateSafeAreaInsets:), method_getImplementation(m), method_getTypeEncoding(m));
+		}
+		
 		NSString* sel = LNPopupHiddenString("_didMoveFromWindow:toWindow:");
 		LNSwizzleMethod(self,
 						NSSelectorFromString(sel),
 						@selector(_ln__dMFW:tW:));
-#else
-		LNSwizzleMethod(self,
-						@selector(didMoveToWindow),
-						@selector(_ln_didMoveToWindow));
-#endif
 	}
+}
+
+- (UIViewController*)_ln_closestController
+{
+	static NSString* const key = LNPopupHiddenString("_viewControllerForAncestor");
+	return [self valueForKey:key];
 }
 
 - (void)_ln_triggerBarAppearanceRefreshIfNeededTriggeringLayout:(BOOL)layout
@@ -221,7 +233,6 @@ static const void* LNPopupBarBackgroundViewForceAnimatedKey = &LNPopupBarBackgro
 	return NO;
 }
 
-#if ! LNPopupControllerEnforceStrictClean
 //_didMoveFromWindow:toWindow:
 - (void)_ln__dMFW:(UIWindow*)fromWindow tW:(UIWindow*)toWindow
 {
@@ -234,14 +245,6 @@ static const void* LNPopupBarBackgroundViewForceAnimatedKey = &LNPopupBarBackgro
 	
 	[self _ln_notify];
 }
-#else
-- (void)_ln_didMoveToWindow
-{
-	[self _ln_didMoveToWindow];
-	
-	[self _ln_notify];
-}
-#endif
 
 LNAlwaysInline
 void _LNNotify(UIView* self, NSMutableArray<LNInWindowBlock>* waiting)
@@ -308,20 +311,14 @@ void _LNNotify(UIView* self, NSMutableArray<LNInWindowBlock>* waiting)
 
 - (NSString*)_ln_effectGroupingIdentifierIfAvailable
 {
-#if ! LNPopupControllerEnforceStrictClean
 	static NSString* key = LNPopupHiddenString("_backdropViewLayerGroupName");
 	
 	if([self respondsToSelector:NSSelectorFromString(key)])
 	{
 		return [self valueForKey:key];
 	}
-	else
-	{
-#endif
-		return nil;
-#if ! LNPopupControllerEnforceStrictClean
-	}
-#endif
+
+	return nil;
 }
 
 - (void)_ln_freezeInsets
@@ -342,10 +339,91 @@ void _LNNotify(UIView* self, NSMutableArray<LNInWindowBlock>* waiting)
 	return NO;
 }
 
+- (nullable UIView*)_ln_firstSubviewPassingTest:(BOOL(^)(UIView* viewToTest))test includingSelf:(BOOL)includeSelf
+{
+	if(test(self) && includeSelf)
+	{
+		return self;
+	}
+	
+	for (UIView* subview in self.subviews) {
+		UIView* passing = [subview _ln_firstSubviewPassingTest:test includingSelf:YES];
+		if(passing != nil)
+		{
+			return passing;
+		}
+	}
+	
+	return nil;
+}
+
+- (nullable UIView*)_ln_lastSubviewPassingTest:(BOOL(^)(UIView* viewToTest))test includingSelf:(BOOL)includeSelf
+{
+	if(test(self) && includeSelf)
+	{
+		return self;
+	}
+	
+	for (UIView* subview in self.subviews.reverseObjectEnumerator) {
+		UIView* passing = [subview _ln_firstSubviewPassingTest:test includingSelf:YES];
+		if(passing != nil)
+		{
+			return passing;
+		}
+	}
+	
+	return nil;
+}
+
+- (nullable UIView*)_ln_firstDescendantPassingTest:(BOOL(^)(UIView* viewToTest))test includingSelf:(BOOL)includeSelf
+{
+	if(test(self) && includeSelf)
+	{
+		return self;
+	}
+	
+	UIView* viewToTest = self.superview;
+	while(viewToTest != nil)
+	{
+		if(test(viewToTest))
+		{
+			return viewToTest;
+		}
+		viewToTest = viewToTest.superview;
+	}
+	return nil;
+}
+
+- (void)_ln_removeInteractionsFromSubviewTree
+{
+	NSArray<id<UIInteraction>>* interactions = self.interactions.copy;
+	for (id<UIInteraction> interaction in interactions) {
+		[self removeInteraction:interaction];
+	}
+	
+	for (UIView* subview in self.subviews) {
+		[subview _ln_removeInteractionsFromSubviewTree];
+	}
+}
+
+static NSString* cornersName = LNPopupHiddenString("cornerRadii");
+
+- (LNPopupViewCorners)_ln_corners
+{
+	NSValue* cornersValue = [self.layer valueForKey:cornersName];
+	LNPopupViewCorners rv;
+	[cornersValue getValue:&rv size:sizeof(LNPopupViewCorners)];
+	return rv;
+}
+
+- (void)_ln_setCorners:(LNPopupViewCorners)corners
+{
+	NSValue* cornersValue = [NSValue valueWithBytes:&corners objCType:@encode(LNPopupViewCorners)];
+	[self.layer setValue:cornersValue forKey:cornersName];
+}
+
 - (CGFloat)_ln_simulatedCornerRadiusFromCorners
 {
-	static NSString* cornersName = LNPopupHiddenString("cornerRadii");
-	
 	NSValue* corners = [self.layer valueForKey:cornersName];
 	CGSize asArray[4];
 	[corners getValue:asArray size:sizeof(asArray)];
@@ -362,7 +440,6 @@ void _LNNotify(UIView* self, NSMutableArray<LNInWindowBlock>* waiting)
 
 @end
 
-#if ! LNPopupControllerEnforceStrictClean
 @interface UIWindow (ScrollToTopFix) @end
 @implementation UIWindow (ScrollToTopFix)
 
@@ -410,16 +487,11 @@ void _LNNotify(UIView* self, NSMutableArray<LNInWindowBlock>* waiting)
 }
 
 @end
-
-#endif
 	
 @implementation UIWindow (LNPopupSupport)
 
 - (UIEvent*)_ln_currentEvent
 {
-#if LNPopupControllerEnforceStrictClean
-	return nil;
-#else
 	//hostWindow
 	static NSString* hW = LNPopupHiddenString("hostWindow");
 	//attachedWindow
@@ -436,7 +508,6 @@ void _LNNotify(UIView* self, NSMutableArray<LNInWindowBlock>* waiting)
 	}
 	//Obtain the current NSEvent
 	return [hostingWindow valueForKey:cE];
-#endif
 }
 
 + (void)load
@@ -587,11 +658,9 @@ static BOOL __ln_scrollEdgeAppearanceRequiresFadeForPopupBar(id bottomBar, LNPop
 			
 			if(!LNPopupEnvironmentHasGlass())
 			{
-#if ! LNPopupControllerEnforceStrictClean
 				LNSwizzleClassMethod(self, NSSelectorFromString(LNPopupHiddenString("_visualProviderForToolbar:")), @selector(_ln_vPFT:));
 				LNSwizzleMethod(self, @selector(standardAppearance), @selector(_lnpopup_standardAppearance));
 				LNSwizzleMethod(self, @selector(compactAppearance), @selector(_lnpopup_compactAppearance));
-#endif
 				LNSwizzleMethod(self, @selector(setStandardAppearance:), @selector(_lnpopup_setStandardAppearance:));
 				LNSwizzleMethod(self, @selector(setCompactAppearance:), @selector(_lnpopup_setCompactAppearance:));
 				LNSwizzleMethod(self, @selector(scrollEdgeAppearance), @selector(_lnpopup_scrollEdgeAppearance));
@@ -601,8 +670,6 @@ static BOOL __ln_scrollEdgeAppearanceRequiresFadeForPopupBar(id bottomBar, LNPop
 	}
 }
 
-#if ! LNPopupControllerEnforceStrictClean
-
 //+_visualProviderForToolbar:
 + (id)_ln_vPFT:(id)arg1 API_AVAILABLE(ios(26.0))
 {
@@ -610,8 +677,6 @@ static BOOL __ln_scrollEdgeAppearanceRequiresFadeForPopupBar(id bottomBar, LNPop
 	
 	return [[visualProviderClass alloc] initWithToolbar:arg1];
 }
-
-#endif
 
 - (void)_ln_layoutSubviews
 {
@@ -654,7 +719,6 @@ static BOOL __ln_scrollEdgeAppearanceRequiresFadeForPopupBar(id bottomBar, LNPop
 	return _LNPopupReturnScrollEdgeAppearanceOrStandardAppearance(self, @selector(standardAppearance), @selector(_lnpopup_compactScrollEdgeAppearance));
 }
 
-#if ! LNPopupControllerEnforceStrictClean
 - (UIToolbarAppearance*)_lnpopup_standardAppearance
 {
 	__weak __typeof(self) weakSelf = self;
@@ -688,7 +752,6 @@ static BOOL __ln_scrollEdgeAppearanceRequiresFadeForPopupBar(id bottomBar, LNPop
 		return popupBar != nil && popupBar.resolvedIsFloating;
 	}];
 }
-#endif
 
 - (void)_lnpopup_setStandardAppearance:(UIToolbarAppearance *)standardAppearance
 {
@@ -717,9 +780,7 @@ static BOOL __ln_scrollEdgeAppearanceRequiresFadeForPopupBar(id bottomBar, LNPop
 		{
 			if(@available(iOS 15.0, *))
 			{
-#if ! LNPopupControllerEnforceStrictClean
 				LNSwizzleMethod(self, @selector(standardAppearance), @selector(_lnpopup_standardAppearance));
-#endif
 				LNSwizzleMethod(self, @selector(setStandardAppearance:), @selector(_lnpopup_setStandardAppearance:));
 				LNSwizzleMethod(self, @selector(scrollEdgeAppearance), @selector(_lnpopup_scrollEdgeAppearance));
 			}
@@ -750,7 +811,6 @@ static BOOL __ln_scrollEdgeAppearanceRequiresFadeForPopupBar(id bottomBar, LNPop
 	return _LNPopupReturnScrollEdgeAppearanceOrStandardAppearance(self, @selector(standardAppearance), @selector(_lnpopup_scrollEdgeAppearance));
 }
 
-#if ! LNPopupControllerEnforceStrictClean
 - (UITabBarAppearance *)_lnpopup_standardAppearance
 {
 	__weak __typeof(self) weakSelf = self;
@@ -767,7 +827,6 @@ static BOOL __ln_scrollEdgeAppearanceRequiresFadeForPopupBar(id bottomBar, LNPop
 		return popupBar != nil && popupBar.resolvedIsFloating;
 	}];
 }
-#endif
 
 - (void)_lnpopup_setStandardAppearance:(UITabBarAppearance *)standardAppearance
 {
@@ -783,12 +842,12 @@ static const void* LNPopupIgnoringLayoutDuringTransition = &LNPopupIgnoringLayou
 @interface UITabBar (ScrollEdgeSupport) @end
 @implementation UITabBar (ScrollEdgeSupport)
 
-- (BOOL)_ignoringLayoutDuringTransition
+- (BOOL)_ln_ignoringLayoutDuringTransition
 {
 	return [objc_getAssociatedObject(self, LNPopupIgnoringLayoutDuringTransition) boolValue];
 }
 
-- (void)_setIgnoringLayoutDuringTransition:(BOOL)ignoringLayoutDuringTransition
+- (void)_ln_setIgnoringLayoutDuringTransition:(BOOL)ignoringLayoutDuringTransition
 {
 	objc_setAssociatedObject(self, LNPopupIgnoringLayoutDuringTransition, @(ignoringLayoutDuringTransition), OBJC_ASSOCIATION_RETAIN);
 }
@@ -805,15 +864,12 @@ static const void* LNPopupIgnoringLayoutDuringTransition = &LNPopupIgnoringLayou
 		{
 			if(@available(iOS 15.0, *))
 			{
-#if ! LNPopupControllerEnforceStrictClean
 				LNSwizzleMethod(self, @selector(standardAppearance), @selector(_lnpopup_standardAppearance));
-#endif
 				LNSwizzleMethod(self, @selector(setStandardAppearance:), @selector(_lnpopup_setStandardAppearance:));
 				LNSwizzleMethod(self, @selector(scrollEdgeAppearance), @selector(_lnpopup_scrollEdgeAppearance));
 			}
 		}
 		
-#if ! LNPopupControllerEnforceStrictClean
 		if(@available(iOS 17.0, *))
 		{
 			Class cls = NSClassFromString(LNPopupHiddenString("_UIBarBackground"));
@@ -829,21 +885,12 @@ static const void* LNPopupIgnoringLayoutDuringTransition = &LNPopupIgnoringLayou
 				orig(_self, sel, animated);
 			}));
 		}
-		
-		if(LNPopupEnvironmentHasGlass())
-		{
-			Method m = LNSwizzleClassGetInstanceMethod(self, NSSelectorFromString(LNPopupHiddenString("_isPhotosApp")));
-			method_setImplementation(m, imp_implementationWithBlock(^ BOOL (id _self) {
-				return YES;
-			}));
-		}
-#endif
 	}
 }
 
 - (void)_ln_setFrame:(CGRect)frame
 {
-	if(self._ignoringLayoutDuringTransition == NO)
+	if(self._ln_ignoringLayoutDuringTransition == NO)
 	{
 		[self _ln_setFrame:frame];
 	}
@@ -880,7 +927,6 @@ static const void* LNPopupIgnoringLayoutDuringTransition = &LNPopupIgnoringLayou
 	
 	if(@available(iOS 15.0, *))
 	{
-#if ! LNPopupControllerEnforceStrictClean
 		static NSString* backgroundViewKey = LNPopupHiddenString("_backgroundView");
 		
 		backgroundView = [self valueForKey:backgroundViewKey];
@@ -888,7 +934,6 @@ static const void* LNPopupIgnoringLayoutDuringTransition = &LNPopupIgnoringLayou
 		{
 			objc_setAssociatedObject(backgroundView, LNPopupBarBackgroundViewForceAnimatedKey, @(YES), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 		}
-#endif
 		
 		self.scrollEdgeAppearance = self._lnpopup_scrollEdgeAppearance;
 		
@@ -904,12 +949,10 @@ static const void* LNPopupIgnoringLayoutDuringTransition = &LNPopupIgnoringLayou
 	
 	if(@available(iOS 15.0, *))
 	{
-#if ! LNPopupControllerEnforceStrictClean
 		if(backgroundView != nil)
 		{
 			objc_setAssociatedObject(backgroundView, LNPopupBarBackgroundViewForceAnimatedKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 		}
-#endif
 	}
 }
 
@@ -923,7 +966,6 @@ static const void* LNPopupIgnoringLayoutDuringTransition = &LNPopupIgnoringLayou
 	return _LNPopupReturnScrollEdgeAppearanceOrStandardAppearance(self, @selector(standardAppearance), @selector(_lnpopup_scrollEdgeAppearance));
 }
 
-#if ! LNPopupControllerEnforceStrictClean
 - (UITabBarAppearance *)_lnpopup_standardAppearance
 {
 	__weak __typeof(self) weakSelf = self;
@@ -940,7 +982,6 @@ static const void* LNPopupIgnoringLayoutDuringTransition = &LNPopupIgnoringLayou
 		return popupBar != nil && popupBar.resolvedIsFloating;
 	}];
 }
-#endif
 
 - (void)_lnpopup_setStandardAppearance:(UITabBarAppearance *)standardAppearance
 {
@@ -1027,7 +1068,17 @@ UIEdgeInsets _LNEdgeInsetsFromDirectionalEdgeInsets(UIView* view, NSDirectionalE
 	}
 }
 
-#if ! LNPopupControllerEnforceStrictClean
+NSDirectionalEdgeInsets _LNDirectionalEdgeInsetsFromEdgeInsets(UIView* view, UIEdgeInsets edgeInsets)
+{
+	if(view.effectiveUserInterfaceLayoutDirection == UIUserInterfaceLayoutDirectionLeftToRight)
+	{
+		return NSDirectionalEdgeInsetsMake(edgeInsets.top, edgeInsets.left, edgeInsets.bottom, edgeInsets.right);
+	}
+	else
+	{
+		return NSDirectionalEdgeInsetsMake(edgeInsets.top, edgeInsets.right, edgeInsets.bottom, edgeInsets.left);
+	}
+}
 
 @interface UIVisualEffectView (LNPopupSupportPrivate) @end
 @implementation UIVisualEffectView (LNPopupSupportPrivate)
@@ -1061,15 +1112,10 @@ UIEdgeInsets _LNEdgeInsetsFromDirectionalEdgeInsets(UIView* view, NSDirectionalE
 
 @end
 
-#endif
-
 @implementation UIViewPropertyAnimator (KeyFrameSupport)
 
 - (void)ln_addAnimations:(void (^)(void))animation delayFactor:(CGFloat)delayFactor durationFactor:(CGFloat)durationFactor
 {
-#if LNPopupControllerEnforceStrictClean
-	[self addAnimations:animation delayFactor:delayFactor];
-#else
 	static void (*impl)(id, SEL, void (^)(void), CGFloat, CGFloat);
 	static SEL sel;
 	static dispatch_once_t onceToken;
@@ -1079,7 +1125,6 @@ UIEdgeInsets _LNEdgeInsetsFromDirectionalEdgeInsets(UIView* view, NSDirectionalE
 		impl = reinterpret_cast<decltype(impl)>(method_getImplementation(m));
 	});
 	impl(self, sel, animation, delayFactor, durationFactor);
-#endif
 }
 
 @end
