@@ -12,8 +12,6 @@
 #import "LNPopupControllerImpl.h"
 #import "UIView+LNPopupSupportPrivate.h"
 
-extern LNPopupInteractionStyle _LNPopupResolveInteractionStyleFromInteractionStyle(LNPopupInteractionStyle style);
-
 @interface UIViewController ()
 
 - (CGRect)_ln_interactionLimitRect;
@@ -40,9 +38,34 @@ extern LNPopupInteractionStyle _LNPopupResolveInteractionStyleFromInteractionSty
 	return self;
 }
 
+- (BOOL)gestureRecognizer:(LNPopupInteractionPanGestureRecognizer *)gestureRecognizer shouldReceiveEvent:(UIEvent *)event API_AVAILABLE(ios(13.4))
+{
+	if([self.forwardedDelegate respondsToSelector:_cmd])
+	{
+		return [self.forwardedDelegate gestureRecognizer:gestureRecognizer shouldReceiveEvent:event];
+	}
+	
+	BOOL rv = YES;
+	
+	if(event.type == UIEventTypeTouches)
+	{
+		UITouch* touch = event.allTouches.anyObject;
+		if(touch.type == UITouchTypeIndirectPointer && gestureRecognizer.allowsIndirectPointerInteraction == NO
+#if !TARGET_OS_MACCATALYST
+		   && [touch.view isDescendantOfView:_popupController.popupBar] == NO
+#endif
+		   )
+		{
+			return NO;
+		}
+	}
+	
+	return rv;
+}
+
 - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer
 {
-	LNPopupInteractionStyle resolvedStyle = _LNPopupResolveInteractionStyleFromInteractionStyle(_popupController.containerController.popupInteractionStyle);
+	LNPopupInteractionStyle resolvedStyle = _LNPopupResolveInteractionStyleFromInteractionStyle(_popupController.containerController.popupInteractionStyle, _popupController.popupControllerPublicState, NULL);
 	
 	BOOL rv = resolvedStyle != LNPopupInteractionStyleNone;
 	
@@ -64,11 +87,6 @@ extern LNPopupInteractionStyle _LNPopupResolveInteractionStyleFromInteractionSty
 	
 	return rv;
 }
-
-//- (BOOL)_panGestureRecognizer:(UIPanGestureRecognizer *)gestureRecognizer shouldTryToBeginHorizontallyWithEvent:(UIEvent*)event
-//{
-//	return NO;
-//}
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer
 {

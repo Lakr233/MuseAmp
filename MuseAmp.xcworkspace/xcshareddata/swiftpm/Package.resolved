@@ -1,5 +1,5 @@
 {
-  "originHash" : "279327253aa147ccfa8756d647b1080ae4a07e596f93bc8b986dc7b23acfb3e3",
+  "originHash" : "245be185879408fcb14a2eac10cecf1b7b27d0601e9745d4fb2ee97618373315",
   "pins" : [
     {
       "identity" : "alertcontroller",
@@ -71,6 +71,15 @@
       "state" : {
         "revision" : "ac632bd26a1c00f139ff62fd01806f21cf67325e",
         "version" : "8.10.0"
+      }
+    },
+    {
+      "identity" : "lnsystemmarqueelabel",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/LeoNatan/LNSystemMarqueeLabel",
+      "state" : {
+        "revision" : "a87c80c36e8cc84f05a691da33c838a8e93015f6",
+        "version" : "0.1.2"
       }
     },
     {
