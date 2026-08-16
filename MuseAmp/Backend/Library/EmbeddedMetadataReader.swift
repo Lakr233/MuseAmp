@@ -61,8 +61,14 @@ final nonisolated class EmbeddedMetadataReader: @unchecked Sendable {
         let album = await stringValue(in: metadataItems, matching: ["albumName", "album"]) ?? String(localized: "Unknown Album")
 
         let albumArtist = await stringValue(in: metadataItems, matching: ["albumArtist"])
-        let trackNumber = await intValue(in: metadataItems, matching: ["trackNumber", "track"])
-        let discNumber = await intValue(in: metadataItems, matching: ["discNumber", "disc"])
+        let trackNumber = await AVMetadataHelper.integerValue(
+            in: metadataItems,
+            matching: ["trackNumber", "track", "trk", "trkn", "trck", "albumAndTrack"],
+        )
+        let discNumber = await AVMetadataHelper.integerValue(
+            in: metadataItems,
+            matching: ["discNumber", "disc", "disk", "tpos"],
+        )
         let genre = await stringValue(in: metadataItems, matching: ["genre"])
         let composer = await stringValue(in: metadataItems, matching: ["composer", "creator"])
         let releaseDate = await releaseDate(in: metadataItems)
@@ -149,23 +155,6 @@ private nonisolated extension EmbeddedMetadataReader {
                 let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !trimmed.isEmpty {
                     return trimmed
-                }
-            }
-        }
-        return nil
-    }
-
-    func intValue(in items: [AVMetadataItem], matching tokens: [String]) async -> Int? {
-        let loweredTokens = tokens.map { $0.lowercased() }
-        for item in items {
-            guard matches(item: item, tokens: loweredTokens) else { continue }
-            if let number = try? await item.load(.numberValue)?.intValue {
-                return number
-            }
-            if let string = try? await item.load(.stringValue) {
-                let head = string.split(separator: "/").first.map(String.init) ?? string
-                if let value = Int(head.trimmingCharacters(in: .whitespacesAndNewlines)) {
-                    return value
                 }
             }
         }
