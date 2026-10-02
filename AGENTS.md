@@ -237,7 +237,7 @@
 ## Build & Tooling Rules
 
 - Always drive build, test, and SwiftPM package-resolve operations through the top-level `Makefile`. Do not invoke `xcodebuild`, `xcrun xcodebuild`, or `swift test` directly from the shell.
-- Build: `make build` (all), `make build-ios`, `make build-catalyst`, `make build-tvos`.
+- Build: `make build` (all), `make build-ios`, `make build-catalyst`, `make build-tvos`, `make build-sim` (iOS Simulator). Simulator deploy: `make install-sim sim=<name-or-udid>`, `make launch-sim sim=<name-or-udid>`, `make run-sim sim=<name-or-udid>`. Catalyst run with a redirected home: `make launch-catalyst home=<dir> [log=<file>]`.
 - Test: `make test` (runs tests on Mac Catalyst).
 - `make build-ios` only compiles the app target. To verify test file changes, use `make test`.
 - A shell exit code of `0` from `make build*` or `make test` is **not** proof of success. `xcodebuild` can exit `0` while the build/test actually failed, or while emitting warnings that must be addressed. Always read the full log output and verify: (1) no compiler errors, (2) no compiler warnings, (3) for `make test`, every test case reported as passed. Fix every warning and error surfaced in the logs before declaring the task complete.
