@@ -33,7 +33,7 @@ class NowPlayingCenterSectionView: UIView {
         fatalError()
     }
 
-    private let scrollView: UIScrollView = {
+    let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
         scrollView.backgroundColor = .clear
         scrollView.alwaysBounceVertical = false
@@ -73,12 +73,16 @@ class NowPlayingCenterSectionView: UIView {
             make.centerX.equalTo(scrollView.frameLayoutGuide.snp.centerX)
             make.top.greaterThanOrEqualTo(scrollView.contentLayoutGuide.snp.top)
             make.bottom.lessThanOrEqualTo(scrollView.contentLayoutGuide.snp.bottom)
-            make.top.greaterThanOrEqualTo(scrollView.frameLayoutGuide.snp.top).offset(NowPlayingArtworkLayout.topInset).priority(.high)
-            make.bottom.lessThanOrEqualTo(scrollView.frameLayoutGuide.snp.bottom).offset(-NowPlayingArtworkLayout.bottomInset).priority(.high)
+            make.top.greaterThanOrEqualTo(scrollView.frameLayoutGuide.snp.top).offset(NowPlayingArtworkLayout.topInset).priority(NowPlayingArtworkLayout.contentPriority)
+            make.bottom.lessThanOrEqualTo(scrollView.frameLayoutGuide.snp.bottom).offset(-NowPlayingArtworkLayout.bottomInset).priority(NowPlayingArtworkLayout.contentPriority)
         }
 
         avatarSectionView.snp.makeConstraints { make in
-            make.width.equalTo(scrollView.frameLayoutGuide.snp.width).multipliedBy(0.8).priority(.high)
+            // Below the column's fit constraints and the height cap, so the
+            // artwork is what gives way when the column is too short, but
+            // above the image view's content hugging, so a cover smaller
+            // than the slot still fills it.
+            make.width.equalTo(scrollView.frameLayoutGuide.snp.width).multipliedBy(0.8).priority(UILayoutPriority.defaultHigh - 1)
             make.width.lessThanOrEqualTo(scrollView.frameLayoutGuide.snp.width).multipliedBy(0.8)
             make.width.lessThanOrEqualTo(NowPlayingArtworkLayout.artworkMaxSize)
             make.height.lessThanOrEqualTo(avatarSectionView.snp.width).priority(.high)

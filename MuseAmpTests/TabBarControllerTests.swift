@@ -152,10 +152,16 @@ struct TabBarControllerTests {
     }
 
     @Test
-    func `Tab bar preloads the now playing popup controller view`() throws {
+    func `Tab bar preloads the now playing popup controller view once installed`() throws {
         let sandbox = TestLibrarySandbox()
         let tabBar = TabBarController(environment: sandbox.makeEnvironment())
         tabBar.loadViewIfNeeded()
+        #expect(tabBar.nowPlayingPopupContentViewController == nil)
+
+        let host = UIViewController()
+        host.addChild(tabBar)
+        host.view.addSubview(tabBar.view)
+        tabBar.didMove(toParent: host)
 
         let controller = try #require(tabBar.nowPlayingPopupContentViewController)
         #expect(controller.isViewLoaded)

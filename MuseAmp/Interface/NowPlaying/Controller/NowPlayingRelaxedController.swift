@@ -97,6 +97,7 @@ class NowPlayingRelaxedController: UIViewController, NowPlayingQueueShellControl
         installContentLayout()
         installLeftPanel()
         installRightPanel()
+        hideTitlebarScrollEdgeEffects()
         bindQueueSectionActions()
         bindContentSelector()
         bindQueueSnapshot()
@@ -207,6 +208,24 @@ class NowPlayingRelaxedController: UIViewController, NowPlayingQueueShellControl
             make.top.bottom.equalToSuperview()
             make.leading.trailing.equalToSuperview().inset(16)
         }
+    }
+
+    /// On Mac every scroll view that reaches the top of the window gets a
+    /// hard edge effect under the hidden title bar. Now Playing has no bar
+    /// there, so the effect only draws an empty tinted strip with a divider
+    /// over the artwork and lyric columns.
+    private func hideTitlebarScrollEdgeEffects() {
+        #if targetEnvironment(macCatalyst)
+            guard #available(iOS 26.0, *) else { return }
+            let scrollViews: [UIScrollView] = [
+                centerSectionView.scrollView,
+                lyricTimelineView.tableView,
+                listSectionView.queueTableView,
+            ]
+            for scrollView in scrollViews {
+                scrollView.topEdgeEffect.isHidden = true
+            }
+        #endif
     }
 
     @objc private func segmentedControlChanged(_ sender: UISegmentedControl) {

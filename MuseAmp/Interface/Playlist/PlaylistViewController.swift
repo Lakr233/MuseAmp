@@ -27,7 +27,9 @@ final class PlaylistDiffableDataSource: UITableViewDiffableDataSource<PlaylistSe
     override func tableView(_: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
         guard !(isSearchActiveProvider?() ?? false) else { return false }
         guard let item = itemIdentifier(for: indexPath) else { return false }
-        if case PlaylistItem.playlist = item { return true }
+        if case PlaylistItem.playlist = item {
+            return true
+        }
         return false
     }
 }
@@ -185,7 +187,9 @@ class PlaylistViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = String(localized: "Playlist")
+        if title == nil {
+            title = String(localized: "Playlist")
+        }
         navigationController?.navigationBar.prefersLargeTitles = true
         view.backgroundColor = .systemBackground
 
@@ -404,24 +408,32 @@ class PlaylistViewController: UIViewController {
             }
         case .trackCount:
             sortedPlaylists.sort {
-                if $0.songs.count != $1.songs.count { return $0.songs.count > $1.songs.count }
+                if $0.songs.count != $1.songs.count {
+                    return $0.songs.count > $1.songs.count
+                }
                 return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
             }
         case .duration:
             sortedPlaylists.sort {
                 let d0 = $0.songs.reduce(0) { $0 + ($1.durationMillis ?? 0) }
                 let d1 = $1.songs.reduce(0) { $0 + ($1.durationMillis ?? 0) }
-                if d0 != d1 { return d0 > d1 }
+                if d0 != d1 {
+                    return d0 > d1
+                }
                 return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
             }
         case .recentlyModified:
             sortedPlaylists.sort {
-                if $0.updatedAt != $1.updatedAt { return $0.updatedAt > $1.updatedAt }
+                if $0.updatedAt != $1.updatedAt {
+                    return $0.updatedAt > $1.updatedAt
+                }
                 return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
             }
         case .recentlyCreated:
             sortedPlaylists.sort {
-                if $0.createdAt != $1.createdAt { return $0.createdAt > $1.createdAt }
+                if $0.createdAt != $1.createdAt {
+                    return $0.createdAt > $1.createdAt
+                }
                 return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
             }
         }

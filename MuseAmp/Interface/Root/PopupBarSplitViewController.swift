@@ -2,12 +2,15 @@ import LNPopupController
 import UIKit
 
 final class PopupBarSplitViewController: UISplitViewController {
+    var isSidebarVisible: Bool {
+        displayMode == .oneBesideSecondary || displayMode == .oneOverSecondary
+    }
+
     @objc
     override var popupBarLayoutFrameForPopupBar: CGRect {
         let bounds = view.bounds
         guard bounds.width > 0 else { return CGRectNull }
-        let sidebarVisible = displayMode == .oneBesideSecondary || displayMode == .oneOverSecondary
-        let sidebarWidth = sidebarVisible ? primaryColumnWidth : 0
+        let sidebarWidth = isSidebarVisible ? primaryColumnWidth : 0
         let availableWidth = bounds.width - sidebarWidth
         let barWidth = availableWidth * 3.0 / 5.0
         let barX = sidebarWidth + (availableWidth - barWidth) / 2.0

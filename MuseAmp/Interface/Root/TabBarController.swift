@@ -84,7 +84,6 @@ class TabBarController: UITabBarController {
         }
 
         configurePopupBar()
-        prepareNowPlayingPopupContentViewController()
         bindDownloadsBadge()
         bindPlaybackPopup()
         observeServerConfigurationChanges()
@@ -173,13 +172,17 @@ class TabBarController: UITabBarController {
 
         if #available(iOS 26.0, *) {
             var built = [albumsTab, songsTab, playlistTab, settingsTab]
-            if let searchTab { built.append(searchTab) }
+            if let searchTab {
+                built.append(searchTab)
+            }
             tabs = built
             return
         }
 
         var built = [albumsTab, songsTab, playlistTab]
-        if let searchTab { built.append(searchTab) }
+        if let searchTab {
+            built.append(searchTab)
+        }
         built.append(settingsTab)
         tabs = built
     }

@@ -51,6 +51,9 @@ final class NowPlayingTransportTitleView: UIView {
         titleStack.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
+        for label in [titleLabel, artistLabel] {
+            label.setContentCompressionResistancePriority(NowPlayingArtworkLayout.contentPriority, for: .vertical)
+        }
         bindDataSource()
     }
 
