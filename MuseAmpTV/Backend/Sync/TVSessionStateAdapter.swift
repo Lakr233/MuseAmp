@@ -72,7 +72,9 @@ final class TVSessionStateAdapter {
     }
 
     var isDisconnectedTransfer: Bool {
-        if case .disconnected = transferPhase { return true }
+        if case .disconnected = transferPhase {
+            return true
+        }
         return false
     }
 
@@ -347,6 +349,11 @@ private extension TVSessionStateAdapter {
                 failedTrackCount: 0,
             )
             notifyStateChanged()
+            await session.reportTransferCompletion(
+                endpoint: endpoint,
+                token: token,
+                alreadyInLibraryTrackCount: manifest.entries.count,
+            )
             return
         }
 
@@ -449,11 +456,15 @@ private extension TVSessionStateAdapter {
             },
         )
 
-        let downloadFailures = max(missingEntries.count - downloadedURLs.count, 0)
-        let failedTrackCount = importResult.errors + importResult.noMetadata + downloadFailures
+        let summary = SyncReceiveSummary(
+            offeredCount: manifest.entries.count,
+            requestedCount: missingEntries.count,
+            downloadedCount: downloadedURLs.count,
+            importResult: importResult,
+        )
         AppLog.info(
             self,
-            "receiveTransfer importDone succeeded=\(importResult.succeeded) duplicates=\(importResult.duplicates) errors=\(importResult.errors) noMetadata=\(importResult.noMetadata) downloadFailures=\(downloadFailures)",
+            "receiveTransfer importDone succeeded=\(importResult.succeeded) duplicates=\(importResult.duplicates) errors=\(importResult.errors) noMetadata=\(importResult.noMetadata) skipped=\(summary.skipped) failed=\(summary.failed)",
         )
 
         session.stopReceiver()
@@ -474,16 +485,21 @@ private extension TVSessionStateAdapter {
         }
         AppLog.info(
             self,
-            "receiveTransfer complete imported=\(importResult.succeeded) skipped=\(importResult.duplicates) failed=\(failedTrackCount)",
+            "receiveTransfer complete imported=\(summary.imported) skipped=\(summary.skipped) failed=\(summary.failed)",
         )
         transferPhase = .completed(
             sourceDeviceName: manifest.deviceName,
             playlistName: playlistSession.playlistName,
-            importedTrackCount: importResult.succeeded,
-            skippedTrackCount: importResult.duplicates,
-            failedTrackCount: failedTrackCount,
+            importedTrackCount: summary.imported,
+            skippedTrackCount: summary.skipped,
+            failedTrackCount: summary.failed,
         )
         notifyStateChanged()
+        await session.reportTransferCompletion(
+            endpoint: endpoint,
+            token: token,
+            alreadyInLibraryTrackCount: manifest.entries.count - missingEntries.count,
+        )
     }
 
     func resumeTransfer(
@@ -513,6 +529,8 @@ private extension TVSessionStateAdapter {
             AppLog.info(self, "resumeTransfer all entries already downloaded, proceeding to import")
             await importAndComplete(
                 session: session,
+                endpoint: endpoint,
+                token: token,
                 manifest: manifest,
                 playlistSession: playlistSession,
                 missingEntries: missingEntries,
@@ -596,6 +614,8 @@ private extension TVSessionStateAdapter {
 
         await importAndComplete(
             session: session,
+            endpoint: endpoint,
+            token: token,
             manifest: manifest,
             playlistSession: playlistSession,
             missingEntries: missingEntries,
@@ -605,6 +625,8 @@ private extension TVSessionStateAdapter {
 
     func importAndComplete(
         session: SyncTransferSession,
+        endpoint: SyncEndpoint,
+        token: String,
         manifest: SyncManifest,
         playlistSession: SyncPlaylistSession,
         missingEntries: [SyncManifestEntry],
@@ -632,11 +654,15 @@ private extension TVSessionStateAdapter {
             },
         )
 
-        let downloadFailures = max(missingEntries.count - downloadedURLs.count, 0)
-        let failedTrackCount = importResult.errors + importResult.noMetadata + downloadFailures
+        let summary = SyncReceiveSummary(
+            offeredCount: manifest.entries.count,
+            requestedCount: missingEntries.count,
+            downloadedCount: downloadedURLs.count,
+            importResult: importResult,
+        )
         AppLog.info(
             self,
-            "importAndComplete done succeeded=\(importResult.succeeded) duplicates=\(importResult.duplicates) errors=\(importResult.errors) noMetadata=\(importResult.noMetadata) downloadFailures=\(downloadFailures)",
+            "importAndComplete done succeeded=\(importResult.succeeded) duplicates=\(importResult.duplicates) errors=\(importResult.errors) noMetadata=\(importResult.noMetadata) skipped=\(summary.skipped) failed=\(summary.failed)",
         )
 
         session.stopReceiver()
@@ -656,16 +682,21 @@ private extension TVSessionStateAdapter {
         }
         AppLog.info(
             self,
-            "importAndComplete complete imported=\(importResult.succeeded) skipped=\(importResult.duplicates) failed=\(failedTrackCount)",
+            "importAndComplete complete imported=\(summary.imported) skipped=\(summary.skipped) failed=\(summary.failed)",
         )
         transferPhase = .completed(
             sourceDeviceName: manifest.deviceName,
             playlistName: playlistSession.playlistName,
-            importedTrackCount: importResult.succeeded,
-            skippedTrackCount: importResult.duplicates,
-            failedTrackCount: failedTrackCount,
+            importedTrackCount: summary.imported,
+            skippedTrackCount: summary.skipped,
+            failedTrackCount: summary.failed,
         )
         notifyStateChanged()
+        await session.reportTransferCompletion(
+            endpoint: endpoint,
+            token: token,
+            alreadyInLibraryTrackCount: manifest.entries.count - missingEntries.count,
+        )
     }
 
     func startReceiverAvailability() {

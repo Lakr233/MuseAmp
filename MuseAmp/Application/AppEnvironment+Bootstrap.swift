@@ -11,6 +11,12 @@ import MuseAmpDatabaseKit
 import UIKit
 
 extension AppEnvironment {
+    /// Opens the journal in the default library at launch, so work that runs
+    /// before the library boots is written to it instead of dropped.
+    static func bootstrapLogging() {
+        AppLog.bootstrap(with: LibraryPaths())
+    }
+
     static func initializeDatabaseManagerSynchronously(
         apiBaseURL: URL = AppPreferences.defaultAPIBaseURL,
         baseDirectory: URL? = nil,

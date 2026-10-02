@@ -228,7 +228,9 @@ extension DownloadArtworkProcessor {
         }
     }
 
-    private static func _export(
+    // nonisolated: the timeout work item runs on a global queue. Inheriting
+    // the default MainActor isolation makes Swift trap when it fires.
+    private nonisolated static func _export(
         _ exportSession: AVAssetExportSession,
         timeout: TimeInterval,
         completion: @escaping @Sendable ((any Error)?) -> Void,
@@ -239,8 +241,11 @@ extension DownloadArtworkProcessor {
         var timeoutWork: DispatchWorkItem?
         if timeout > 0 {
             let work = DispatchWorkItem { [weak sessionBox] in
-                sessionBox?.value.cancelExport()
+                // Claim the result before cancelling: cancelExport can run the
+                // completion handler first, which would report a plain
+                // cancellation instead of the timeout.
                 once.perform { completion(ProcessingError.exportTimedOut) }
+                sessionBox?.value.cancelExport()
             }
             timeoutWork = work
             DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + timeout, execute: work)

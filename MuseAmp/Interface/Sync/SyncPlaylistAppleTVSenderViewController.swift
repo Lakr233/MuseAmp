@@ -103,19 +103,20 @@ final class SyncPlaylistAppleTVSenderViewController: StackScrollController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        environment.screenAwakeCoordinator.acquire(.syncSession)
+        environment.screenAwakeCoordinator.acquire(.syncSession, owner: self)
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        environment.screenAwakeCoordinator.release(.syncSession)
-        if isMovingFromParent {
-            startupTask?.cancel()
-            startupTask = nil
-            receiverBrowser.stop()
-            Task {
-                await session.stopSender()
-            }
+        environment.screenAwakeCoordinator.release(.syncSession, owner: self)
+        guard isLeavingNavigationStack else {
+            return
+        }
+        startupTask?.cancel()
+        startupTask = nil
+        receiverBrowser.stop()
+        Task {
+            await session.stopSender()
         }
     }
 
@@ -156,10 +157,13 @@ final class SyncPlaylistAppleTVSenderViewController: StackScrollController {
                 )
             }
             if !session.preparedSkippedItems.isEmpty {
+                let allUnreadable = session.preparedSkippedItems.areAllSourcesUnreadable
                 addInfoView(
-                    title: "Unreadable",
+                    title: allUnreadable ? "Unreadable" : "Not Prepared",
                     rawValue: "\(session.preparedSkippedItems.count)",
-                    description: String(localized: "These songs could not be read from local storage and were left out."),
+                    description: allUnreadable
+                        ? String(localized: "These songs could not be read from local storage and were left out.")
+                        : String(localized: "These songs could not be prepared and were left out."),
                 )
                 stackView.addArrangedSubviewWithMargin(makeViewSkippedObject().createView())
                 stackView.addArrangedSubview(SeparatorView())
@@ -289,14 +293,18 @@ private extension SyncPlaylistAppleTVSenderViewController {
                     playlist: playlist,
                     includeLyrics: true,
                     progress: { [weak self] current, total in
-                        guard let self else {
+                        guard let self, case .preparing = state else {
                             return
                         }
                         state = .preparing(current: current, total: total)
                         refreshUI()
                     },
                 )
+                // A cancel that lands after the last song, or while the
+                // listener starts, must not leave a server advertising.
+                try Task.checkCancellation()
                 _ = try await session.startSender()
+                try Task.checkCancellation()
                 guard let connectionInfo = session.currentConnectionInfo else {
                     throw SyncTransferError.invalidServerResponse
                 }
@@ -311,8 +319,12 @@ private extension SyncPlaylistAppleTVSenderViewController {
                 refreshUI()
                 presentSkippedNoticeIfNeeded()
             } catch {
-                AppLog.error(self, "startSession failed playlistID=\(playlistID?.uuidString ?? "nil") error=\(error.localizedDescription)")
                 await session.stopSender()
+                guard !Task.isCancelled else {
+                    AppLog.info(self, "startSession cancelled playlistID=\(playlistID?.uuidString ?? "nil") error=\(error.localizedDescription)")
+                    return
+                }
+                AppLog.error(self, "startSession failed playlistID=\(playlistID?.uuidString ?? "nil") error=\(error.localizedDescription)")
                 presentFailureAndPop(message: error.localizedDescription)
             }
         }
@@ -335,14 +347,18 @@ private extension SyncPlaylistAppleTVSenderViewController {
                     password: selectedReceiverInfo?.pairingCode,
                     includeLyrics: true,
                     progress: { [weak self] current, total in
-                        guard let self else {
+                        guard let self, case .preparing = state else {
                             return
                         }
                         state = .preparing(current: current, total: total)
                         refreshUI()
                     },
                 )
+                // A cancel that lands after the last song, or while the
+                // listener starts, must not leave a server advertising.
+                try Task.checkCancellation()
                 _ = try await session.startSender()
+                try Task.checkCancellation()
                 guard let connectionInfo = session.currentConnectionInfo else {
                     throw SyncTransferError.invalidServerResponse
                 }
@@ -357,8 +373,12 @@ private extension SyncPlaylistAppleTVSenderViewController {
                 refreshUI()
                 presentSkippedNoticeIfNeeded()
             } catch {
-                AppLog.error(self, "startSession tracks failed error=\(error.localizedDescription)")
                 await session.stopSender()
+                guard !Task.isCancelled else {
+                    AppLog.info(self, "startSession tracks cancelled error=\(error.localizedDescription)")
+                    return
+                }
+                AppLog.error(self, "startSession tracks failed error=\(error.localizedDescription)")
                 presentFailureAndPop(message: error.localizedDescription)
             }
         }
@@ -381,7 +401,9 @@ private extension SyncPlaylistAppleTVSenderViewController {
         let alert = AlertViewController(
             title: String(localized: "Some Songs Skipped"),
             message: String(
-                format: String(localized: "%1$lld of %2$lld songs could not be read and were excluded from this transfer."),
+                format: skippedItems.areAllSourcesUnreadable
+                    ? String(localized: "%1$lld of %2$lld songs could not be read and were excluded from this transfer.")
+                    : String(localized: "%1$lld of %2$lld songs could not be prepared and were excluded from this transfer."),
                 skippedItems.count,
                 skippedItems.count + session.preparedSongCount,
             ),
@@ -412,7 +434,7 @@ private extension SyncPlaylistAppleTVSenderViewController {
         ConfigurableObject(
             icon: "exclamationmark.triangle",
             title: "View Skipped Songs",
-            explain: "Songs that could not be read and were left out of this transfer.",
+            explain: "Songs that were left out of this transfer.",
             ephemeralAnnotation: .action { [weak self] _ in
                 await MainActor.run { self?.presentSkippedSongsList() }
             },
@@ -491,7 +513,9 @@ private extension SyncPlaylistAppleTVSenderViewController {
             addInfoView(
                 title: "Status",
                 value: "iPhone Transfer Complete",
-                description: String(localized: "All transferable audio files were served to Apple TV. It may still be importing them locally."),
+                description: progress.isMissingTracks
+                    ? String(localized: "Apple TV finished, but some audio files were not delivered.")
+                    : String(localized: "All transferable audio files were served to Apple TV. It may still be importing them locally."),
             )
             addInfoView(
                 title: "Progress",

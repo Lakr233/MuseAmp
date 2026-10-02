@@ -24,6 +24,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     ) -> Bool {
         AlertControllerConfiguration.alertImage = Bundle.appIcon
         AlertControllerConfiguration.accentColor = .accent
+        AppEnvironment.bootstrapLogging()
+        // No transfer can be running yet, so any scratch directory left by
+        // a crash or kill is stale.
+        SyncTransferSession.removeStaleTemporaryDirectories()
         return true
     }
 

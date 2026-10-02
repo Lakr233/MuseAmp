@@ -12,6 +12,12 @@ import SubsonicClientKit
 import UIKit
 
 extension TVAppContext {
+    /// Opens the journal in the default library at launch, so work that runs
+    /// before the library boots is written to it instead of dropped.
+    static func bootstrapLogging() {
+        AppLog.bootstrap(with: LibraryPaths(baseDirectory: makeLibraryBaseDirectory()))
+    }
+
     static func initializeDatabaseManager(
         apiBaseURL: URL = AppPreferences.defaultAPIBaseURL,
         baseDirectory: URL? = nil,

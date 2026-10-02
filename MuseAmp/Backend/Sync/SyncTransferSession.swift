@@ -15,6 +15,10 @@ final class SyncTransferSession {
         let downloadedURLs: [URL]
     }
 
+    /// Shared by the sender's prepared copies (`am-transfer-<UUID>`) and the
+    /// receiver's downloads (`am-transfer-receive-<UUID>`).
+    nonisolated static let temporaryDirectoryPrefix = "am-transfer-"
+
     let paths: LibraryPaths
     let libraryDatabase: MusicLibraryDatabase
     let lyricsCacheStore: LyricsCacheStore
@@ -375,6 +379,34 @@ final class SyncTransferSession {
         return result
     }
 
+    /// Tells the sender the receiver is done, so it can show completion even
+    /// when songs the receiver already had were never requested. Older
+    /// senders do not know this request; a failure does not affect the
+    /// transfer that already finished.
+    func reportTransferCompletion(
+        endpoint: SyncEndpoint,
+        token: String,
+        alreadyInLibraryTrackCount: Int,
+    ) async {
+        // Run in a fresh unstructured task: the caller's transfer task is
+        // cancelled when the user leaves the screen right after a receive,
+        // and an inherited cancel would drop the request before it is sent.
+        let apiClient = apiClient
+        let result = await Task {
+            try await apiClient.reportTransferCompletion(
+                endpoint: endpoint,
+                token: token,
+                alreadyInLibraryTrackCount: alreadyInLibraryTrackCount,
+            )
+        }.result
+        if case let .failure(error) = result {
+            AppLog.warning(
+                self,
+                "reportTransferCompletion ignored failure endpoint=\(endpoint.displayString) error=\(error.localizedDescription)",
+            )
+        }
+    }
+
     func stopReceiver() {
         stopBrowsing()
         cleanupReceiverDownloads()
@@ -384,6 +416,92 @@ final class SyncTransferSession {
     func stopAll() async {
         await stopSender()
         stopReceiver()
+    }
+
+    /// Removes the `am-transfer-*` scratch directories (sender copies and
+    /// receiver downloads) that a crash or kill left behind. Call it once at
+    /// launch, before any transfer can create a new one.
+    @discardableResult
+    nonisolated static func removeStaleTemporaryDirectories(
+        in directoryURL: URL = FileManager.default.temporaryDirectory,
+        minimumAge: TimeInterval = staleTemporaryDirectoryMinimumAge,
+    ) -> Int {
+        let entries: [URL]
+        do {
+            entries = try FileManager.default.contentsOfDirectory(
+                at: directoryURL,
+                includingPropertiesForKeys: [.contentModificationDateKey],
+            )
+        } catch {
+            AppLog.warning(
+                "SyncTransferSession",
+                "removeStaleTemporaryDirectories listing failed error=\(error.localizedDescription)",
+            )
+            return 0
+        }
+
+        var removedCount = 0
+        for entry in entries where entry.lastPathComponent.hasPrefix(temporaryDirectoryPrefix) {
+            if minimumAge > 0 {
+                let modifiedAt: Date
+                do {
+                    modifiedAt = try entry.resourceValues(forKeys: [.contentModificationDateKey])
+                        .contentModificationDate ?? .distantPast
+                } catch {
+                    AppLog.warning(
+                        "SyncTransferSession",
+                        "removeStaleTemporaryDirectories kept path=\(entry.lastPathComponent) error=\(error.localizedDescription)",
+                    )
+                    continue
+                }
+                guard Date().timeIntervalSince(modifiedAt) >= minimumAge else {
+                    continue
+                }
+            }
+            do {
+                try FileManager.default.removeItem(at: entry)
+                removedCount += 1
+            } catch {
+                AppLog.error(
+                    "SyncTransferSession",
+                    "removeStaleTemporaryDirectories failed path=\(entry.lastPathComponent) error=\(error.localizedDescription)",
+                )
+            }
+        }
+        if removedCount > 0 {
+            AppLog.info("SyncTransferSession", "removeStaleTemporaryDirectories removed=\(removedCount)")
+        }
+        return removedCount
+    }
+
+    #if targetEnvironment(macCatalyst)
+        /// An unsandboxed Mac build shares its temporary directory with other
+        /// running copies of the app (debug builds, the test host), so only
+        /// directories nobody has touched for an hour count as stale there.
+        nonisolated static let staleTemporaryDirectoryMinimumAge: TimeInterval = 60 * 60
+    #else
+        nonisolated static let staleTemporaryDirectoryMinimumAge: TimeInterval = 0
+    #endif
+}
+
+/// What one receive did with every song the sender offered:
+/// `imported + skipped + failed` equals the number offered.
+nonisolated struct SyncReceiveSummary: Equatable {
+    let imported: Int
+    let skipped: Int
+    let failed: Int
+
+    init(
+        offeredCount: Int,
+        requestedCount: Int,
+        downloadedCount: Int,
+        importResult: AudioImportResult,
+    ) {
+        imported = importResult.succeeded
+        skipped = importResult.duplicates + max(offeredCount - requestedCount, 0)
+        failed = importResult.errors
+            + importResult.noMetadata
+            + max(requestedCount - downloadedCount, 0)
     }
 }
 
@@ -413,7 +531,7 @@ private extension SyncTransferSession {
         }
 
         let directoryURL = fileManager.temporaryDirectory
-            .appendingPathComponent("am-transfer-receive-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("\(Self.temporaryDirectoryPrefix)receive-\(UUID().uuidString)", isDirectory: true)
         try fileManager.createDirectory(
             at: directoryURL,
             withIntermediateDirectories: true,

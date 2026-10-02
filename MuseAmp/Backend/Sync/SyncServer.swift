@@ -281,8 +281,21 @@ private nonisolated extension SyncServer {
             )
         }
 
-        if let request = parseRequest(from: accumulated) {
+        switch parseRequest(from: accumulated) {
+        case let .request(request):
             return .request(request)
+        case .invalidContentLength:
+            return .error(
+                statusCode: HTTPStatus.badRequest.rawValue,
+                body: invalidRequestMessage,
+            )
+        case .oversizedBody:
+            return .error(
+                statusCode: HTTPStatus.badRequest.rawValue,
+                body: oversizedRequestMessage,
+            )
+        case .incomplete:
+            break
         }
 
         if isComplete {
@@ -295,24 +308,31 @@ private nonisolated extension SyncServer {
         return .needMoreData(accumulated)
     }
 
-    nonisolated static func parseRequest(from data: Data) -> HTTPRequest? {
+    nonisolated enum ParsedRequest {
+        case request(HTTPRequest)
+        case incomplete
+        case invalidContentLength
+        case oversizedBody
+    }
+
+    nonisolated static func parseRequest(from data: Data) -> ParsedRequest {
         let delimiter = Data("\r\n\r\n".utf8)
         guard let range = data.range(of: delimiter) else {
-            return nil
+            return .incomplete
         }
 
         let head = data[..<range.lowerBound]
         guard let headString = String(data: head, encoding: .utf8) else {
-            return nil
+            return .incomplete
         }
 
         let headerLines = headString.components(separatedBy: "\r\n")
         guard let requestLine = headerLines.first else {
-            return nil
+            return .incomplete
         }
         let requestParts = requestLine.split(separator: " ", omittingEmptySubsequences: true)
         guard requestParts.count >= 2 else {
-            return nil
+            return .incomplete
         }
 
         var headers: [String: String] = [:]
@@ -325,19 +345,31 @@ private nonisolated extension SyncServer {
             headers[key] = value
         }
 
+        // The header comes from an unauthenticated peer, so it is range
+        // checked before it is used in any index arithmetic.
+        var contentLength = 0
+        if let rawContentLength = headers["content-length"] {
+            guard let value = Int(rawContentLength), value >= 0 else {
+                return .invalidContentLength
+            }
+            guard value <= maxRequestBufferSize else {
+                return .oversizedBody
+            }
+            contentLength = value
+        }
+
         let bodyStart = range.upperBound
-        let contentLength = Int(headers["content-length"] ?? "") ?? 0
-        guard data.count >= bodyStart + contentLength else {
-            return nil
+        guard data.endIndex - bodyStart >= contentLength else {
+            return .incomplete
         }
 
         let body = Data(data[bodyStart ..< bodyStart + contentLength])
-        return HTTPRequest(
+        return .request(HTTPRequest(
             method: String(requestParts[0]),
             path: String(requestParts[1]),
             headers: headers,
             body: body,
-        )
+        ))
     }
 
     nonisolated func process(_ request: HTTPRequest, on connection: NWConnection) {
@@ -363,6 +395,21 @@ private nonisolated extension SyncServer {
                 currentTrackTitle: nil,
             )
             sendJSONResponse(status: .ok, payload: manifest, on: connection)
+
+        case ("POST", "/complete"):
+            guard let token = authorizedToken(for: request) else {
+                sendPlainResponse(
+                    status: .unauthorized,
+                    body: String(localized: "Unauthorized."),
+                    on: connection,
+                )
+                return
+            }
+            handleCompletion(
+                request,
+                receiverDeviceName: tokenStore.receiverDeviceName(for: token),
+                on: connection,
+            )
 
         default:
             if request.method == "GET",
@@ -435,6 +482,40 @@ private nonisolated extension SyncServer {
                 on: connection,
             )
         }
+    }
+
+    nonisolated func handleCompletion(
+        _ request: HTTPRequest,
+        receiverDeviceName: String?,
+        on connection: NWConnection,
+    ) {
+        let completion: SyncTransferCompletion
+        do {
+            completion = try JSONDecoder().decode(SyncTransferCompletion.self, from: request.body)
+        } catch {
+            AppLog.error(self, "handleCompletion decode failed: \(error.localizedDescription)")
+            sendPlainResponse(
+                status: .badRequest,
+                body: Self.invalidRequestMessage,
+                on: connection,
+            )
+            return
+        }
+
+        let totalTrackCount = manifest.entries.count
+        let alreadyInLibraryTrackCount = min(max(completion.alreadyInLibraryTrackCount, 0), totalTrackCount)
+        let deliveredTrackCount = min(completedTrackIDs.count + alreadyInLibraryTrackCount, totalTrackCount)
+        AppLog.info(
+            self,
+            "handleCompletion served=\(completedTrackIDs.count) alreadyInLibrary=\(alreadyInLibraryTrackCount) total=\(totalTrackCount) receiver=\(sanitizedLogText(receiverDeviceName ?? "unknown"))",
+        )
+        reportProgress(
+            phase: .completed,
+            receiverDeviceName: receiverDeviceName,
+            currentTrackCount: deliveredTrackCount,
+            currentTrackTitle: nil,
+        )
+        sendPlainResponse(status: .ok, body: "", on: connection)
     }
 
     nonisolated func handleTrack(

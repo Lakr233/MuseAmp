@@ -265,6 +265,12 @@ nonisolated struct SyncSenderTransferProgress: Hashable {
     let totalTrackCount: Int
     let currentTrackTitle: String?
 
+    /// The receiver finished without getting every offered song, for
+    /// example because some downloads failed.
+    var isMissingTracks: Bool {
+        phase == .completed && currentTrackCount < totalTrackCount
+    }
+
     static func waiting(
         playlistName: String?,
         totalTrackCount: Int,
@@ -289,6 +295,13 @@ nonisolated struct SyncAuthResponse: Codable {
     let success: Bool
     let token: String?
     let message: String?
+}
+
+/// Sent by the receiver once it has finished a transfer, so the sender can
+/// stop waiting for songs the receiver never requests because it already
+/// has them.
+nonisolated struct SyncTransferCompletion: Codable {
+    let alreadyInLibraryTrackCount: Int
 }
 
 nonisolated struct DiscoveredDevice: Hashable {

@@ -386,4 +386,51 @@ struct DownloadArtworkProcessorTimeoutTests {
             #expect(Date().timeIntervalSince(startedAt) < 0.5)
         }
     }
+
+    @Test
+    func `export timeout firing off the main queue reports a timeout`() async throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ExportTimeoutTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let sourceURL = dir.appendingPathComponent("source.m4a")
+        let settings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatMPEG4AAC,
+            AVSampleRateKey: 44100.0,
+            AVNumberOfChannelsKey: 1,
+            AVEncoderBitRateKey: 64000,
+        ]
+        let format = try #require(AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 1))
+        let buffer = try #require(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 88200))
+        buffer.frameLength = 88200
+        // Scoped so the file is closed and finalized before the export reads
+        // it; an unfinished file makes the export fail before the timer fires.
+        do {
+            let audioFile = try AVAudioFile(
+                forWriting: sourceURL,
+                settings: settings,
+                commonFormat: .pcmFormatFloat32,
+                interleaved: false,
+            )
+            try audioFile.write(from: buffer)
+        }
+
+        let exportSession = try #require(AVAssetExportSession(
+            asset: AVURLAsset(url: sourceURL),
+            presetName: AVAssetExportPresetPassthrough,
+        ))
+        exportSession.outputURL = dir.appendingPathComponent("output.m4a")
+        exportSession.outputFileType = .m4a
+
+        // The timer fires on a global queue long before the export can finish.
+        do {
+            try await DownloadArtworkProcessor.export(exportSession, timeout: 0.000_001)
+            Issue.record("Expected the export to time out")
+        } catch DownloadArtworkProcessor.ProcessingError.exportTimedOut {
+            // Expected.
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+    }
 }

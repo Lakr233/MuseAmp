@@ -14,6 +14,17 @@ nonisolated struct PreparedTransferSkippedItem: Hashable, Sendable {
     let title: String
     let artistName: String
     let reason: String
+    /// False when the file itself is fine and preparing it failed for
+    /// another reason, such as a timeout. Only unreadable songs are offered
+    /// for removal.
+    var isSourceUnreadable = true
+}
+
+nonisolated extension [PreparedTransferSkippedItem] {
+    /// True when every song was skipped because its file cannot be read.
+    var areAllSourcesUnreadable: Bool {
+        allSatisfy(\.isSourceUnreadable)
+    }
 }
 
 nonisolated struct PreparedTransferBatch {
@@ -112,7 +123,10 @@ nonisolated extension SyncPreparedTrackBuilder {
 
     func makeCleanupDirectory() throws -> URL {
         let directoryURL = fileManager.temporaryDirectory
-            .appendingPathComponent("am-transfer-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent(
+                "\(SyncTransferSession.temporaryDirectoryPrefix)\(UUID().uuidString)",
+                isDirectory: true,
+            )
         try fileManager.createDirectory(
             at: directoryURL,
             withIntermediateDirectories: true,
@@ -206,7 +220,7 @@ nonisolated extension SyncPreparedTrackBuilder {
         fallbackTrackID: String,
         usedFileNames: inout Set<String>,
     ) -> PreparedFileNames {
-        let sanitizedBaseName = sanitizeDisplayFileName(baseName, fallback: fallbackTrackID)
+        let sanitizedBaseName = Self.fileSystemSafeBaseName(baseName, fallback: fallbackTrackID)
 
         var candidateBaseName = sanitizedBaseName
         var audioFileName = "\(candidateBaseName).\(fileExtension)"
@@ -226,6 +240,38 @@ nonisolated extension SyncPreparedTrackBuilder {
             audioFileName: audioFileName,
             lyricsFileName: lyricsFileName,
         )
+    }
+
+    /// File systems cap a name at 255 bytes. Leave room for a " 99" suffix
+    /// and the extension so `linkItem`/`copyItem` never fail with
+    /// ENAMETOOLONG on long artist and title tags.
+    static let maxFileBaseNameByteCount = 200
+
+    /// A sanitized base name for a file written from artist and title tags,
+    /// short enough for the file system.
+    static func fileSystemSafeBaseName(_ baseName: String, fallback: String) -> String {
+        truncatedFileBaseName(
+            sanitizeDisplayFileName(baseName, fallback: fallback),
+            fallback: fallback,
+        )
+    }
+
+    static func truncatedFileBaseName(_ baseName: String, fallback: String) -> String {
+        guard baseName.utf8.count > maxFileBaseNameByteCount else {
+            return baseName
+        }
+        var truncated = ""
+        var byteCount = 0
+        for character in baseName {
+            let characterByteCount = String(character).utf8.count
+            guard byteCount + characterByteCount <= maxFileBaseNameByteCount else {
+                break
+            }
+            truncated.append(character)
+            byteCount += characterByteCount
+        }
+        let trimmed = truncated.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? fallback : trimmed
     }
 
     static func preferredFileBaseName(
