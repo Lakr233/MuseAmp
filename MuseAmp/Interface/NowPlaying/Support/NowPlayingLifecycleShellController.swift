@@ -42,7 +42,7 @@ extension NowPlayingLifecycleShellController where Self: UIViewController {
             return
         }
 
-        refreshControlIslandContent(animated: false)
+        refreshControlIslandContent()
         refreshPlayingContent(animated: false)
     }
 

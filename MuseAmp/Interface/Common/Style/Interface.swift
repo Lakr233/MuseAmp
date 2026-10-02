@@ -43,21 +43,6 @@ enum Interface {
         )
     }
 
-    static func bounceAnimate(
-        animations: @escaping () -> Void,
-        completion: ((Bool) -> Void)? = nil,
-    ) {
-        UIView.animate(
-            withDuration: 0.5,
-            delay: 0,
-            usingSpringWithDamping: 0.8,
-            initialSpringVelocity: 1.0,
-            options: interruptibleOptions,
-            animations: animations,
-            completion: completion,
-        )
-    }
-
     static func animate(
         duration: TimeInterval,
         delay: TimeInterval = 0,

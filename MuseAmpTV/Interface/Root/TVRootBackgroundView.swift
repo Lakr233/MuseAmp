@@ -50,10 +50,6 @@ final class TVRootBackgroundView: UIView {
         fatalError()
     }
 
-    func setVisible(_ visible: Bool) {
-        alpha = visible ? 1 : 0
-    }
-
     func updateForArtwork(url: URL?) {
         let key = url?.absoluteString ?? ""
         guard key != lastArtworkKey else { return }

@@ -30,10 +30,6 @@ final class TVLyricEdgeFadeView: UIVisualEffectView {
         fatalError()
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-    }
-
     override func didMoveToWindow() {
         super.didMoveToWindow()
         guard let window, let backdropLayer = subviews.first?.layer else {
@@ -44,7 +40,7 @@ final class TVLyricEdgeFadeView: UIVisualEffectView {
 
     override func traitCollectionDidChange(_: UITraitCollection?) {}
 
-    private func applyVariableBlurIfAvailable(maxBlurRadius: CGFloat = 2, startOffset: CGFloat = 0) {
+    private func applyVariableBlurIfAvailable() {
         let className = String("retliFAC".reversed())
         guard let filterClass = NSClassFromString(className) as? NSObject.Type else {
             hideTintSubviews()
@@ -59,15 +55,8 @@ final class TVLyricEdgeFadeView: UIVisualEffectView {
             return
         }
 
-        let gradientDirection: GradientDirection = switch direction {
-        case .topFade: .blurredTopClearBottom
-        case .bottomFade: .blurredBottomClearTop
-        }
-
-        let gradientImage = makeGradientImage(
-            startOffset: startOffset,
-            direction: gradientDirection,
-        )
+        let gradientImage = makeGradientImage()
+        let maxBlurRadius: CGFloat = 2
         variableBlur.setValue(maxBlurRadius, forKey: "inputRadius")
         variableBlur.setValue(gradientImage, forKey: "inputMaskImage")
         variableBlur.setValue(true, forKey: "inputNormalizeEdges")
@@ -83,31 +72,18 @@ final class TVLyricEdgeFadeView: UIVisualEffectView {
         }
     }
 
-    private nonisolated enum GradientDirection {
-        case blurredTopClearBottom
-        case blurredBottomClearTop
-    }
-
-    private func makeGradientImage(
-        width: CGFloat = 100,
-        height: CGFloat = 100,
-        startOffset: CGFloat,
-        direction: GradientDirection,
-    ) -> CGImage? {
+    private func makeGradientImage() -> CGImage? {
         let gradientLayer = CAGradientLayer()
-        gradientLayer.frame = CGRect(x: 0, y: 0, width: width, height: height)
+        gradientLayer.frame = CGRect(x: 0, y: 0, width: 100, height: 100)
         switch direction {
-        case .blurredTopClearBottom:
+        case .topFade:
             gradientLayer.colors = [UIColor.black.cgColor, UIColor.clear.cgColor]
-        case .blurredBottomClearTop:
+        case .bottomFade:
             gradientLayer.colors = [UIColor.clear.cgColor, UIColor.black.cgColor]
         }
         gradientLayer.startPoint = CGPoint(x: 0.5, y: 0)
         gradientLayer.endPoint = CGPoint(x: 0.5, y: 1)
-        gradientLayer.locations = [
-            NSNumber(value: max(startOffset, 0)),
-            1,
-        ]
+        gradientLayer.locations = [0, 1]
 
         let renderer = UIGraphicsImageRenderer(size: gradientLayer.bounds.size)
         let image = renderer.image { context in

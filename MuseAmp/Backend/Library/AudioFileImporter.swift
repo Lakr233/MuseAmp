@@ -308,10 +308,7 @@ private extension AudioFileImporter {
 
     func extractCatalogIDs(from items: [AVMetadataItem]) async -> EmbeddedCatalogIDs? {
         for item in items {
-            guard
-                item.identifier == .iTunesMetadataUserComment
-                || AVMetadataHelper.matches(item, tokens: ["comment", "cmt"])
-            else { continue }
+            guard AVMetadataHelper.isComment(item) else { continue }
             guard let value = try? await item.load(.stringValue),
                   let data = value.data(using: .utf8),
                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -419,7 +416,6 @@ private extension AudioFileImporter {
 
         AppLog.info(self, "importFiles enqueued background artwork fetches count=\(candidates.count)")
         let paths = paths
-        let apiClient = apiClient
         Task.detached(priority: .utility) {
             for candidate in candidates {
                 guard let artworkURL = candidate.artworkURL else {
@@ -430,7 +426,6 @@ private extension AudioFileImporter {
                     let artworkData = try await DownloadArtworkProcessor.cachedArtworkData(
                         trackID: candidate.trackID,
                         artworkURL: artworkURL,
-                        apiClient: apiClient,
                         locations: paths,
                         session: .shared,
                     )

@@ -5,7 +5,6 @@
 //  Created by @Lakr233 on 2026/04/11.
 //
 
-import Combine
 import MuseAmpDatabaseKit
 import SnapKit
 import Then
@@ -138,7 +137,6 @@ final class SidebarViewController: UIViewController {
 
     private var collectionView: UICollectionView!
     private var dataSource: UICollectionViewDiffableDataSource<SidebarSection, SidebarItem>!
-    private var cancellables: Set<AnyCancellable> = []
     private nonisolated(unsafe) var playlistObserver: NSObjectProtocol?
     private nonisolated(unsafe) var playlistArtworkObserver: NSObjectProtocol?
     private nonisolated(unsafe) var serverConfigurationObserver: NSObjectProtocol?

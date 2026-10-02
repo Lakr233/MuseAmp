@@ -9,8 +9,7 @@ struct SyncServerTests {
         let chunk = Data(repeating: 0x41, count: SyncServer.maxRequestBufferSize + 1)
 
         switch SyncServer.receiveOutcome(buffer: Data(), chunk: chunk, isComplete: false) {
-        case let .error(statusCode, body):
-            #expect(statusCode == 400)
+        case let .error(body):
             #expect(body == SyncServer.oversizedRequestMessage)
 
         default:
@@ -54,8 +53,7 @@ struct SyncServerTests {
             + "\r\n"
 
         switch SyncServer.receiveOutcome(buffer: Data(), chunk: Data(request.utf8), isComplete: false) {
-        case let .error(statusCode, body):
-            #expect(statusCode == 400)
+        case let .error(body):
             #expect(body == SyncServer.invalidRequestMessage)
 
         default:
@@ -71,8 +69,7 @@ struct SyncServerTests {
             + "\r\n"
 
         switch SyncServer.receiveOutcome(buffer: Data(), chunk: Data(request.utf8), isComplete: false) {
-        case let .error(statusCode, body):
-            #expect(statusCode == 400)
+        case let .error(body):
             #expect(body == SyncServer.oversizedRequestMessage)
 
         default:

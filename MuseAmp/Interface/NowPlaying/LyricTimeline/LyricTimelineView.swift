@@ -8,8 +8,6 @@ final class LyricTimelineView: UIView {
         static let activeLineAnchorFraction: CGFloat = 1.0 / 3.0
         static let topBlurFraction: CGFloat = activeLineAnchorFraction / 2.0
         static let bottomBlurFraction: CGFloat = 0.28
-        static let activeLineHeightEstimate: CGFloat = LyricTimelineLineStyle.estimatedLineHeight
-        static let autoScrollCooldown: TimeInterval = 2.0
         static let verticalSpacing: CGFloat = 18
         static let minimumHorizontalInset: CGFloat = 16
         static let topContentInset: CGFloat = 200

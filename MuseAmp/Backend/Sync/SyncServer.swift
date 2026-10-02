@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import MuseAmpDatabaseKit
 import Network
 
 final nonisolated class SyncServer: @unchecked Sendable {
@@ -25,7 +26,7 @@ final nonisolated class SyncServer: @unchecked Sendable {
     nonisolated enum ReceiveOutcome {
         case request(HTTPRequest)
         case needMoreData(Data)
-        case error(statusCode: Int, body: String)
+        case error(body: String)
     }
 
     nonisolated static let maxRequestBufferSize = 1024 * 1024
@@ -37,7 +38,33 @@ final nonisolated class SyncServer: @unchecked Sendable {
         chunk: Data?,
         isComplete: Bool,
     ) -> ReceiveOutcome {
-        _receiveOutcome(buffer: buffer, chunk: chunk, isComplete: isComplete)
+        var accumulated = buffer
+        if let chunk, !chunk.isEmpty {
+            accumulated.append(chunk)
+        }
+
+        if accumulated.count > maxRequestBufferSize {
+            AppLog.warning("SyncServer", "receiveRequest buffer exceeded limit=\(maxRequestBufferSize)")
+            return .error(body: oversizedRequestMessage)
+        }
+
+        switch parseRequest(from: accumulated) {
+        case let .request(request):
+            return .request(request)
+        case .invalidContentLength:
+            return .error(body: invalidRequestMessage)
+        case .oversizedBody:
+            AppLog.warning("SyncServer", "receiveRequest buffer exceeded limit=\(maxRequestBufferSize)")
+            return .error(body: oversizedRequestMessage)
+        case .incomplete:
+            break
+        }
+
+        if isComplete {
+            return .error(body: invalidRequestMessage)
+        }
+
+        return .needMoreData(accumulated)
     }
 
     private let serviceName: String
@@ -162,12 +189,6 @@ private nonisolated extension SyncServer {
             return token
         }
 
-        func contains(_ token: String) -> Bool {
-            lock.lock()
-            defer { lock.unlock() }
-            return receiverNamesByToken[token] != nil
-        }
-
         func receiverDeviceName(for token: String) -> String? {
             lock.lock()
             defer { lock.unlock() }
@@ -242,70 +263,17 @@ private nonisolated extension SyncServer {
                 return
             }
 
-            switch Self._receiveOutcome(buffer: buffer, chunk: data, isComplete: isComplete) {
+            switch Self.receiveOutcome(buffer: buffer, chunk: data, isComplete: isComplete) {
             case let .request(request):
                 process(request, on: connection)
 
             case let .needMoreData(accumulated):
                 receiveRequest(on: connection, buffer: accumulated)
 
-            case let .error(statusCode, body):
-                if statusCode == HTTPStatus.badRequest.rawValue,
-                   body == Self.oversizedRequestMessage
-                {
-                    AppLog.warning(self, "receiveRequest buffer exceeded limit=\(Self.maxRequestBufferSize)")
-                }
-                sendPlainResponse(
-                    status: HTTPStatus(rawValue: statusCode) ?? .internalServerError,
-                    body: body,
-                    on: connection,
-                )
+            case let .error(body):
+                sendPlainResponse(status: .badRequest, body: body, on: connection)
             }
         }
-    }
-
-    nonisolated static func _receiveOutcome(
-        buffer: Data,
-        chunk: Data?,
-        isComplete: Bool,
-    ) -> ReceiveOutcome {
-        var accumulated = buffer
-        if let chunk, !chunk.isEmpty {
-            accumulated.append(chunk)
-        }
-
-        if accumulated.count > maxRequestBufferSize {
-            return .error(
-                statusCode: HTTPStatus.badRequest.rawValue,
-                body: oversizedRequestMessage,
-            )
-        }
-
-        switch parseRequest(from: accumulated) {
-        case let .request(request):
-            return .request(request)
-        case .invalidContentLength:
-            return .error(
-                statusCode: HTTPStatus.badRequest.rawValue,
-                body: invalidRequestMessage,
-            )
-        case .oversizedBody:
-            return .error(
-                statusCode: HTTPStatus.badRequest.rawValue,
-                body: oversizedRequestMessage,
-            )
-        case .incomplete:
-            break
-        }
-
-        if isComplete {
-            return .error(
-                statusCode: HTTPStatus.badRequest.rawValue,
-                body: invalidRequestMessage,
-            )
-        }
-
-        return .needMoreData(accumulated)
     }
 
     nonisolated enum ParsedRequest {
@@ -380,7 +348,7 @@ private nonisolated extension SyncServer {
             handleAuth(request, on: connection)
 
         case ("GET", "/manifest"):
-            guard let token = authorizedToken(for: request) else {
+            guard let receiverDeviceName = authorizedReceiverDeviceName(for: request) else {
                 sendPlainResponse(
                     status: .unauthorized,
                     body: String(localized: "Unauthorized."),
@@ -390,14 +358,14 @@ private nonisolated extension SyncServer {
             }
             reportProgress(
                 phase: .manifestServed,
-                receiverDeviceName: tokenStore.receiverDeviceName(for: token),
+                receiverDeviceName: receiverDeviceName,
                 currentTrackCount: 0,
                 currentTrackTitle: nil,
             )
             sendJSONResponse(status: .ok, payload: manifest, on: connection)
 
         case ("POST", "/complete"):
-            guard let token = authorizedToken(for: request) else {
+            guard let receiverDeviceName = authorizedReceiverDeviceName(for: request) else {
                 sendPlainResponse(
                     status: .unauthorized,
                     body: String(localized: "Unauthorized."),
@@ -407,7 +375,7 @@ private nonisolated extension SyncServer {
             }
             handleCompletion(
                 request,
-                receiverDeviceName: tokenStore.receiverDeviceName(for: token),
+                receiverDeviceName: receiverDeviceName,
                 on: connection,
             )
 
@@ -415,7 +383,7 @@ private nonisolated extension SyncServer {
             if request.method == "GET",
                request.path.hasPrefix("/track/")
             {
-                guard let token = authorizedToken(for: request) else {
+                guard let receiverDeviceName = authorizedReceiverDeviceName(for: request) else {
                     sendPlainResponse(
                         status: .unauthorized,
                         body: String(localized: "Unauthorized."),
@@ -425,7 +393,7 @@ private nonisolated extension SyncServer {
                 }
                 handleTrack(
                     request,
-                    receiverDeviceName: tokenStore.receiverDeviceName(for: token),
+                    receiverDeviceName: receiverDeviceName,
                     on: connection,
                 )
             } else {
@@ -576,7 +544,7 @@ private nonisolated extension SyncServer {
         }
     }
 
-    nonisolated func authorizedToken(for request: HTTPRequest) -> String? {
+    nonisolated func authorizedReceiverDeviceName(for request: HTTPRequest) -> String? {
         guard let authorization = request.headers["authorization"] else {
             return nil
         }
@@ -584,7 +552,7 @@ private nonisolated extension SyncServer {
             return nil
         }
         let token = String(authorization.dropFirst("Bearer ".count))
-        return tokenStore.contains(token) ? token : nil
+        return tokenStore.receiverDeviceName(for: token)
     }
 
     nonisolated func streamFile(
@@ -683,21 +651,13 @@ private nonisolated extension SyncServer {
         onProgress?(
             SyncSenderTransferProgress(
                 phase: phase,
-                receiverDeviceName: sanitizedOptionalText(receiverDeviceName),
+                receiverDeviceName: receiverDeviceName.nilIfEmpty,
                 playlistName: manifest.session?.playlistName,
                 currentTrackCount: currentTrackCount,
                 totalTrackCount: manifest.entries.count,
-                currentTrackTitle: sanitizedOptionalText(currentTrackTitle),
+                currentTrackTitle: currentTrackTitle.nilIfEmpty,
             ),
         )
-    }
-
-    nonisolated func sanitizedOptionalText(_ value: String?) -> String? {
-        guard let value else {
-            return nil
-        }
-        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? nil : trimmed
     }
 
     nonisolated func sendPlainResponse(

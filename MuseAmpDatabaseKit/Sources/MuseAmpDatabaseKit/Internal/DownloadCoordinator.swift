@@ -9,6 +9,7 @@ import Foundation
 
 struct DownloadCoordinator {
     let stateStore: StateStore
+    let paths: LibraryPaths
     let logger: DatabaseLogger
 
     func enqueue(_ requests: [DownloadRequest]) throws -> (queued: Int, skipped: Int) {
@@ -24,7 +25,7 @@ struct DownloadCoordinator {
             let job = DownloadJob(
                 trackID: request.trackID,
                 albumID: request.albumID,
-                targetRelativePath: "\(sanitizePathComponent(request.albumID))/\(sanitizePathComponent(request.trackID)).m4a",
+                targetRelativePath: paths.inferredRelativePath(for: request.trackID, albumID: request.albumID),
                 sourceURL: request.sourceURL,
                 title: request.title,
                 artistName: request.artistName,
@@ -35,16 +36,8 @@ struct DownloadCoordinator {
             queued += 1
         }
 
-        DBLog.info(logger, "DownloadCoordinator", "enqueue queued=\(queued) skipped=\(skipped)")
+        logger.info("DownloadCoordinator", "enqueue queued=\(queued) skipped=\(skipped)")
         return (queued, skipped)
-    }
-
-    func pauseAll() {
-        DBLog.info(logger, "DownloadCoordinator", "pauseAll")
-    }
-
-    func resumeAll() {
-        DBLog.info(logger, "DownloadCoordinator", "resumeAll")
     }
 
     func retry(trackID: String) throws {
@@ -69,9 +62,5 @@ struct DownloadCoordinator {
             updatedAt: .init(),
         )
         try stateStore.upsertDownload(updated)
-    }
-
-    func cancel(trackID: String) throws {
-        try stateStore.deleteDownload(trackID: trackID)
     }
 }

@@ -52,7 +52,7 @@ final class NowPlayingInfoManager {
             let itemID = item.id
             artworkTask = Task { [weak self] in
                 guard let self else { return }
-                guard let artwork = await artworkLoader.loadArtwork(url: url, for: itemID) else {
+                guard let artwork = await artworkLoader.loadArtwork(url: url) else {
                     return
                 }
                 guard currentItemID == itemID else { return }
@@ -119,7 +119,6 @@ final class NowPlayingInfoManager {
         originalArtist = nil
         artworkTask?.cancel()
         artworkTask = nil
-        artworkLoader.cancelCurrent()
         currentItemID = nil
         currentInfo = [:]
         publisher.playbackState = .stopped

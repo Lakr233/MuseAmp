@@ -9,7 +9,6 @@ import MediaPlayer
 
 @MainActor
 final class RemoteCommandManager {
-    private weak var player: MusicPlayer?
     private let provider: any RemoteCommandCenterProviding
 
     init(provider: any RemoteCommandCenterProviding) {
@@ -21,8 +20,6 @@ final class RemoteCommandManager {
     }
 
     func register(player: MusicPlayer) {
-        self.player = player
-
         commandCenter.playCommand.isEnabled = true
         commandCenter.playCommand.addTarget { [weak player] _ in
             player?.play()

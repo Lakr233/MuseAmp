@@ -237,7 +237,6 @@ extension DownloadManager {
                 trackID: trackID,
                 fileURL: ingestURL,
                 artworkURL: artworkURL,
-                apiClient: apiClient,
                 locations: paths,
             )
             async let lyricsDone: Void = DownloadLyricsProcessor.cacheLyrics(

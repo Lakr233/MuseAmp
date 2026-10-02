@@ -18,11 +18,6 @@ final class AudioSessionManager {
     )
 
     private let logger: any MusicPlayerLogger
-    private var interruptionObserver: (any NSObjectProtocol)?
-    private var routeChangeObserver: (any NSObjectProtocol)?
-    private var onInterruptionBegan: (@Sendable () -> Void)?
-    private var onInterruptionEndedShouldResume: (@Sendable () -> Void)?
-    private var onRouteOldDeviceUnavailable: (@Sendable () -> Void)?
 
     init(logger: any MusicPlayerLogger = NoopMusicPlayerLogger()) {
         self.logger = logger
@@ -33,10 +28,6 @@ final class AudioSessionManager {
         onInterruptionEndedShouldResume: @escaping @Sendable () -> Void,
         onRouteOldDeviceUnavailable: @escaping @Sendable () -> Void,
     ) {
-        self.onInterruptionBegan = onInterruptionBegan
-        self.onInterruptionEndedShouldResume = onInterruptionEndedShouldResume
-        self.onRouteOldDeviceUnavailable = onRouteOldDeviceUnavailable
-
         #if os(iOS) || os(tvOS) || os(watchOS)
             let session = AVAudioSession.sharedInstance()
             do {
@@ -62,11 +53,8 @@ final class AudioSessionManager {
                 )
             }
 
-            let beganHandler = onInterruptionBegan
-            let resumeHandler = onInterruptionEndedShouldResume
-            let routeHandler = onRouteOldDeviceUnavailable
-
-            interruptionObserver = NotificationCenter.default.addObserver(
+            // Both observers stay registered for the process lifetime; nothing removes them.
+            _ = NotificationCenter.default.addObserver(
                 forName: AVAudioSession.interruptionNotification,
                 object: session,
                 queue: .main,
@@ -78,12 +66,12 @@ final class AudioSessionManager {
 
                 switch type {
                 case .began:
-                    beganHandler()
+                    onInterruptionBegan()
                 case .ended:
                     if let optionsValue = info[AVAudioSessionInterruptionOptionKey] as? UInt {
                         let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
                         if options.contains(.shouldResume) {
-                            resumeHandler()
+                            onInterruptionEndedShouldResume()
                         }
                     }
                 @unknown default:
@@ -91,7 +79,7 @@ final class AudioSessionManager {
                 }
             }
 
-            routeChangeObserver = NotificationCenter.default.addObserver(
+            _ = NotificationCenter.default.addObserver(
                 forName: AVAudioSession.routeChangeNotification,
                 object: session,
                 queue: .main,
@@ -102,7 +90,7 @@ final class AudioSessionManager {
                 else { return }
 
                 if reason == .oldDeviceUnavailable {
-                    routeHandler()
+                    onRouteOldDeviceUnavailable()
                 }
             }
         #endif
@@ -143,17 +131,6 @@ final class AudioSessionManager {
                 }
             }
         #endif
-    }
-
-    func teardown() {
-        if let obs = interruptionObserver {
-            NotificationCenter.default.removeObserver(obs)
-            interruptionObserver = nil
-        }
-        if let obs = routeChangeObserver {
-            NotificationCenter.default.removeObserver(obs)
-            routeChangeObserver = nil
-        }
     }
 
     private func log(_ level: MusicPlayerLogLevel, _ message: String) {

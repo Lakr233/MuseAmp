@@ -11,7 +11,7 @@ import MuseAmpPlayerKit
 import SnapKit
 import UIKit
 
-class NowPlayingCompactController: UIViewController, NowPlayingQueueShellController, NowPlayingArtworkShellController, NowPlayingLyricsPlaybackShellController, NowPlayingLifecycleShellController, NowPlayingTransportShellController {
+class NowPlayingCompactController: UIViewController, NowPlayingQueueShellController, NowPlayingArtworkShellController, NowPlayingLifecycleShellController {
     let environment: AppEnvironment
     let backgroundView = NowPlayingArtworkBackgroundView()
     lazy var artworkBackgroundCoordinator = NowPlayingArtworkBackgroundCoordinator(
@@ -123,10 +123,6 @@ class NowPlayingCompactController: UIViewController, NowPlayingQueueShellControl
         )
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-    }
-
     override var prefersStatusBarHidden: Bool {
         true
     }
@@ -141,8 +137,6 @@ class NowPlayingCompactController: UIViewController, NowPlayingQueueShellControl
     ) -> UIView? {
         nil
     }
-
-    deinit {}
 
     func installQueueActionHandlers(
         onToggleShuffle: @escaping () -> Void,

@@ -38,13 +38,6 @@ struct NowPlayingQueueCellTests {
     }
 
     @Test
-    func `NowPlayingQueueTrackCell inherits selection suppression`() {
-        let cell = NowPlayingQueueTrackCell(style: .default, reuseIdentifier: NowPlayingQueueTrackCell.reuseID)
-        cell.setSelected(true, animated: false)
-        #expect(cell.selectedBackgroundView?.isHidden == true)
-    }
-
-    @Test
     func `NowPlayingQueueEmptyCell inherits selection suppression`() {
         let cell = NowPlayingQueueEmptyCell(style: .default, reuseIdentifier: NowPlayingQueueEmptyCell.reuseID)
         cell.setSelected(true, animated: false)

@@ -9,10 +9,6 @@ import AVFoundation
 import Foundation
 import MuseAmpDatabaseKit
 
-enum EmbeddedMetadataReaderError: Error {
-    case unableToLoadMetadata
-}
-
 final nonisolated class EmbeddedMetadataReader: @unchecked Sendable {
     func extractArtwork(from fileURL: URL) async -> Data? {
         let asset = AVURLAsset(url: fileURL)
@@ -21,13 +17,7 @@ final nonisolated class EmbeddedMetadataReader: @unchecked Sendable {
             return nil
         }
         for item in items {
-            let identifier = item.identifier?.rawValue.lowercased() ?? ""
-            let commonKey = item.commonKey?.rawValue.lowercased() ?? ""
-            let key = (item.key as? String)?.lowercased() ?? (item.key as? NSString)?.lowercased ?? ""
-            let isArtwork = ["artwork", "coverart"].contains { token in
-                identifier.contains(token) || commonKey.contains(token) || key.contains(token)
-            }
-            guard isArtwork else { continue }
+            guard AVMetadataHelper.matches(item, tokens: ["artwork", "coverart"]) else { continue }
             if let data = try? await item.load(.dataValue), !data.isEmpty {
                 return data
             }
@@ -54,7 +44,7 @@ final nonisolated class EmbeddedMetadataReader: @unchecked Sendable {
         try validateFileIsReadable(at: fileURL)
         let asset = AVURLAsset(url: fileURL)
         let durationSeconds = try await validatePlayability(of: asset, fileURL: fileURL)
-        let metadataItems = try await collectMetadataItems(from: asset)
+        let metadataItems = try await AVMetadataHelper.collectMetadataItems(from: asset)
         let fileName = fileURL.deletingPathExtension().lastPathComponent
         let title = await stringValue(in: metadataItems, matching: ["title", "songName"]) ?? fileName
         let artist = await stringValue(in: metadataItems, matching: ["artist"]) ?? String(localized: "Unknown Artist")
@@ -132,14 +122,10 @@ private nonisolated extension EmbeddedMetadataReader {
         return durationSeconds
     }
 
-    func collectMetadataItems(from asset: AVURLAsset) async throws -> [AVMetadataItem] {
-        try await AVMetadataHelper.collectMetadataItems(from: asset)
-    }
-
     func stringValue(in items: [AVMetadataItem], matching tokens: [String]) async -> String? {
         let loweredTokens = tokens.map { $0.lowercased() }
         for item in items {
-            guard matches(item: item, tokens: loweredTokens) else { continue }
+            guard AVMetadataHelper.matches(item, tokens: loweredTokens) else { continue }
             if let value = try? await item.load(.stringValue)?.trimmingCharacters(in: .whitespacesAndNewlines),
                !value.isEmpty
             {
@@ -158,7 +144,7 @@ private nonisolated extension EmbeddedMetadataReader {
     func intValue(in items: [AVMetadataItem], matching tokens: [String]) async -> Int? {
         let loweredTokens = tokens.map { $0.lowercased() }
         for item in items {
-            guard matches(item: item, tokens: loweredTokens) else { continue }
+            guard AVMetadataHelper.matches(item, tokens: loweredTokens) else { continue }
             if let number = try? await item.load(.numberValue)?.intValue {
                 return number
             }
@@ -178,7 +164,7 @@ private nonisolated extension EmbeddedMetadataReader {
         }
 
         for item in items {
-            guard matches(item: item, tokens: ["creationdate", "releasedate", "date"]) else { continue }
+            guard AVMetadataHelper.matches(item, tokens: ["creationdate", "releasedate", "date"]) else { continue }
             if let date = try? await item.load(.dateValue) {
                 return ISO8601DateFormatter().string(from: date)
             }
@@ -192,9 +178,7 @@ private nonisolated extension EmbeddedMetadataReader {
 
     func lyricsStringValue(in items: [AVMetadataItem]) async -> String? {
         for item in items {
-            guard item.identifier == .iTunesMetadataLyrics
-                || matches(item: item, tokens: ["lyrics", "lyr"])
-            else { continue }
+            guard AVMetadataHelper.isLyrics(item) else { continue }
             if let value = try? await item.load(.stringValue)?
                 .trimmingCharacters(in: .whitespacesAndNewlines),
                 !value.isEmpty
@@ -207,7 +191,7 @@ private nonisolated extension EmbeddedMetadataReader {
 
     func hasArtwork(in items: [AVMetadataItem]) async -> Bool {
         for item in items {
-            if matches(item: item, tokens: ["artwork", "coverart"]) {
+            if AVMetadataHelper.matches(item, tokens: ["artwork", "coverart"]) {
                 let hasData = await (try? item.load(.dataValue)) != nil
                 let hasValue = await (try? item.load(.value)) != nil
                 if hasData || hasValue {
@@ -216,9 +200,5 @@ private nonisolated extension EmbeddedMetadataReader {
             }
         }
         return false
-    }
-
-    func matches(item: AVMetadataItem, tokens: [String]) -> Bool {
-        AVMetadataHelper.matches(item, tokens: tokens)
     }
 }

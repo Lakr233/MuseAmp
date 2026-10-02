@@ -243,7 +243,6 @@ nonisolated extension SyncPreparedTrackBuilder {
                 exportInfo.artworkData = try await DownloadArtworkProcessor.cachedArtworkData(
                     trackID: item.trackID,
                     artworkURL: artworkURL,
-                    apiClient: apiClient,
                     locations: paths,
                     session: .shared,
                 )
@@ -284,9 +283,7 @@ nonisolated extension SyncPreparedTrackBuilder {
     func sourceCommentArtworkURL(at fileURL: URL) async -> URL? {
         do {
             let items = try await AVMetadataHelper.collectMetadataItems(from: AVURLAsset(url: fileURL))
-            for item in items where item.identifier == .iTunesMetadataUserComment
-                || AVMetadataHelper.matches(item, tokens: ["comment", "cmt"])
-            {
+            for item in items where AVMetadataHelper.isComment(item) {
                 guard let comment = try await item.load(.stringValue),
                       let artworkURL = TrackArtworkRepairService.embeddedArtworkURL(fromComment: comment)
                 else {

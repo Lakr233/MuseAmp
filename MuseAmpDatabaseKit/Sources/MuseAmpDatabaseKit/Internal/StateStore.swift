@@ -10,17 +10,13 @@ import Foundation
 
 struct StateStore {
     private let database: WCDBSwift.Database
-    let databaseURL: URL
-    private let logger: DatabaseLogger
 
-    init(databaseURL: URL, logger: DatabaseLogger) throws {
-        self.databaseURL = databaseURL
+    init(databaseURL: URL) throws {
         database = WCDBSwift.Database(at: databaseURL.path)
-        self.logger = logger
         try createTablesIfNeeded()
     }
 
-    func createTablesIfNeeded() throws {
+    private func createTablesIfNeeded() throws {
         try database.create(table: StateMetaRow.tableName, of: StateMetaRow.self)
         try database.create(table: DownloadJobRow.tableName, of: DownloadJobRow.self)
         try database.create(table: PlaylistRow.tableName, of: PlaylistRow.self)
@@ -39,7 +35,6 @@ struct StateStore {
         guard oldVersion != newVersion else {
             return
         }
-        try createTablesIfNeeded()
         try setSchemaVersion(newVersion)
     }
 
@@ -54,11 +49,7 @@ struct StateStore {
     func activeDownloads() throws -> [DownloadJob] {
         let rows: [DownloadJobRow] = try database.getObjects(
             fromTable: DownloadJobRow.tableName,
-            where: DownloadJobRow.Properties.status == DownloadJobStatus.queued.rawValue
-                || DownloadJobRow.Properties.status == DownloadJobStatus.waitingForNetwork.rawValue
-                || DownloadJobRow.Properties.status == DownloadJobStatus.resolving.rawValue
-                || DownloadJobRow.Properties.status == DownloadJobStatus.downloading.rawValue
-                || DownloadJobRow.Properties.status == DownloadJobStatus.finalizing.rawValue,
+            where: DownloadJobRow.Properties.status.in(DownloadJobStatus.allCases.filter(\.isActive).map(\.rawValue)),
             orderBy: [DownloadJobRow.Properties.updatedAt.order(.descending)],
         )
         return rows.map { $0.toModel() }

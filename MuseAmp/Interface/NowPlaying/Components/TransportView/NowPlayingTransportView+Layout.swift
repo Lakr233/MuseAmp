@@ -65,25 +65,4 @@ extension NowPlayingTransportView {
             make.height.equalTo(Layout.buttonSize)
         }
     }
-
-    func makeIconButton(
-        systemName: String,
-        pointSize: CGFloat,
-        weight: UIImage.SymbolWeight,
-        accessibilityLabel: String,
-    ) -> UIButton {
-        let button = UIButton(type: .system)
-        var configuration = UIButton.Configuration.plain()
-        configuration.baseForegroundColor = Palette.primaryText
-        configuration.contentInsets = .zero
-        configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(
-            pointSize: pointSize,
-            weight: weight,
-        )
-        button.configuration = configuration
-        button.tintColor = Palette.primaryText
-        button.setImage(UIImage(systemName: systemName), for: .normal)
-        button.accessibilityLabel = accessibilityLabel
-        return button
-    }
 }

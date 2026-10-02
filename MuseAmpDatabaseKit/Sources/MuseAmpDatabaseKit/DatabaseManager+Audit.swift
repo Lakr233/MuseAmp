@@ -9,19 +9,8 @@ import Foundation
 
 public extension DatabaseManager {
     func auditSnapshot() async throws -> AuditSnapshot {
-        try requireInitialized()
-        guard let indexStore, let stateStore else {
-            throw NSError(
-                domain: "DatabaseManager",
-                code: 1,
-                userInfo: [
-                    NSLocalizedDescriptionKey: String(
-                        localized: "DatabaseManager audit runtime is unavailable",
-                        bundle: .module,
-                    ),
-                ],
-            )
-        }
+        let indexStore = try requireIndexStore()
+        let stateStore = try requireStateStore()
 
         let validTrackIDs = try indexStore.trackIDs()
         let artworkCount = cacheCoordinator.countFiles(in: paths.artworkCacheDirectory)
@@ -35,11 +24,10 @@ public extension DatabaseManager {
         let indexSchemaVersion = try indexStore.schemaVersion()
         let indexFormatVersion = try indexStore.formatVersion()
         let stateSchemaVersion = try stateStore.schemaVersion()
-        let invalidPathsFound = libraryScanner().discoverAudioFiles().reduce(into: 0) { count, url in
-            if !libraryScanner().validatePath(paths.relativeAudioPath(for: url)) {
-                count += 1
-            }
-        }
+        let scanner = try libraryScanner()
+        let invalidPathsFound = scanner.discoverAudioFiles().count(where: { url in
+            !scanner.validatePath(paths.relativeAudioPath(for: url))
+        })
         let issues = buildAuditIssues(
             orphanArtwork: orphanArtwork,
             orphanLyrics: orphanLyrics,

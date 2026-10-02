@@ -38,10 +38,6 @@ final class AVPlayerEngine: AudioPlaybackEngine {
         player
     }
 
-    var rate: Float {
-        player.rate
-    }
-
     var currentAVItem: AVPlayerItem? {
         player.currentItem
     }
@@ -117,11 +113,6 @@ final class AVPlayerEngine: AudioPlaybackEngine {
         if let item {
             player.insert(item, after: player.currentItem)
         }
-    }
-
-    func hasAdvancedToPreloadedItem() -> Bool {
-        guard let preloaded = preloadedItem else { return false }
-        return player.currentItem === preloaded
     }
 
     func advanceToPreloadedItem() -> Bool {

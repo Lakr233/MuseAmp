@@ -25,22 +25,6 @@ nonisolated struct TVLyricTimeline: Sendable, Equatable {
         return false
     }
 
-    func progress(at currentTime: TimeInterval) -> TVLyricProgress? {
-        guard let range = activeLineRange(at: currentTime) else { return nil }
-
-        let index = range.lowerBound
-        let line = lines[index]
-        let elapsed = max(0, currentTime - line.time)
-
-        guard range.upperBound < lines.count else {
-            return TVLyricProgress(line: line, index: index, elapsed: elapsed, duration: nil, progress: 1)
-        }
-
-        let duration = max(lines[range.upperBound].time - line.time, 0)
-        let progress = duration > 0 ? min(max(elapsed / duration, 0), 1) : 1
-        return TVLyricProgress(line: line, index: index, elapsed: elapsed, duration: duration, progress: progress)
-    }
-
     /// The lines active at `currentTime`: every line sharing the latest
     /// timestamp at or before it. Translations and continuation lines share
     /// their original line's timestamp, so the whole group is active together.

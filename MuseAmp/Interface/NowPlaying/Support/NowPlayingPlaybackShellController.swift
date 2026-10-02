@@ -12,14 +12,12 @@ import UIKit
 private struct NowPlayingPresentationState: Equatable {
     let currentTrack: PlaybackTrack?
     let state: PlaybackState
-    let duration: TimeInterval
     let isCurrentTrackLiked: Bool
     let outputDevice: PlaybackOutputDevice?
 
     init(snapshot: PlaybackSnapshot) {
         currentTrack = snapshot.currentTrack
         state = snapshot.state
-        duration = snapshot.duration
         isCurrentTrackLiked = snapshot.isCurrentTrackLiked
         outputDevice = snapshot.outputDevice
     }
@@ -49,7 +47,6 @@ protocol NowPlayingPlaybackShellController: NowPlayingShellController {
     func applySupplementalPlaybackProgress(for snapshot: PlaybackSnapshot)
     func refreshPlayingContent(animated: Bool)
     func animateTrackTransitionIfNeeded(shouldAnimate: Bool)
-    func refreshControlIslandContent(animated: Bool)
 }
 
 extension NowPlayingPlaybackShellController where Self: UIViewController {
@@ -81,7 +78,7 @@ extension NowPlayingPlaybackShellController where Self: UIViewController {
                     "content selector changed selector=\(String(describing: selector)) trackID=\(currentPlaybackSnapshot.currentTrack?.id ?? "nil")",
                 )
                 handleContentSelectorChange(selector)
-                refreshControlIslandContent(animated: false)
+                refreshControlIslandContent()
                 refreshPlayingContent(animated: false)
             }
             .store(in: &cancellables)
@@ -181,7 +178,7 @@ extension NowPlayingPlaybackShellController where Self: UIViewController {
         applySupplementalPlaybackProgress(for: snapshot)
     }
 
-    func refreshControlIslandContent(animated _: Bool) {
+    func refreshControlIslandContent() {
         controlIslandViewModel.apply(snapshot: currentPlaybackSnapshot)
     }
 }

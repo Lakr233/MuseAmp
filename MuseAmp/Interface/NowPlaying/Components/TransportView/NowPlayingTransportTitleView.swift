@@ -85,7 +85,7 @@ final class NowPlayingTransportTitleView: UIView {
                     cleanTitleEnabled: cleanTitleEnabled,
                 )
             }
-            .map { ($0.title, $0.artist) }
+            .map { ($0.title, $0.subtitle) }
             .removeDuplicates { $0 == $1 }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] title, artist in

@@ -11,7 +11,7 @@ import MuseAmpPlayerKit
 import SnapKit
 import UIKit
 
-class NowPlayingRelaxedController: UIViewController, NowPlayingQueueShellController, NowPlayingArtworkShellController, NowPlayingLyricsPlaybackShellController, NowPlayingLifecycleShellController, NowPlayingTransportShellController {
+class NowPlayingRelaxedController: UIViewController, NowPlayingQueueShellController, NowPlayingArtworkShellController, NowPlayingLifecycleShellController {
     let environment: AppEnvironment
     let backgroundView = NowPlayingArtworkBackgroundView()
     lazy var artworkBackgroundCoordinator = NowPlayingArtworkBackgroundCoordinator(
@@ -63,8 +63,6 @@ class NowPlayingRelaxedController: UIViewController, NowPlayingQueueShellControl
     )
 
     // MARK: - Right Panel
-
-    // MARK: - Layout Containers
 
     private(set) var currentRightPanel: NowPlayingRelaxedPanel = .lyrics
 
@@ -127,10 +125,6 @@ class NowPlayingRelaxedController: UIViewController, NowPlayingQueueShellControl
         )
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-    }
-
     override var prefersStatusBarHidden: Bool {
         false
     }
@@ -158,8 +152,6 @@ class NowPlayingRelaxedController: UIViewController, NowPlayingQueueShellControl
         nil
     }
 
-    deinit {}
-
     func installQueueActionHandlers(
         onToggleShuffle: @escaping () -> Void,
         onSelectQueueTrack: @escaping (NowPlayingQueueTrackSelection) -> Void,
@@ -180,8 +172,6 @@ class NowPlayingRelaxedController: UIViewController, NowPlayingQueueShellControl
             onCycleRepeatMode: onCycleRepeatMode,
         )
     }
-
-    // MARK: - Background Setup
 
     // MARK: - Content Layout
 

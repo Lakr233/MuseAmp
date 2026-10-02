@@ -337,22 +337,6 @@
         }
       }
     },
-    "Finishing Playlist \"%@\"" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Finishing Playlist \"%@\""
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在完成播放列表「%@」"
-          }
-        }
-      }
-    },
     "Invalid address format \"%@\". Use hostname:port, IPv4:port, or [IPv6]:port." : {
       "localizations" : {
         "en" : {
@@ -781,22 +765,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "二维码可用"
-          }
-        }
-      }
-    },
-    "Receiving Playlist \"%@\"" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Receiving Playlist \"%@\""
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在接收播放列表「%@」"
           }
         }
       }

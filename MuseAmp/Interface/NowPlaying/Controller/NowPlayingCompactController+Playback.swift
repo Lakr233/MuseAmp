@@ -25,8 +25,6 @@ extension NowPlayingCompactController {
 
     func applySupplementalPlaybackProgress(for snapshot: PlaybackSnapshot) {
         updateTransportLyricLine(for: snapshot)
-
-        guard controlIslandViewModel.selectedContentSelector == .lyrics else { return }
     }
 
     func updateTransportSongMenu(for snapshot: PlaybackSnapshot) {
@@ -85,27 +83,5 @@ extension NowPlayingCompactController {
         pageViewController.setSelector(selector, animated: animated)
         updateTransportSongMenu(for: snapshot)
         updateTransportLyricLine(for: snapshot)
-
-        guard selector == .lyrics else {
-            return
-        }
-    }
-
-    private func makeShowLyricsAction() -> UIAction {
-        UIAction(
-            title: String(localized: "Show Lyrics"),
-            image: UIImage(systemName: "text.quote"),
-        ) { [weak self] _ in
-            self?.controlIslandViewModel.setContentSelector(.lyrics)
-        }
-    }
-
-    private func makeShowPlaybackQueueAction() -> UIAction {
-        UIAction(
-            title: String(localized: "Show Playback Queue"),
-            image: UIImage(systemName: "list.bullet"),
-        ) { [weak self] _ in
-            self?.controlIslandViewModel.setContentSelector(.queue)
-        }
     }
 }

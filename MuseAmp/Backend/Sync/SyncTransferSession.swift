@@ -21,7 +21,6 @@ final class SyncTransferSession {
 
     let paths: LibraryPaths
     let libraryDatabase: MusicLibraryDatabase
-    let lyricsCacheStore: LyricsCacheStore
     let audioFileImporter: AudioFileImporter
     let apiClient: APIClient
 
@@ -34,7 +33,6 @@ final class SyncTransferSession {
     private(set) var password = SyncPasswordGenerator.generate()
     private(set) var senderProgress: SyncSenderTransferProgress?
     private(set) var runningServer: SyncServer.RunningServer?
-    private(set) var currentEndpoint: SyncEndpoint?
 
     private var preparedBatch: PreparedTransferBatch?
     private var server: SyncServer?
@@ -53,7 +51,6 @@ final class SyncTransferSession {
     ) {
         self.paths = paths
         self.libraryDatabase = libraryDatabase
-        self.lyricsCacheStore = lyricsCacheStore
         self.audioFileImporter = audioFileImporter
         self.apiClient = apiClient
         self.fileManager = fileManager
@@ -251,8 +248,7 @@ final class SyncTransferSession {
         endpoint: SyncEndpoint,
         password: String,
     ) async throws -> String {
-        currentEndpoint = endpoint
-        return try await apiClient.authenticateTransfer(
+        try await apiClient.authenticateTransfer(
             endpoint: endpoint,
             password: password,
             deviceName: deviceName,
@@ -263,8 +259,7 @@ final class SyncTransferSession {
         endpoint: SyncEndpoint,
         token: String,
     ) async throws -> SyncManifest {
-        currentEndpoint = endpoint
-        return try await apiClient.fetchTransferManifest(
+        try await apiClient.fetchTransferManifest(
             endpoint: endpoint,
             token: token,
         )
@@ -296,7 +291,6 @@ final class SyncTransferSession {
             _ fractionCompleted: Double,
         ) -> Void)? = nil,
     ) async throws -> [URL] {
-        currentEndpoint = endpoint
         let directoryURL: URL
         do {
             directoryURL = try prepareReceiverDirectoryURL()
@@ -410,7 +404,6 @@ final class SyncTransferSession {
     func stopReceiver() {
         stopBrowsing()
         cleanupReceiverDownloads()
-        currentEndpoint = nil
     }
 
     func stopAll() async {

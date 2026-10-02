@@ -36,23 +36,14 @@ public extension MusicPlayer {
             repeatMode: repeatMode,
         )
 
-        sessionManager.activate()
-        remoteCommandManager.unregister()
-        remoteCommandManager.register(player: self)
-        setupTimeObserver()
-        setupItemEndObserver()
+        preparePlaybackSession()
 
         guard let item = playbackQueue.nowPlaying else {
             log(.warning, "restorePlayback failed because no nowPlaying item could be produced")
             return false
         }
 
-        teardownItemObservers()
-        currentItem = item
-        let avItem = AVPlayerItem(url: item.url)
-        engine.replaceCurrentItem(with: avItem)
-        observeItemStatus(avItem, for: item)
-        observeBuffering(avItem)
+        attachItem(item)
         preloadNextItem()
 
         nowPlayingManager.setTrack(item)
@@ -78,12 +69,7 @@ public extension MusicPlayer {
         }
 
         remoteCommandManager.updateEnabledCommands(queue: snap)
-        remoteCommandManager.updateLikeCommand(
-            isEnabled: canHandleLikeCommand,
-            isActive: currentItemLiked,
-            localizedTitle: likeCommandLocalizedTitle,
-            localizedShortTitle: likeCommandLocalizedShortTitle,
-        )
+        refreshLikeCommand()
         delegate?.musicPlayer(self, didTransitionTo: item, reason: .natural)
         delegate?.musicPlayer(self, didChangeQueue: snap)
         log(.verbose, "restorePlayback completed \(describe(queue: snap))")

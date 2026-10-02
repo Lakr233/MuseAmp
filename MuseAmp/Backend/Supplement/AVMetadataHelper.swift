@@ -26,4 +26,14 @@ nonisolated enum AVMetadataHelper {
             identifier.contains(token) || commonKey.contains(token) || key.contains(token)
         }
     }
+
+    static func isComment(_ item: AVMetadataItem) -> Bool {
+        item.identifier == .iTunesMetadataUserComment
+            || AVMetadataHelper.matches(item, tokens: ["comment", "cmt"])
+    }
+
+    static func isLyrics(_ item: AVMetadataItem) -> Bool {
+        item.identifier == .iTunesMetadataLyrics
+            || AVMetadataHelper.matches(item, tokens: ["lyrics", "lyr"])
+    }
 }

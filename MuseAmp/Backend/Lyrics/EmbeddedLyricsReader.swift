@@ -25,9 +25,7 @@ nonisolated enum EmbeddedLyricsReader {
             return nil
         }
         for item in items {
-            let isLyrics = item.identifier == .iTunesMetadataLyrics
-                || AVMetadataHelper.matches(item, tokens: ["lyrics", "lyr"])
-            guard isLyrics else { continue }
+            guard AVMetadataHelper.isLyrics(item) else { continue }
             if let value = await loadText(of: item, fileName: url.lastPathComponent) {
                 return value
             }

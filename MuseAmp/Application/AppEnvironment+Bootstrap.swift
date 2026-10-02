@@ -23,7 +23,7 @@ extension AppEnvironment {
     ) throws -> DatabaseManager {
         let paths = LibraryPaths(baseDirectory: baseDirectory)
         AppLog.bootstrap(with: paths)
-        let apiClient = makeAPIClient(apiBaseURL: apiBaseURL)
+        let apiClient = APIClient(baseURL: apiBaseURL)
         let metadataReader = EmbeddedMetadataReader()
         let manager = DatabaseManager(
             baseDirectory: paths.baseDirectory,
@@ -57,10 +57,6 @@ extension AppEnvironment {
             apiBaseURL: apiBaseURL,
             baseDirectory: baseDirectory,
         )
-    }
-
-    static func makeAPIClient(apiBaseURL: URL) -> APIClient {
-        APIClient(baseURL: apiBaseURL)
     }
 
     static func makeRuntimeDependencies(
@@ -134,18 +130,12 @@ extension AppEnvironment {
         )
     }
 
-    static func configureImageRequestAuthorization() {
+    static func configureImagePipeline() {
         let cache = ImageCache.default
         cache.memoryStorage.config.totalCostLimit = 100 * 1024 * 1024
         cache.memoryStorage.config.countLimit = 512
         cache.diskStorage.config.sizeLimit = 500 * 1024 * 1024
 
-        KingfisherManager.shared.defaultOptions =
-            KingfisherManager.shared.defaultOptions.filter { option in
-                if case .requestModifier = option {
-                    return false
-                }
-                return true
-            } + [.backgroundDecode]
+        KingfisherManager.shared.defaultOptions += [.backgroundDecode]
     }
 }

@@ -154,6 +154,15 @@ public final class MusicPlayer {
         currentItem != nil && likeCommandHandler != nil
     }
 
+    func refreshLikeCommand() {
+        remoteCommandManager.updateLikeCommand(
+            isEnabled: canHandleLikeCommand,
+            isActive: currentItemLiked,
+            localizedTitle: likeCommandLocalizedTitle,
+            localizedShortTitle: likeCommandLocalizedShortTitle,
+        )
+    }
+
     func handleLikeCommand() -> MPRemoteCommandHandlerStatus {
         guard currentItem != nil else {
             return .noActionableNowPlayingItem
@@ -200,12 +209,7 @@ public extension MusicPlayer {
         likeCommandLocalizedTitle = title ?? String(localized: "Like", bundle: .module)
         likeCommandLocalizedShortTitle = shortTitle
         likeCommandHandler = handler
-        remoteCommandManager.updateLikeCommand(
-            isEnabled: canHandleLikeCommand,
-            isActive: currentItemLiked,
-            localizedTitle: likeCommandLocalizedTitle,
-            localizedShortTitle: likeCommandLocalizedShortTitle,
-        )
+        refreshLikeCommand()
     }
 
     /// Deliver a lyric line to display in the system media center artist field.
@@ -217,11 +221,6 @@ public extension MusicPlayer {
 
     func setCurrentItemLiked(_ isLiked: Bool) {
         currentItemLiked = isLiked
-        remoteCommandManager.updateLikeCommand(
-            isEnabled: canHandleLikeCommand,
-            isActive: currentItemLiked,
-            localizedTitle: likeCommandLocalizedTitle,
-            localizedShortTitle: likeCommandLocalizedShortTitle,
-        )
+        refreshLikeCommand()
     }
 }

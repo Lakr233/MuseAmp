@@ -25,8 +25,6 @@ public final class DatabaseManager: @unchecked Sendable {
 
     var indexStore: IndexStore?
     var stateStore: StateStore?
-    var downloadCoordinator: DownloadCoordinator?
-    var initialized = false
 
     public init(baseDirectory: URL? = nil, dependencies: RuntimeDependencies, logSink: LogSink? = nil) {
         paths = LibraryPaths(baseDirectory: baseDirectory, logSink: logSink)
@@ -50,17 +48,11 @@ public final class DatabaseManager: @unchecked Sendable {
         initializationLock.lock()
         defer { initializationLock.unlock() }
 
-        precondition(!initialized, "DatabaseManager.initialize() must only be called once")
+        precondition(indexStore == nil, "DatabaseManager.initialize() must only be called once")
         let result = try bootstrapper.bootstrap()
         indexStore = result.indexStore
         stateStore = result.stateStore
-        downloadCoordinator = DownloadCoordinator(stateStore: result.stateStore, logger: logger)
-        initialized = true
 
-        if let reason = result.indexResetReason {
-            eventSubject.send(.indexResetStarted(reason: reason))
-            eventSubject.send(.indexResetFinished(reason: reason))
-        }
         eventSubject.send(.runtimeReady)
     }
 }

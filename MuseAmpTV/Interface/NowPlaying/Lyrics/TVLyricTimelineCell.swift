@@ -11,7 +11,7 @@ nonisolated enum TVLyricLineStyle {
 }
 
 @MainActor
-class TVLyricTimelineCell: UITableViewCell {
+final class TVLyricTimelineCell: UITableViewCell {
     private let lyricLabel: UILabel = {
         let label = UILabel()
         label.numberOfLines = 0

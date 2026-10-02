@@ -76,11 +76,9 @@ def normalize(doc: dict) -> tuple[dict, int, int, str]:
             string_unit["state"] = "translated"
             source_loc["stringUnit"] = string_unit
             localizations[source_lang] = source_loc
-            entry["localizations"] = localizations
             source_fixed += 1
-        else:
-            entry["localizations"] = localizations
 
+        entry["localizations"] = localizations
         new_strings[key] = entry
 
     new_doc = dict(doc)

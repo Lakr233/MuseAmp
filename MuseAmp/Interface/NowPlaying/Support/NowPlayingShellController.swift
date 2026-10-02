@@ -60,10 +60,6 @@ protocol NowPlayingQueueShellController: NowPlayingPlaybackShellController {
 }
 
 extension NowPlayingQueueShellController where Self: UIViewController {
-    func setShuffle(_ enabled: Bool) {
-        environment.playbackController.setShuffle(enabled)
-    }
-
     func setRepeatMode(_ mode: RepeatMode) {
         environment.playbackController.setRepeatMode(mode)
     }
@@ -168,5 +164,23 @@ extension NowPlayingPlaybackShellController where Self: UIViewController {
             )
         }
         .store(in: &cancellables)
+    }
+
+    func makeShowLyricsAction() -> UIAction {
+        UIAction(
+            title: String(localized: "Show Lyrics"),
+            image: UIImage(systemName: "text.quote"),
+        ) { [weak self] _ in
+            self?.controlIslandViewModel.setContentSelector(.lyrics)
+        }
+    }
+
+    func makeShowPlaybackQueueAction() -> UIAction {
+        UIAction(
+            title: String(localized: "Show Playback Queue"),
+            image: UIImage(systemName: "list.bullet"),
+        ) { [weak self] _ in
+            self?.controlIslandViewModel.setContentSelector(.queue)
+        }
     }
 }

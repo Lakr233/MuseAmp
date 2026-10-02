@@ -19,6 +19,7 @@ struct LibraryScanner {
     let paths: LibraryPaths
     let indexStore: IndexStore
     let cacheCoordinator: CacheCoordinator
+    let fileManager: LibraryFileManager
     let dependencies: RuntimeDependencies
     let logger: DatabaseLogger
 
@@ -72,35 +73,38 @@ struct LibraryScanner {
             ))
         }
 
+        func pruneInvalidFileIfRequested(_ fileURL: URL) {
+            guard pruneInvalidFiles else {
+                return
+            }
+            try? FileManager.default.removeItem(at: fileURL)
+            try? fileManager.removeEmptyDirectoryIfNeeded(fileURL.deletingLastPathComponent())
+        }
+
         let totalFiles = audioFiles.count
         for (fileIndex, fileURL) in audioFiles.enumerated() {
             progressCallback?(fileIndex, totalFiles)
             let relativePath = paths.relativeAudioPath(for: fileURL)
             seenRelativePaths.insert(relativePath)
 
-            if !validatePath(relativePath) || relativePath.hasSuffix(".tmp") {
-                let reason = if relativePath.hasSuffix(".tmp") {
-                    String(localized: "Leftover temporary download file", bundle: .module)
-                } else {
-                    String(localized: "File is outside the expected album folder layout", bundle: .module)
-                }
-                recordInvalidFile(relativePath, reason: reason)
-                if pruneInvalidFiles {
-                    try? FileManager.default.removeItem(at: fileURL)
-                    try? removeEmptyParentDirectory(for: fileURL)
-                }
+            if relativePath.hasSuffix(".tmp") {
+                recordInvalidFile(
+                    relativePath,
+                    reason: String(localized: "Leftover temporary download file", bundle: .module),
+                )
+                pruneInvalidFileIfRequested(fileURL)
                 continue
             }
-
-            let components = relativePath.split(separator: "/", maxSplits: 1).map(String.init)
-            guard components.count == 2 else {
+            guard validatePath(relativePath) else {
                 recordInvalidFile(
                     relativePath,
                     reason: String(localized: "File is outside the expected album folder layout", bundle: .module),
                 )
+                pruneInvalidFileIfRequested(fileURL)
                 continue
             }
 
+            let components = relativePath.split(separator: "/", maxSplits: 1).map(String.init)
             let albumID = components[0]
             let fileName = components[1]
             let fileExtension = URL(fileURLWithPath: fileName).pathExtension.lowercased()
@@ -110,7 +114,7 @@ struct LibraryScanner {
             do {
                 attributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
             } catch {
-                DBLog.warning(logger, "LibraryScanner", "attributes read failed, keeping file relativePath=\(relativePath) error=\(error.localizedDescription)")
+                logger.warning("LibraryScanner", "attributes read failed, keeping file relativePath=\(relativePath) error=\(error.localizedDescription)")
                 transientFailureRelativePaths.append(relativePath)
                 continue
             }
@@ -131,14 +135,11 @@ struct LibraryScanner {
                         // The file kept its size and mtime but is no longer
                         // readable: in-place corruption the fast path would
                         // otherwise hide forever.
-                        DBLog.warning(logger, "LibraryScanner", "indexed file failed revalidation relativePath=\(relativePath) error=\(error.localizedDescription)")
+                        logger.warning("LibraryScanner", "indexed file failed revalidation relativePath=\(relativePath) error=\(error.localizedDescription)")
                         recordInvalidFile(relativePath, reason: error.localizedDescription)
-                        if pruneInvalidFiles {
-                            try? FileManager.default.removeItem(at: fileURL)
-                            try? removeEmptyParentDirectory(for: fileURL)
-                        }
+                        pruneInvalidFileIfRequested(fileURL)
                     } catch {
-                        DBLog.warning(logger, "LibraryScanner", "forceArtwork re-extract failed relativePath=\(relativePath) error=\(error.localizedDescription)")
+                        logger.warning("LibraryScanner", "forceArtwork re-extract failed relativePath=\(relativePath) error=\(error.localizedDescription)")
                     }
                 }
                 continue
@@ -178,16 +179,13 @@ struct LibraryScanner {
                     try? cacheCoordinator.writeLyrics(text: lyrics, trackID: trackID)
                 }
             } catch let error as AudioFileValidationError {
-                DBLog.warning(logger, "LibraryScanner", "audio file failed validation relativePath=\(relativePath) error=\(error.localizedDescription)")
+                logger.warning("LibraryScanner", "audio file failed validation relativePath=\(relativePath) error=\(error.localizedDescription)")
                 recordInvalidFile(relativePath, reason: error.localizedDescription)
-                if pruneInvalidFiles {
-                    try? FileManager.default.removeItem(at: fileURL)
-                    try? removeEmptyParentDirectory(for: fileURL)
-                }
+                pruneInvalidFileIfRequested(fileURL)
             } catch {
                 // Transient failure (I/O, file protection, cancellation): keep
                 // the file and any existing index row; a later rebuild retries.
-                DBLog.warning(logger, "LibraryScanner", "inspectAudioFile transient failure, keeping file relativePath=\(relativePath) error=\(error.localizedDescription)")
+                logger.warning("LibraryScanner", "inspectAudioFile transient failure, keeping file relativePath=\(relativePath) error=\(error.localizedDescription)")
                 transientFailureRelativePaths.append(relativePath)
             }
         }
@@ -197,8 +195,8 @@ struct LibraryScanner {
         let deletedPaths = snapshot.keys.filter { !seenRelativePaths.contains($0) || invalidRelativePaths.contains($0) }
         try indexStore.deleteTracks(relativePaths: deletedPaths)
         let validTrackIDs = try indexStore.trackIDs()
-        _ = try cacheCoordinator.pruneOrphanArtwork(validTrackIDs: validTrackIDs)
-        _ = try cacheCoordinator.pruneOrphanLyrics(validTrackIDs: validTrackIDs)
+        try cacheCoordinator.pruneOrphanArtwork(validTrackIDs: validTrackIDs)
+        try cacheCoordinator.pruneOrphanLyrics(validTrackIDs: validTrackIDs)
         removeEmptyAlbumDirectories()
 
         return RebuildResult(
@@ -208,17 +206,6 @@ struct LibraryScanner {
             removedInvalidFiles: removedInvalidFiles,
             transientFailureRelativePaths: transientFailureRelativePaths,
         )
-    }
-
-    private func removeEmptyParentDirectory(for fileURL: URL) throws {
-        let directory = fileURL.deletingLastPathComponent()
-        guard directory.path != paths.audioDirectory.path else {
-            return
-        }
-        let contents = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
-        if contents.isEmpty {
-            try FileManager.default.removeItem(at: directory)
-        }
     }
 
     private func removeEmptyAlbumDirectories() {

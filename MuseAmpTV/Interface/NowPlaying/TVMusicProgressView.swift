@@ -85,11 +85,12 @@ final class TVMusicProgressView: UIView {
         fatalError()
     }
 
-    func update(progress: CGFloat, currentTime: TimeInterval, duration: TimeInterval, animated: Bool = false) {
+    func update(currentTime: TimeInterval, duration: TimeInterval, animated: Bool = false) {
         elapsedLabel.text = formattedPlaybackTime(currentTime)
         let remaining = max(duration - currentTime, 0)
         remainingLabel.text = "-\(formattedPlaybackTime(remaining))"
 
+        let progress = duration > 0 ? CGFloat(currentTime / duration) : 0
         let clamped = min(max(progress, 0), 1)
         let fillWidth = trackView.bounds.width * clamped
         fillView.snp.updateConstraints { make in

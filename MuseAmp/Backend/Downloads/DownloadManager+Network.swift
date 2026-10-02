@@ -43,7 +43,6 @@ extension DownloadManager {
         AppLog.info(self, "Network changed to \(connectionType), isPausedAll=\(isPausedAll)")
         switch connectionType {
         case .wifi:
-            isPausedForNetwork = false
             guard !isPausedAll else { return }
             var resumedCount = 0
             for key in tasks.keys {
@@ -58,7 +57,6 @@ extension DownloadManager {
             processNextIfNeeded()
 
         case .cellular:
-            isPausedForNetwork = true
             guard !isPausedAll else { return }
             var deferredCount = 0
             for key in tasks.keys {
@@ -78,7 +76,6 @@ extension DownloadManager {
             publishSnapshot()
 
         case .none:
-            isPausedForNetwork = true
             guard !isPausedAll else { return }
             var deferredCount = 0
             for key in tasks.keys where tasks[key]?.state == .downloading {

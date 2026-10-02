@@ -17,19 +17,16 @@ final class TVNowPlayingController: UIViewController {
     private let contentView = TVNowPlayingView()
     private lazy var lyricsCoordinator = TVNowPlayingLyricsCoordinator(
         lyricsService: context.lyricsService,
-        currentPlaybackTime: { [weak self] in
-            self?.latestSnapshot.currentTime ?? 0
-        },
         shouldApplyLoadedLyrics: { [weak self] trackID in
             guard let currentID = self?.latestSnapshot.currentTrack?.id else { return false }
-            let catalogID = currentID.split(separator: "|").last.map(String.init) ?? currentID
-            return catalogID == trackID
+            return TVNowPlayingController.catalogTrackID(from: currentID) == trackID
         },
-        updateLyricsView: { [weak self] text, isLoading, currentTime in
-            self?.contentView.lyricsView.update(
+        updateLyricsView: { [weak self] text, isLoading in
+            guard let self else { return }
+            contentView.lyricsView.update(
                 text: text,
                 isLoading: isLoading,
-                currentTime: currentTime,
+                currentTime: latestSnapshot.currentTime,
             )
         },
     )
@@ -77,11 +74,11 @@ final class TVNowPlayingController: UIViewController {
                 handled = true
             case .upArrow:
                 context.recordUserInteraction()
-                contentView.lyricsView.scrollUpOneLine()
+                contentView.lyricsView.scroll(byLines: -1)
                 handled = true
             case .downArrow:
                 context.recordUserInteraction()
-                contentView.lyricsView.scrollDownOneLine()
+                contentView.lyricsView.scroll(byLines: 1)
                 handled = true
             case .leftArrow:
                 context.recordUserInteraction()
@@ -137,8 +134,7 @@ final class TVNowPlayingController: UIViewController {
                 guard let self else { return }
                 contentView.lyricsView.updateCurrentTime(currentTime)
                 if Date() >= scrubCommitCooldownDeadline {
-                    let progress = duration > 0 ? CGFloat(currentTime / duration) : 0
-                    contentView.nowPlayingContentView.updateProgress(progress, currentTime: currentTime, duration: duration)
+                    contentView.nowPlayingContentView.progressView.update(currentTime: currentTime, duration: duration)
                 }
             }
             .store(in: &cancellables)
@@ -151,7 +147,7 @@ final class TVNowPlayingController: UIViewController {
         case .playing, .buffering: true
         case .paused, .idle, .error: false
         }
-        contentView.nowPlayingContentView.setIsPlaying(isPlaying)
+        contentView.nowPlayingContentView.transportBar.setIsPlaying(isPlaying)
 
         let track = snapshot.currentTrack
         let subtitle: String = {
@@ -173,12 +169,15 @@ final class TVNowPlayingController: UIViewController {
         if initial || trackID != lastPresentedTrackID {
             lastPresentedTrackID = trackID
             if let trackID {
-                let catalogTrackID = trackID.split(separator: "|").last.map(String.init) ?? trackID
-                lyricsCoordinator.loadLyrics(for: catalogTrackID)
+                lyricsCoordinator.loadLyrics(for: Self.catalogTrackID(from: trackID))
             } else {
                 lyricsCoordinator.clearDisplayedLyrics()
             }
         }
+    }
+
+    private static func catalogTrackID(from trackID: String) -> String {
+        trackID.split(separator: "|").last.map(String.init) ?? trackID
     }
 
     // MARK: - Actions
@@ -208,8 +207,7 @@ final class TVNowPlayingController: UIViewController {
 
     private func animateProgressTo(time: TimeInterval) {
         let duration = latestSnapshot.duration
-        let progress = duration > 0 ? CGFloat(time / duration) : 0
-        contentView.nowPlayingContentView.updateProgress(progress, currentTime: time, duration: duration, animated: true)
+        contentView.nowPlayingContentView.progressView.update(currentTime: time, duration: duration, animated: true)
     }
 
     @objc private func handlePlayPause() {

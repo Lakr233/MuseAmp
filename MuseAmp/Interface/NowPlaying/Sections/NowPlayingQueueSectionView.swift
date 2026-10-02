@@ -27,8 +27,6 @@ class NowPlayingQueueSectionView: UIView, UITableViewDataSource, UITableViewDele
         static let headerSpacerHeight: CGFloat = 100
         static let sectionHeaderHeight: CGFloat = 56
         static let queueRowHeight: CGFloat = 56
-        static let headerControlSize: CGFloat = 40
-        static let headerActionsWidth: CGFloat = 92
         static let activeRowAnchorFraction: CGFloat = 1.0 / 3.0
         static let footerSpacerHeight: CGFloat = 100
         static let programmaticScrollBlockDuration: TimeInterval = 1.0
@@ -40,12 +38,6 @@ class NowPlayingQueueSectionView: UIView, UITableViewDataSource, UITableViewDele
             left: horizontalInset,
             bottom: 6,
             right: horizontalInset,
-        )
-        static let headerMargins = NSDirectionalEdgeInsets(
-            top: 0,
-            leading: horizontalInset,
-            bottom: 0,
-            trailing: horizontalInset,
         )
     }
 
@@ -129,9 +121,7 @@ class NowPlayingQueueSectionView: UIView, UITableViewDataSource, UITableViewDele
             NowPlayingQueueFooterCell.self,
             forCellReuseIdentifier: NowPlayingQueueFooterCell.reuseID,
         )
-        if #available(iOS 15.0, *) {
-            tableView.sectionHeaderTopPadding = 0
-        }
+        tableView.sectionHeaderTopPadding = 0
         return tableView
     }()
 
@@ -206,18 +196,12 @@ class NowPlayingQueueSectionView: UIView, UITableViewDataSource, UITableViewDele
         guard hasAppliedInitialSnapshot else {
             queueTableView.reloadData()
             hasAppliedInitialSnapshot = true
-            refreshVisibleCells()
-            refreshQueueControlsCell()
-            refreshQueueFooterCell()
-            didApplyQueueSnapshot()
+            finishApplyingQueueSnapshot()
             return
         }
 
         guard !changedSections.isEmpty else {
-            refreshVisibleCells()
-            refreshQueueControlsCell()
-            refreshQueueFooterCell()
-            didApplyQueueSnapshot()
+            finishApplyingQueueSnapshot()
             return
         }
 
@@ -227,11 +211,15 @@ class NowPlayingQueueSectionView: UIView, UITableViewDataSource, UITableViewDele
             guard let self else {
                 return
             }
-            refreshVisibleCells()
-            refreshQueueControlsCell()
-            refreshQueueFooterCell()
-            didApplyQueueSnapshot()
+            finishApplyingQueueSnapshot()
         }
+    }
+
+    private func finishApplyingQueueSnapshot() {
+        refreshVisibleCells()
+        refreshQueueControlsCell()
+        refreshQueueFooterCell()
+        didApplyQueueSnapshot()
     }
 
     @discardableResult
@@ -261,7 +249,17 @@ class NowPlayingQueueSectionView: UIView, UITableViewDataSource, UITableViewDele
             }
         }
 
-        if didHistoryIdentityChange || didQueueIdentityChange || didFooterVisibilityChange || didTrackContentChange || didPlayerIndexChange {
+        let update = NowPlayingQueuePresentationUpdate(
+            didHistoryIdentityChange: didHistoryIdentityChange,
+            didQueueIdentityChange: didQueueIdentityChange,
+            didFooterVisibilityChange: didFooterVisibilityChange,
+            didTrackContentChange: didTrackContentChange,
+            didPlayerIndexChange: didPlayerIndexChange,
+            didHeaderContentChange: didHeaderContentChange,
+            didFooterContentChange: didFooterContentChange,
+        )
+
+        if update.appliedSnapshot {
             var changedSections = IndexSet()
             if didHistoryIdentityChange { changedSections.insert(QueueSection.history.rawValue) }
             if didQueueIdentityChange { changedSections.insert(QueueSection.queue.rawValue) }
@@ -277,15 +275,7 @@ class NowPlayingQueueSectionView: UIView, UITableViewDataSource, UITableViewDele
             performPendingAutoScrollIfNeeded(animated: false)
         }
 
-        return NowPlayingQueuePresentationUpdate(
-            didHistoryIdentityChange: didHistoryIdentityChange,
-            didQueueIdentityChange: didQueueIdentityChange,
-            didFooterVisibilityChange: didFooterVisibilityChange,
-            didTrackContentChange: didTrackContentChange,
-            didPlayerIndexChange: didPlayerIndexChange,
-            didHeaderContentChange: didHeaderContentChange,
-            didFooterContentChange: didFooterContentChange,
-        )
+        return update
     }
 
     func displayItem(at indexPath: IndexPath) -> AMQueueItemContent? {

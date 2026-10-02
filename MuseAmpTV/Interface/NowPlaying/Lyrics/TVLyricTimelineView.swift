@@ -21,10 +21,6 @@ final class TVLyricTimelineView: UIView {
         case staticLine(Int, String)
     }
 
-    nonisolated struct Snapshot: Sendable, Equatable {
-        let items: [Item]
-    }
-
     nonisolated enum LyricsPhase: Sendable, Equatable {
         case pending
         case loaded(ParsedLyrics)
@@ -58,7 +54,6 @@ final class TVLyricTimelineView: UIView {
 
     private var items: [Item] = []
     private var parsedLyrics: ParsedLyrics = .empty
-    private var currentTime: TimeInterval = 0
     private var lastFocusedActiveRow: Int?
     private var cancellables: Set<AnyCancellable> = []
     let interactionSubject = PassthroughSubject<Void, Never>()
@@ -81,7 +76,6 @@ final class TVLyricTimelineView: UIView {
         tableView.delegate = self
         bindInteraction()
         tableView.register(TVLyricTimelineCell.self, forCellReuseIdentifier: String(describing: TVLyricTimelineCell.self))
-        tableView.register(TVStaticLyricCell.self, forCellReuseIdentifier: String(describing: TVStaticLyricCell.self))
         tableView.register(TVLyricTimelineSpacerCell.self, forCellReuseIdentifier: String(describing: TVLyricTimelineSpacerCell.self))
         tableView.register(TVLyricTimelineMessageCell.self, forCellReuseIdentifier: String(describing: TVLyricTimelineMessageCell.self))
 
@@ -106,51 +100,23 @@ final class TVLyricTimelineView: UIView {
     // MARK: - Public API
 
     func update(text: String?, isLoading: Bool, currentTime: TimeInterval) {
-        self.currentTime = currentTime
         lastFocusedActiveRow = nil
-
-        if isLoading {
-            parsedLyrics = .empty
-            applySnapshot(buildSnapshot(phase: .pending, currentTime: currentTime))
-            return
-        }
-
-        let normalizedText = text?.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let normalizedText, !normalizedText.isEmpty else {
-            parsedLyrics = .empty
-            applySnapshot(buildSnapshot(phase: .loaded(.empty), currentTime: currentTime))
-            return
-        }
-
-        parsedLyrics = Self.parseLyrics(from: normalizedText)
-        let snapshot = buildSnapshot(phase: .loaded(parsedLyrics), currentTime: currentTime)
-        applySnapshot(snapshot)
+        parsedLyrics = isLoading ? .empty : Self.parseLyrics(from: text)
+        applySnapshot(buildSnapshot(phase: isLoading ? .pending : .loaded(parsedLyrics), currentTime: currentTime))
         if parsedLyrics.timeline != nil {
             focusCurrentLine()
         }
     }
 
     func updateCurrentTime(_ currentTime: TimeInterval) {
-        self.currentTime = currentTime
         guard parsedLyrics.timeline != nil else { return }
         applySnapshot(buildSnapshot(phase: .loaded(parsedLyrics), currentTime: currentTime))
         focusSubject.send()
     }
 
-    func scrollUpOneLine() {
+    func scroll(byLines lines: CGFloat) {
         interactionSubject.send()
-        let lineHeight = TVLyricLineStyle.estimatedLineHeight + Layout.verticalSpacing
-        let target = clampedOffsetY(tableView.contentOffset.y - lineHeight)
-        Interface.smoothSpringAnimate {
-            self.tableView.setContentOffset(CGPoint(x: 0, y: target), animated: false)
-            self.layoutIfNeeded()
-        }
-    }
-
-    func scrollDownOneLine() {
-        interactionSubject.send()
-        let lineHeight = TVLyricLineStyle.estimatedLineHeight + Layout.verticalSpacing
-        let target = clampedOffsetY(tableView.contentOffset.y + lineHeight)
+        let target = clampedOffsetY(tableView.contentOffset.y + lines * tableView.estimatedRowHeight)
         Interface.smoothSpringAnimate {
             self.tableView.setContentOffset(CGPoint(x: 0, y: target), animated: false)
             self.layoutIfNeeded()
@@ -192,9 +158,7 @@ final class TVLyricTimelineView: UIView {
 
     // MARK: - Snapshot Application
 
-    private func applySnapshot(_ snapshot: Snapshot) {
-        let newItems = snapshot.items
-
+    private func applySnapshot(_ newItems: [Item]) {
         let oldHadContent = items.contains { Self.isContentItem($0) }
         let newHasContent = newItems.contains { Self.isContentItem($0) }
 
@@ -274,20 +238,20 @@ final class TVLyricTimelineView: UIView {
 
     // MARK: - Snapshot Building
 
-    private func buildSnapshot(phase: LyricsPhase, currentTime: TimeInterval) -> Snapshot {
+    private func buildSnapshot(phase: LyricsPhase, currentTime: TimeInterval) -> [Item] {
         switch phase {
         case .pending:
-            return Snapshot(items: [
+            return [
                 .spacer(Layout.topContentInset),
                 .spacer(Layout.bottomContentInset),
-            ])
+            ]
         case let .loaded(lyrics):
             guard !lyrics.lines.isEmpty else {
-                return Snapshot(items: [
+                return [
                     .spacer(Layout.topContentInset),
                     .message(String(localized: "No lyrics available")),
                     .spacer(Layout.bottomContentInset),
-                ])
+                ]
             }
 
             var items: [Item] = [.spacer(Layout.topContentInset)]
@@ -302,7 +266,7 @@ final class TVLyricTimelineView: UIView {
                 }
             }
             items.append(.spacer(Layout.bottomContentInset))
-            return Snapshot(items: items)
+            return items
         }
     }
 
@@ -349,8 +313,7 @@ final class TVLyricTimelineView: UIView {
         let indexPath = IndexPath(row: activeRow, section: 0)
         let cellRect = tableView.rectForRow(at: indexPath)
         let targetY = cellRect.midY - tableView.bounds.height * Layout.activeLineAnchorFraction
-        let maxY = tableView.contentSize.height - tableView.bounds.height
-        let clampedY = min(max(targetY, 0), max(maxY, 0))
+        let clampedY = clampedOffsetY(targetY)
 
         guard abs(tableView.contentOffset.y - clampedY) > 5 else { return }
 
@@ -405,9 +368,9 @@ extension TVLyricTimelineView: UITableViewDataSource, UITableViewDelegate {
             return cell
         case let .staticLine(_, text):
             let cell = tableView.dequeueReusableCell(
-                withIdentifier: String(describing: TVStaticLyricCell.self),
+                withIdentifier: String(describing: TVLyricTimelineCell.self),
                 for: indexPath,
-            ) as! TVStaticLyricCell
+            ) as! TVLyricTimelineCell
             cell.configure(text: text, isActive: true)
             return cell
         }

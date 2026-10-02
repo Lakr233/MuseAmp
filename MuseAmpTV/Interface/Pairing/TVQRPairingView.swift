@@ -118,14 +118,8 @@ final class TVQRPairingView: UIStackView {
         let oldIDs = currentDevices.map(\.serviceName)
         guard newIDs != oldIDs else { return }
 
-        let wasSearching = currentDevices.isEmpty
         currentDevices = devices
         updateDeviceMenu()
-
-        if wasSearching, !currentDevices.isEmpty {
-            setNeedsFocusUpdate()
-            updateFocusIfNeeded()
-        }
     }
 
     override var preferredFocusEnvironments: [UIFocusEnvironment] {
@@ -158,19 +152,7 @@ final class TVQRPairingView: UIStackView {
                     self?.onSenderSelected(device)
                 }
             }
-
-            let children: [UIMenuElement]
-            if deviceActions.isEmpty {
-                let emptyAction = UIAction(
-                    title: String(localized: "No nearby devices"),
-                    attributes: .disabled,
-                    handler: { _ in },
-                )
-                children = [emptyAction]
-            } else {
-                children = [UIMenu(options: .displayInline, children: deviceActions)]
-            }
-            deviceMenuButton.menu = UIMenu(children: children)
+            deviceMenuButton.menu = UIMenu(children: [UIMenu(options: .displayInline, children: deviceActions)])
         }
 
         if !wasEnabled, deviceMenuButton.isEnabled {
@@ -180,16 +162,6 @@ final class TVQRPairingView: UIStackView {
     }
 
     // MARK: - Helpers
-
-    private static func isMacDevice(_ deviceName: String) -> Bool {
-        let lower = deviceName.lowercased()
-        return lower.contains("macbook")
-            || lower.contains("imac")
-            || lower.contains("mac mini")
-            || lower.contains("mac studio")
-            || lower.contains("mac pro")
-            || lower.contains("mac")
-    }
 
     private static func makeQRCodeImage(from payload: String) -> UIImage? {
         guard let data = payload.data(using: .utf8),

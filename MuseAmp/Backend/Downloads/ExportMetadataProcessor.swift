@@ -96,7 +96,7 @@ enum ExportMetadataProcessor {
         AppLog.verbose(logger, "verifyEmbeddedMetadata loaded \(items.count) metadata item(s) trackID=\(expectedTrackID)")
 
         for item in items {
-            guard matchesComment(item) else { continue }
+            guard AVMetadataHelper.isComment(item) else { continue }
             guard let value = try? await item.load(.stringValue),
                   let data = value.data(using: .utf8),
                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
@@ -148,12 +148,13 @@ private extension ExportMetadataProcessor {
         )
 
         AppLog.verbose(logger, "collecting metadata trackID=\(info.trackID)")
-        let existingMetadata = try await DownloadArtworkProcessor.collectMetadataItems(from: asset)
+        let existingMetadata = try await AVMetadataHelper.collectMetadataItems(from: asset)
 
-        let hasExistingArtwork = await existingMetadataContainsArtwork(existingMetadata)
+        let hasExistingArtwork = await DownloadArtworkProcessor.containsArtwork(existingMetadata)
 
         var metadata = existingMetadata.filter {
-            !matchesComment($0) && !matchesLyrics($0) && !matchesTitle($0) && !matchesArtist($0) && !matchesAlbum($0)
+            !AVMetadataHelper.isComment($0) && !AVMetadataHelper.isLyrics($0)
+                && !matchesTitle($0) && !matchesArtist($0) && !matchesAlbum($0)
         }
 
         metadata.append(commentMetadataItem(for: info))
@@ -197,18 +198,6 @@ private extension ExportMetadataProcessor {
             }
             throw error
         }
-    }
-
-    static func existingMetadataContainsArtwork(_ items: [AVMetadataItem]) async -> Bool {
-        for item in items {
-            guard DownloadArtworkProcessor.matchesArtwork(item) else { continue }
-            let hasData = await (try? item.load(.dataValue)) != nil
-            let hasValue = await (try? item.load(.value)) != nil
-            if hasData || hasValue {
-                return true
-            }
-        }
-        return false
     }
 
     enum ExportError: LocalizedError {
@@ -266,16 +255,6 @@ private extension ExportMetadataProcessor {
         item.identifier = .iTunesMetadataLyrics
         item.value = lyrics as NSString
         return item.copy() as! AVMetadataItem
-    }
-
-    static func matchesComment(_ item: AVMetadataItem) -> Bool {
-        item.identifier == .iTunesMetadataUserComment
-            || AVMetadataHelper.matches(item, tokens: ["comment", "cmt"])
-    }
-
-    static func matchesLyrics(_ item: AVMetadataItem) -> Bool {
-        item.identifier == .iTunesMetadataLyrics
-            || AVMetadataHelper.matches(item, tokens: ["lyrics", "lyr"])
     }
 
     static func matchesTitle(_ item: AVMetadataItem) -> Bool {

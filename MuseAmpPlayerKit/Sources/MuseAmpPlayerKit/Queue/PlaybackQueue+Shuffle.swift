@@ -35,21 +35,4 @@ extension PlaybackQueue {
         // Prepend played indices (they're before current in the permutation)
         shufflePermutation = playedIndices + indices
     }
-
-    /// Insert a new canonical index into the shuffle permutation at the given position.
-    mutating func insertIntoPermutation(_ canonicalIndex: Int, at position: Int) {
-        let clamped = min(max(position, 0), shufflePermutation.count)
-        shufflePermutation.insert(canonicalIndex, at: clamped)
-    }
-
-    /// Remove a canonical index from the shuffle permutation.
-    mutating func removeFromPermutation(_ canonicalIndex: Int) {
-        shufflePermutation.removeAll { $0 == canonicalIndex }
-    }
-
-    /// After a canonical removal, shift all permutation entries that pointed above the
-    /// removed index down by one.
-    mutating func adjustPermutationAfterCanonicalRemoval(at removedIndex: Int) {
-        shufflePermutation = shufflePermutation.map { $0 > removedIndex ? $0 - 1 : $0 }
-    }
 }

@@ -124,9 +124,9 @@ if [ -n "$PROJECT_PATH" ] && grep -F "is not a workspace file" "$LOG" >/dev/null
 fi
 
 if command -v xcbeautify >/dev/null 2>&1; then
-    xcbeautify --disable-colored-output --disable-logging <"$LOG" | grep -Ev 'Metal\.xctoolchain/usr/lib/swift/maccatalyst|CoreData: error: Failed to create NSXPCConnection|connection to service named com\.apple\.linkd\.autoShortcut'
+    xcbeautify --disable-colored-output --disable-logging <"$LOG"
 else
-    grep -Ev 'Metal\.xctoolchain/usr/lib/swift/maccatalyst|CoreData: error: Failed to create NSXPCConnection|connection to service named com\.apple\.linkd\.autoShortcut' "$LOG"
+    cat "$LOG"
 fi
 
 # Patterns that must never appear in a successful log.

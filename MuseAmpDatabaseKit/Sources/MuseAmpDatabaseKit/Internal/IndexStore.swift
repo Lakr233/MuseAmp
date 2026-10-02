@@ -10,17 +10,15 @@ import Foundation
 
 struct IndexStore {
     private let database: WCDBSwift.Database
-    let databaseURL: URL
     private let logger: DatabaseLogger
 
     init(databaseURL: URL, logger: DatabaseLogger) throws {
-        self.databaseURL = databaseURL
         database = WCDBSwift.Database(at: databaseURL.path)
         self.logger = logger
         try createTablesIfNeeded()
     }
 
-    func createTablesIfNeeded() throws {
+    private func createTablesIfNeeded() throws {
         try database.create(table: TrackRow.tableName, of: TrackRow.self)
         try database.create(table: IndexMetaRow.tableName, of: IndexMetaRow.self)
     }
@@ -38,9 +36,9 @@ struct IndexStore {
         try setMetaValue(String(format), for: "format_version")
     }
 
-    func setLastRebuild(timestamp: Date, succeeded: Bool) throws {
+    func setLastRebuild(timestamp: Date) throws {
         try setMetaValue(String(timestamp.timeIntervalSince1970), for: "last_rebuild_timestamp")
-        try setMetaValue(succeeded ? "1" : "0", for: "last_rebuild_succeeded")
+        try setMetaValue("1", for: "last_rebuild_succeeded")
     }
 
     func lastRebuildTimestamp() throws -> Date? {
@@ -172,7 +170,7 @@ struct IndexStore {
                 try database.insertOrReplace(TrackRow(from: record), intoTable: TrackRow.tableName)
             }
         })
-        DBLog.info(logger, "IndexStore", "upsertTracks count=\(records.count)")
+        logger.info("IndexStore", "upsertTracks count=\(records.count)")
     }
 
     func deleteTracks(relativePaths: [String]) throws {
@@ -188,7 +186,7 @@ struct IndexStore {
                 )
             }
         })
-        DBLog.info(logger, "IndexStore", "deleteTracks count=\(relativePaths.count)")
+        logger.info("IndexStore", "deleteTracks count=\(relativePaths.count)")
     }
 
     func deleteTrack(trackID: String) throws {

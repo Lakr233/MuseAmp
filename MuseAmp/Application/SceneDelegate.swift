@@ -43,18 +43,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             windowScene.sizeRestrictions?.minimumSize = CGSize(width: 800, height: 650)
         #endif
 
-        for urlContext in connectionOptions.urlContexts {
-            let url = urlContext.url
-            if url.isFileURL, isImportableAudioFile(url) {
-                pendingAudioImportURLs.append(url)
-            } else if url.isFileURL, isImportablePlaylistFile(url) {
-                pendingPlaylistImportURLs.append(url)
-            } else if url.isFileURL, isImportableServerProfileFile(url) {
-                pendingServerProfileImportURLs.append(url)
-            } else if let receiverInfo = parseAppleTVURL(url) {
-                pendingReceiverInfo = receiverInfo
-            }
-        }
+        _ = enqueueURLContexts(connectionOptions.urlContexts)
 
         let window = UIWindow(windowScene: windowScene)
         window.clipsToBounds = true
@@ -86,25 +75,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func scene(_: UIScene, openURLContexts contexts: Set<UIOpenURLContext>) {
-        var audioURLs: [URL] = []
-        var playlistURLs: [URL] = []
-        var serverProfileURLs: [URL] = []
-        for context in contexts {
-            let url = context.url
-            if url.isFileURL, isImportableAudioFile(url) {
-                audioURLs.append(url)
-            } else if url.isFileURL, isImportablePlaylistFile(url) {
-                playlistURLs.append(url)
-            } else if url.isFileURL, isImportableServerProfileFile(url) {
-                serverProfileURLs.append(url)
-            } else if let receiverInfo = parseAppleTVURL(url) {
-                handleAppleTVReceiverInfo(receiverInfo)
-            }
-        }
-        guard !audioURLs.isEmpty || !playlistURLs.isEmpty || !serverProfileURLs.isEmpty else { return }
-        pendingAudioImportURLs.append(contentsOf: audioURLs)
-        pendingPlaylistImportURLs.append(contentsOf: playlistURLs)
-        pendingServerProfileImportURLs.append(contentsOf: serverProfileURLs)
+        guard enqueueURLContexts(contexts) else { return }
         scheduleCoalescedImport()
     }
 
@@ -149,6 +120,47 @@ private extension SceneDelegate {
         url.pathExtension.caseInsensitiveCompare("subsonicconfig") == .orderedSame
     }
 
+    /// Queues importable files and routes Apple TV links. Returns whether any
+    /// file was queued for import.
+    func enqueueURLContexts(_ contexts: Set<UIOpenURLContext>) -> Bool {
+        var didEnqueueImport = false
+        for context in contexts {
+            let url = context.url
+            if url.isFileURL, isImportableAudioFile(url) {
+                pendingAudioImportURLs.append(url)
+                didEnqueueImport = true
+            } else if url.isFileURL, isImportablePlaylistFile(url) {
+                pendingPlaylistImportURLs.append(url)
+                didEnqueueImport = true
+            } else if url.isFileURL, isImportableServerProfileFile(url) {
+                pendingServerProfileImportURLs.append(url)
+                didEnqueueImport = true
+            } else if let receiverInfo = parseAppleTVURL(url) {
+                handleAppleTVReceiverInfo(receiverInfo)
+            }
+        }
+        return didEnqueueImport
+    }
+
+    func dispatchImports(
+        audioURLs: [URL],
+        playlistURLs: [URL],
+        serverProfileURLs: [URL],
+    ) {
+        if !audioURLs.isEmpty {
+            mainController?.performFileImport(urls: audioURLs)
+        }
+        if !playlistURLs.isEmpty {
+            mainController?.performPlaylistImport(urls: playlistURLs)
+        }
+        if let serverProfileURL = serverProfileURLs.first {
+            if serverProfileURLs.count > 1 {
+                AppLog.warning(self, "Multiple server profile files received; importing the first one only")
+            }
+            mainController?.performServerProfileImport(url: serverProfileURL)
+        }
+    }
+
     func drainPendingImports() {
         guard !pendingAudioImportURLs.isEmpty
             || !pendingPlaylistImportURLs.isEmpty
@@ -166,18 +178,11 @@ private extension SceneDelegate {
         // is fully in the window hierarchy before we present the import alert.
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            if !audioURLs.isEmpty {
-                mainController?.performFileImport(urls: audioURLs)
-            }
-            if !playlistURLs.isEmpty {
-                mainController?.performPlaylistImport(urls: playlistURLs)
-            }
-            if let serverProfileURL = serverProfileURLs.first {
-                if serverProfileURLs.count > 1 {
-                    AppLog.warning(self, "Multiple server profile files received; importing the first one only")
-                }
-                mainController?.performServerProfileImport(url: serverProfileURL)
-            }
+            dispatchImports(
+                audioURLs: audioURLs,
+                playlistURLs: playlistURLs,
+                serverProfileURLs: serverProfileURLs,
+            )
         }
     }
 
@@ -230,7 +235,7 @@ private extension SceneDelegate {
         importCoalesceTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .milliseconds(200))
             guard !Task.isCancelled, let self else { return }
-            guard let mainController else { return }
+            guard mainController != nil else { return }
 
             let audioURLs = pendingAudioImportURLs
             let playlistURLs = pendingPlaylistImportURLs
@@ -239,18 +244,11 @@ private extension SceneDelegate {
             pendingPlaylistImportURLs.removeAll()
             pendingServerProfileImportURLs.removeAll()
 
-            if !audioURLs.isEmpty {
-                mainController.performFileImport(urls: audioURLs)
-            }
-            if !playlistURLs.isEmpty {
-                mainController.performPlaylistImport(urls: playlistURLs)
-            }
-            if let serverProfileURL = serverProfileURLs.first {
-                if serverProfileURLs.count > 1 {
-                    AppLog.warning(self, "Multiple server profile files received; importing the first one only")
-                }
-                mainController.performServerProfileImport(url: serverProfileURL)
-            }
+            dispatchImports(
+                audioURLs: audioURLs,
+                playlistURLs: playlistURLs,
+                serverProfileURLs: serverProfileURLs,
+            )
         }
     }
 }

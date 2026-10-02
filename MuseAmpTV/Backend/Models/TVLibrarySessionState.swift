@@ -2,8 +2,8 @@ import Foundation
 
 enum AMTVLibrarySessionState: Equatable {
     case awaitingUpload
-    case receivingTracks(count: Int, totalCount: Int?)
-    case playing(trackCount: Int)
+    case receivingTracks
+    case playing
     case failed(message: String)
 
     var rootFlowState: AMTVRootFlowState {

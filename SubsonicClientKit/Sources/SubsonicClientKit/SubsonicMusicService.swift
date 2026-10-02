@@ -14,7 +14,7 @@ public final class SubsonicMusicService: Sendable {
     private let password: String
     private let session: URLSession
     private let cacheStorageProvider: (any CacheStorageProvider)?
-    private let cacheVersion: Int
+    private let cacheVersion = 2
     private let cacheTTL: TimeInterval = .infinity
     private let authLock = NSLock()
     private let tokenSalt = UUID().uuidString.replacingOccurrences(of: "-", with: "")
@@ -35,14 +35,12 @@ public final class SubsonicMusicService: Sendable {
         password: String,
         session: URLSession = .shared,
         cacheStorageProvider: (any CacheStorageProvider)? = nil,
-        cacheVersion: Int = 2,
     ) {
         self.baseURL = baseURL
         self.username = username
         self.password = password
         self.session = session
         self.cacheStorageProvider = cacheStorageProvider
-        self.cacheVersion = cacheVersion
     }
 
     public func ping() async throws {
@@ -74,9 +72,7 @@ public final class SubsonicMusicService: Sendable {
                 type: type,
                 limit: limit,
                 offset: offset,
-                artworkBuilder: { [serviceBaseURL = self.baseURL, weak self] coverArtID in
-                    self?.artworkTemplateURL(coverArtID: coverArtID, baseURL: serviceBaseURL)
-                },
+                artworkBuilder: { self.artworkTemplateURL(coverArtID: $0) },
             )
         }
 
@@ -114,7 +110,7 @@ public final class SubsonicMusicService: Sendable {
     }
 
     public func playback(id: String) async throws -> PlaybackInfo {
-        let cacheKey = "\(baseURL.absoluteString)|\(username)|\(SubsonicEndpoint.stream(id: id).cacheIdentifier)"
+        let cacheKey = responseCacheKey(for: .stream(id: id))
         if let fresh = await playbackCache.freshValue(forKey: cacheKey, ttl: cacheTTL) {
             return fresh
         }
@@ -122,10 +118,10 @@ public final class SubsonicMusicService: Sendable {
         guard let rawSong = try await fetchSubsonicSong(id: id) else {
             throw APIError.invalidResponse
         }
-        let song = Self.mapSong(rawSong, artworkURL: artworkTemplateURL(coverArtID: rawSong.coverArt))
+        let song = Self.mapSong(rawSong, artworkURL: nil)
 
         let info = try PlaybackInfo(
-            playbackURL: makeURL(for: .stream(id: id)).absoluteString,
+            playbackURL: endpointURL(for: .stream(id: id), authMode: currentAuthMode()).absoluteString,
             size: rawSong.size ?? 0,
             title: song.attributes.name,
             artist: song.attributes.artistName,
@@ -159,7 +155,7 @@ public final class SubsonicMusicService: Sendable {
             )
         }
 
-        let cacheKey = "\(baseURL.absoluteString)|\(username)|\(endpoint.cacheIdentifier)"
+        let cacheKey = responseCacheKey(for: endpoint)
 
         if !bypassCache, let cache, let fresh = await cache.freshValue(forKey: cacheKey, ttl: cacheTTL) {
             return fresh
@@ -174,12 +170,11 @@ public final class SubsonicMusicService: Sendable {
 
         do {
             let initialAuthMode = currentAuthMode()
-            let rawData: Data =
-                if cache != nil {
-                    try await fetchNetworkData(for: endpoint, authMode: initialAuthMode, coalescingKey: cacheKey)
-                } else {
-                    try await fetchNetworkData(for: endpoint, authMode: initialAuthMode, coalescingKey: nil)
-                }
+            var rawData = try await fetchNetworkData(
+                for: endpoint,
+                authMode: initialAuthMode,
+                coalescingKey: cache == nil ? nil : cacheKey,
+            )
 
             let decodedPayload: Response
             do {
@@ -190,18 +185,12 @@ public final class SubsonicMusicService: Sendable {
                 }
 
                 updateAuthMode(.plain)
-                let fallbackRawData = try await fetchNetworkData(
+                rawData = try await fetchNetworkData(
                     for: endpoint,
                     authMode: .plain,
                     coalescingKey: nil,
                 )
-                let fallbackPayload = try decodeSubsonicResponse(Response.self, from: fallbackRawData)
-                let mapped = try await decode(fallbackPayload)
-                if let cache {
-                    await cache.setValue(mapped, forKey: cacheKey)
-                    await storeToDisk(data: fallbackRawData, forKey: cacheKey)
-                }
-                return mapped
+                decodedPayload = try decodeSubsonicResponse(Response.self, from: rawData)
             }
             let mapped = try await decode(decodedPayload)
             if let cache {
@@ -210,10 +199,6 @@ public final class SubsonicMusicService: Sendable {
             }
             return mapped
         } catch {
-            if error is CancellationError {
-                throw error
-            }
-
             guard cache != nil, !bypassCache, isFallbackEligible(error) else {
                 throw error
             }
@@ -235,7 +220,7 @@ public final class SubsonicMusicService: Sendable {
         coalescingKey: String?,
     ) async throws -> Data {
         let work: @Sendable () async throws -> Data = { [self] in
-            let request = try urlRequest(for: endpoint, authMode: authMode)
+            let request = try URLRequest(url: endpointURL(for: endpoint, authMode: authMode))
             return try await Self.fetchRawData(session: session, request: request)
         }
 
@@ -247,19 +232,9 @@ public final class SubsonicMusicService: Sendable {
     }
 
     private func decodeSubsonicResponse<Response: Decodable>(_ type: Response.Type, from data: Data) throws -> Response {
+        let wrapped: SubsonicResponse<Response>
         do {
-            let wrapped = try decoder.decode(SubsonicResponse<Response>.self, from: data)
-            if wrapped.status == "ok", let payload = wrapped.payload {
-                return payload
-            }
-
-            let error = wrapped.error
-            throw APIError.subsonicRequestFailed(
-                code: error?.code,
-                message: error?.message ?? String(localized: "Unknown Subsonic error.", bundle: .module),
-            )
-        } catch let error as APIError {
-            throw error
+            wrapped = try decoder.decode(SubsonicResponse<Response>.self, from: data)
         } catch {
             let context = decodeContext(for: error)
             let host = baseURL.host ?? String(localized: "server", bundle: .module)
@@ -272,21 +247,30 @@ public final class SubsonicMusicService: Sendable {
             )
             throw APIError.decodingFailed(message: message)
         }
+
+        if wrapped.status == "ok", let payload = wrapped.payload {
+            return payload
+        }
+
+        let error = wrapped.error
+        throw APIError.subsonicRequestFailed(
+            code: error?.code,
+            message: error?.message ?? String(localized: "Unknown Subsonic error.", bundle: .module),
+        )
     }
 
-    private func makeURL(for endpoint: SubsonicEndpoint) throws -> URL {
-        try endpoint.url(baseURL: baseURL, authorization: authorization(mode: currentAuthMode()))
+    private func responseCacheKey(for endpoint: SubsonicEndpoint) -> String {
+        "\(baseURL.absoluteString)|\(username)|\(endpoint.cacheIdentifier)"
+    }
+
+    private func endpointURL(for endpoint: SubsonicEndpoint, authMode: SubsonicAuthenticationMode) throws -> URL {
+        try endpoint.url(baseURL: baseURL, authorization: authorization(mode: authMode))
     }
 
     private func fetchSubsonicSong(id: String) async throws -> SubsonicSong? {
         try await perform(.song(id: id), cache: nil) { (payload: SubsonicSongPayload) in
             payload.song
         }
-    }
-
-    private func urlRequest(for endpoint: SubsonicEndpoint, authMode: SubsonicAuthenticationMode) throws -> URLRequest {
-        let url = try endpoint.url(baseURL: baseURL, authorization: authorization(mode: authMode))
-        return URLRequest(url: url)
     }
 
     private func authorization(mode: SubsonicAuthenticationMode) -> SubsonicAuthorization {
@@ -298,14 +282,12 @@ public final class SubsonicMusicService: Sendable {
         )
     }
 
-    private func artworkTemplateURL(coverArtID: String?, baseURL: URL? = nil) -> String? {
+    private func artworkTemplateURL(coverArtID: String?) -> String? {
         guard let coverArtID, coverArtID.isEmpty == false else {
             return nil
         }
 
-        guard let url = try? SubsonicEndpoint.coverArt(id: coverArtID, size: nil)
-            .url(baseURL: baseURL ?? self.baseURL, authorization: authorization(mode: currentAuthMode()))
-        else {
+        guard let url = try? endpointURL(for: .coverArt(id: coverArtID), authMode: currentAuthMode()) else {
             return nil
         }
         return url.absoluteString
@@ -464,19 +446,14 @@ public final class SubsonicMusicService: Sendable {
             return response
         }
 
-        let indexed = Array(songs.data.enumerated())
         let enrichedSongs = await withTaskGroup(of: (Int, CatalogSong).self, returning: [CatalogSong].self) { group in
-            for (index, song) in indexed {
+            for (index, song) in songs.data.enumerated() {
                 group.addTask {
-                    do {
-                        let detail = try await self.song(id: song.id)
-                        return (index, detail.data.first ?? song)
-                    } catch {
-                        return (index, song)
-                    }
+                    let detail = try? await self.song(id: song.id)
+                    return (index, detail?.data.first ?? song)
                 }
             }
-            var results = Array(repeating: indexed[0].element, count: indexed.count)
+            var results = songs.data
             for await (index, song) in group {
                 results[index] = song
             }
@@ -599,14 +576,12 @@ private extension SubsonicMusicService {
                 name: song.title,
                 artistName: song.artist ?? "",
                 albumName: song.album,
-                url: song.contentType,
                 durationInMillis: song.duration.map { $0 * 1000 },
                 trackNumber: song.track,
                 discNumber: song.discNumber,
                 releaseDate: song.year.map(String.init),
                 composerName: nil,
                 hasLyrics: true,
-                hasTimeSyncedLyrics: false,
                 artwork: Artwork(width: nil, height: nil, url: artworkURL),
                 playParams: CatalogPlayParams(
                     id: song.id,

@@ -25,7 +25,7 @@ extension TVAppContext {
         let resolvedBaseDirectory = baseDirectory ?? makeLibraryBaseDirectory()
         let paths = LibraryPaths(baseDirectory: resolvedBaseDirectory)
         AppLog.bootstrap(with: paths)
-        let apiClient = makeAPIClient(apiBaseURL: apiBaseURL)
+        let apiClient = APIClient(baseURL: apiBaseURL)
         let metadataReader = EmbeddedMetadataReader()
         let manager = DatabaseManager(
             baseDirectory: paths.baseDirectory,
@@ -62,10 +62,6 @@ extension TVAppContext {
         TVPlaylistSessionStore(
             fileURL: paths.baseDirectory.appendingPathComponent("tv-playlist-session.json", isDirectory: false),
         )
-    }
-
-    static func makeAPIClient(apiBaseURL: URL) -> APIClient {
-        APIClient(baseURL: apiBaseURL)
     }
 
     static func makeRuntimeDependencies(
@@ -139,13 +135,7 @@ extension TVAppContext {
         )
     }
 
-    static func configureImageRequestAuthorization() {
-        KingfisherManager.shared.defaultOptions =
-            KingfisherManager.shared.defaultOptions.filter { option in
-                if case .requestModifier = option {
-                    return false
-                }
-                return true
-            } + [.backgroundDecode]
+    static func configureImagePipeline() {
+        KingfisherManager.shared.defaultOptions += [.backgroundDecode]
     }
 }
