@@ -63,11 +63,26 @@ nonisolated enum TVLyricParser {
 
         return [TVLyricLine(time: 0, text: "")] + sortedLines
     }
+
+    /// Display lines for lyrics without usable timestamps. LRC ID tags such as
+    /// `[ti:]`, `[ar:]` or `[offset:]` are metadata, not lyrics, so they are
+    /// dropped; bracketed section markers such as `[Chorus]` are kept.
+    static func plainLines(from text: String) -> [String] {
+        text.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty && $0.wholeMatch(of: idTagLinePattern) == nil }
+    }
 }
 
 private nonisolated extension TVLyricParser {
+    /// `[mm:ss]`, `[mm:ss.x…]` or `[mm:ss:xx]`. Fractions longer than
+    /// milliseconds are accepted and truncated by `parseTime`.
     static var timestampPattern: Regex<(Substring, Substring, Substring, Substring?)> {
-        #/\[(\d+):(\d{1,2})(?:\.(\d{1,3}))?\]/#
+        #/\[(\d+):(\d{1,2})(?:[.:](\d+))?\]/#
+    }
+
+    static var idTagLinePattern: Regex<Substring> {
+        #/(?i)\[(?:ti|ar|al|au|by|re|ve|la|id|tool|length|offset|#)\s*:[^\]]*\]/#
     }
 
     static var offsetPattern: Regex<(Substring, Substring)> {

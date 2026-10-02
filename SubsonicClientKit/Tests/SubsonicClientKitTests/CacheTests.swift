@@ -84,6 +84,16 @@ private func wrappedSongResponse(id: String = "song-1") throws -> Data {
     ])
 }
 
+private func wrappedLyricsResponse(_ text: String) throws -> Data {
+    try JSONSerialization.data(withJSONObject: [
+        "subsonic-response": [
+            "status": "ok",
+            "version": "1.16.1",
+            "lyrics": ["value": text],
+        ],
+    ])
+}
+
 private func cacheKey(forSongID id: String) -> String {
     "\(testBaseURL.absoluteString)|demo|song:\(id)"
 }
@@ -197,5 +207,87 @@ struct SubsonicCacheTests {
 
         _ = try await service.song(id: "song-1")
         #expect(await diskStore.storeCount == 1)
+    }
+
+    @Test
+    func `Lyrics bypassing the cache refetch and replace the cached response`() async throws {
+        let session = makeMockSession()
+        let requestCount = AtomicInt()
+        let serverLyrics = LockedString("[00:01.00]Old line")
+        MockURLProtocol.handler = { request in
+            requestCount.increment()
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return try (wrappedLyricsResponse(serverLyrics.value), response)
+        }
+
+        let service = SubsonicMusicService(
+            baseURL: testBaseURL,
+            username: "demo",
+            password: "secret",
+            session: session,
+        )
+
+        let first = try await service.lyrics(id: "song-1")
+        serverLyrics.value = "[00:01.00]New line"
+        let cached = try await service.lyrics(id: "song-1")
+        let reloaded = try await service.lyrics(id: "song-1", bypassCache: true)
+        let afterReload = try await service.lyrics(id: "song-1")
+
+        #expect(first.lyrics == "[00:01.00]Old line")
+        #expect(cached.lyrics == "[00:01.00]Old line")
+        #expect(reloaded.lyrics == "[00:01.00]New line")
+        #expect(afterReload.lyrics == "[00:01.00]New line")
+        #expect(requestCount.value == 2)
+    }
+
+    @Test
+    func `Lyrics bypassing the cache report a failed request instead of the cached response`() async throws {
+        let session = makeMockSession()
+        let shouldFail = LockedString("no")
+        MockURLProtocol.handler = { request in
+            if shouldFail.value == "yes" {
+                throw URLError(.notConnectedToInternet)
+            }
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return try (wrappedLyricsResponse("[00:01.00]Cached line"), response)
+        }
+
+        let service = SubsonicMusicService(
+            baseURL: testBaseURL,
+            username: "demo",
+            password: "secret",
+            session: session,
+        )
+
+        _ = try await service.lyrics(id: "song-1")
+        shouldFail.value = "yes"
+
+        await #expect(throws: APIError.self) {
+            _ = try await service.lyrics(id: "song-1", bypassCache: true)
+        }
+        let cached = try await service.lyrics(id: "song-1")
+        #expect(cached.lyrics == "[00:01.00]Cached line")
+    }
+}
+
+private final class LockedString: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage: String
+
+    init(_ value: String) {
+        storage = value
+    }
+
+    var value: String {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return storage
+        }
+        set {
+            lock.lock()
+            storage = newValue
+            lock.unlock()
+        }
     }
 }

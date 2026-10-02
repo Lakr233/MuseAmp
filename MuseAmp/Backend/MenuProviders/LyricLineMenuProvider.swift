@@ -18,6 +18,9 @@ final class LyricLineMenuProvider {
 
     struct Context {
         var allowedInteractionTypes: Set<InteractionType> = Set(InteractionType.allCases)
+        /// The track the line belongs to. `Play from Here` does nothing once
+        /// another track is playing, since `lineTime` is a time in this one.
+        var trackID: String?
         var lineText: String
         var lineTime: TimeInterval?
         var allLines: [String]
@@ -42,9 +45,15 @@ final class LyricLineMenuProvider {
                 title: String(localized: "Play from Here"),
                 subtitle: Self.formatTimestamp(time),
                 image: UIImage(systemName: "play.fill"),
-            ) { [weak self] _ in
-                self?.playbackController.seek(to: time)
-                self?.playbackController.play()
+            ) { [weak self, trackID = context.trackID] _ in
+                guard let self else { return }
+                let currentTrackID = playbackController.snapshot.currentTrack?.id
+                guard currentTrackID == trackID else {
+                    AppLog.info(self, "playFromLine ignored, track changed from=\(trackID ?? "nil") to=\(currentTrackID ?? "nil")")
+                    return
+                }
+                playbackController.seek(to: time)
+                playbackController.play()
             })
         }
 

@@ -138,8 +138,11 @@ public final class SubsonicMusicService: Sendable {
         return info
     }
 
-    public func lyrics(id: String) async throws -> LyricsResponse {
-        try await perform(.lyrics(id: id), cache: lyricsCache) { (payload: SubsonicLyricsPayload) in
+    /// `bypassCache` sends a new request even when a response is cached,
+    /// and does not fall back to the cached response if that request fails.
+    /// The new response replaces the cached one.
+    public func lyrics(id: String, bypassCache: Bool = false) async throws -> LyricsResponse {
+        try await perform(.lyrics(id: id), cache: lyricsCache, bypassCache: bypassCache) { (payload: SubsonicLyricsPayload) in
             LyricsResponse(lyrics: payload.text)
         }
     }
@@ -147,6 +150,7 @@ public final class SubsonicMusicService: Sendable {
     private func perform<Response: Decodable, Output: Sendable>(
         _ endpoint: SubsonicEndpoint,
         cache: ResponseCache<Output>? = nil,
+        bypassCache: Bool = false,
         decode: @escaping @Sendable (Response) async throws -> Output,
     ) async throws -> Output {
         guard baseURL.host != "example.com" else {
@@ -157,11 +161,11 @@ public final class SubsonicMusicService: Sendable {
 
         let cacheKey = "\(baseURL.absoluteString)|\(username)|\(endpoint.cacheIdentifier)"
 
-        if let cache, let fresh = await cache.freshValue(forKey: cacheKey, ttl: cacheTTL) {
+        if !bypassCache, let cache, let fresh = await cache.freshValue(forKey: cacheKey, ttl: cacheTTL) {
             return fresh
         }
 
-        if cache != nil, let freshDiskData = await loadFreshDataFromDisk(forKey: cacheKey) {
+        if !bypassCache, cache != nil, let freshDiskData = await loadFreshDataFromDisk(forKey: cacheKey) {
             let decodedPayload = try decodeSubsonicResponse(Response.self, from: freshDiskData)
             let mapped = try await decode(decodedPayload)
             await cache?.setValue(mapped, forKey: cacheKey)
@@ -210,7 +214,7 @@ public final class SubsonicMusicService: Sendable {
                 throw error
             }
 
-            guard cache != nil, isFallbackEligible(error) else {
+            guard cache != nil, !bypassCache, isFallbackEligible(error) else {
                 throw error
             }
 

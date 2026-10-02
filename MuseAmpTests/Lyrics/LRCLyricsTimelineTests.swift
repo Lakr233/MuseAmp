@@ -174,4 +174,110 @@ struct LyricTimelineTests {
             LyricLine(time: 10, text: "Verse two"),
         ])
     }
+
+    // MARK: - Same-timestamp groups
+
+    @Test
+    func `lines sharing a timestamp are active together and anchor on the first`() {
+        let timeline = LyricTimeline(lrc: """
+        [00:05.00]Original
+        [00:05.00]Translation
+        [00:10.00]Next
+        """)
+
+        #expect(timeline.activeLineRange(at: 7) == 1 ..< 3)
+        let progress = timeline.progress(at: 7)
+        #expect(progress?.index == 1)
+        #expect(progress?.duration == 5)
+        #expect(timeline.activeLineRange(at: 12) == 3 ..< 4)
+    }
+
+    @Test
+    func `continuation lines light up with their timestamped line`() throws {
+        let parsed = LyricTimelineView.parseLyrics(from: "[00:05.00]Line one\nLine two\n[00:10.00]Line three")
+        let timeline = try #require(parsed.timeline)
+
+        #expect(timeline.activeLineRange(at: 6) == 1 ..< 3)
+
+        let snapshot = LyricTimelineView.buildSnapshot(phase: .loaded(parsed), currentTime: 6)
+        let activeTexts = snapshot.items.compactMap { item -> String? in
+            guard case let .line(_, text, true) = item else { return nil }
+            return text
+        }
+        #expect(activeTexts == ["Line one", "Line two"])
+    }
+
+    @Test
+    func `lyrics stamped at one time are shown as static lyrics`() {
+        let parsed = LyricTimelineView.parseLyrics(from: """
+        [00:00.00]A
+        [00:00.00]B
+        [00:00.00]C
+        """)
+
+        #expect(parsed.timeline == nil)
+        #expect(parsed.lines == ["A", "B", "C"])
+    }
+
+    @Test
+    func `one timestamp followed by untimed lines is shown as static lyrics`() {
+        let parsed = LyricTimelineView.parseLyrics(from: """
+        [00:12.00]Header line
+        Verse one
+        Verse two
+        """)
+
+        #expect(parsed.timeline == nil)
+        #expect(parsed.lines == ["Header line", "Verse one", "Verse two"])
+    }
+
+    // MARK: - Tags and timestamp formats
+
+    @Test
+    func `unsynced lyrics drop LRC ID tags but keep section markers`() {
+        let parsed = LyricTimelineView.parseLyrics(from: """
+        [ti:Header Test]
+        [ar:Header Artist]
+        [by:Someone]
+        [offset:0]
+        Plain one
+        [Chorus]
+        Plain two
+        """)
+
+        #expect(parsed.timeline == nil)
+        #expect(parsed.lines == ["Plain one", "[Chorus]", "Plain two"])
+    }
+
+    @Test(arguments: [
+        ("[00:01.2345]One\n[00:03.00]Two", 1.234),
+        ("[00:01:23]One\n[00:03:00]Two", 1.23),
+    ])
+    func `timestamps with long fractions or a colon separator are synced`(lrc: String, expectedTime: TimeInterval) throws {
+        let parsed = LyricTimelineView.parseLyrics(from: lrc)
+        let timeline = try #require(parsed.timeline)
+
+        #expect(timeline.lines == [
+            LyricLine(time: 0, text: ""),
+            LyricLine(time: expectedTime, text: "One"),
+            LyricLine(time: 3, text: "Two"),
+        ])
+    }
+
+    // MARK: - Seek targets
+
+    @Test
+    func `blank lead-in line is not a seek target`() {
+        let timeline = LyricTimeline(lrc: """
+        [00:05.00]Intro
+        [00:08.00]
+        [00:10.00]Verse
+        """)
+
+        #expect(timeline.lines.first == LyricLine(time: 0, text: ""))
+        #expect(LyricTimelineView.seekTime(for: .line(0, "", true), in: timeline) == nil)
+        #expect(LyricTimelineView.seekTime(for: .line(2, "", false), in: timeline) == nil)
+        #expect(LyricTimelineView.seekTime(for: .line(1, "Intro", false), in: timeline) == 5)
+        #expect(LyricTimelineView.seekTime(for: .line(3, "Verse", false), in: timeline) == 10)
+    }
 }

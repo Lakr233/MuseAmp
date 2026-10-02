@@ -15,6 +15,7 @@ final class LyricTimelineView: UIView {
         static let topContentInset: CGFloat = 200
         static let bottomContentInset: CGFloat = 248
         static let userInteractionCooldown: TimeInterval = 1.0
+        static let loadingIndicatorDelay: TimeInterval = 0.6
     }
 
     nonisolated enum Item: Sendable, Equatable {
@@ -63,6 +64,12 @@ final class LyricTimelineView: UIView {
     let interactionSubject = PassthroughSubject<Void, Never>()
     var userInteractionDeadline: Date = .distantPast
 
+    /// The size the list was last laid out at; a change re-anchors the
+    /// active line, whose scroll target depends on the list height.
+    private var lastLayoutSize: CGSize = .zero
+    /// A line's context menu is open; automatic scrolling waits until it closes.
+    var isLineMenuVisible = false
+
     var isProgrammaticScrollSuppressed: Bool {
         Date() < userInteractionDeadline
     }
@@ -102,6 +109,31 @@ final class LyricTimelineView: UIView {
         bindDataSource()
     }
 
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        guard bounds.size != lastLayoutSize else { return }
+        AppLog.verbose(self, "layoutSubviews size changed from=\(lastLayoutSize) to=\(bounds.size)")
+        lastLayoutSize = bounds.size
+        // The message row is sized from the list height in heightForRowAt,
+        // which UITableView does not ask again on a height-only change.
+        let showsMessage = items.contains { item in
+            guard case .message = item else { return false }
+            return true
+        }
+        if showsMessage {
+            tableView.reloadData()
+        }
+        focusSubject.send()
+    }
+
+    /// The list may have been anchored while off screen, before its rows
+    /// took their on-screen size (a restored session opening Now Playing).
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        guard window != nil else { return }
+        focusSubject.send()
+    }
+
     func applySnapshot(_ snapshot: Snapshot) {
         let newItems = snapshot.items
 
@@ -112,6 +144,7 @@ final class LyricTimelineView: UIView {
 
         if oldHadContent, !newHasContent {
             AppLog.info(self, "applySnapshot fade-out branch oldCount=\(items.count)")
+            dismissLineContextMenu()
             items = newItems
             Interface.transition(
                 with: tableView,
@@ -144,6 +177,7 @@ final class LyricTimelineView: UIView {
 
         if structureChanged {
             AppLog.info(self, "applySnapshot structure-changed reload oldCount=\(items.count) newCount=\(newItems.count)")
+            dismissLineContextMenu()
             items = newItems
             tableView.reloadData()
         } else {
@@ -159,6 +193,12 @@ final class LyricTimelineView: UIView {
                 }
             }
         }
+    }
+
+    /// A line menu describes rows of the lyrics it was opened on; once those
+    /// rows are replaced its actions would target the wrong line or song.
+    private func dismissLineContextMenu() {
+        tableView.contextMenuInteraction?.dismissMenu()
     }
 
     private func animateContentFadeIn() {

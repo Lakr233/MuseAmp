@@ -292,9 +292,9 @@ final class TVLyricTimelineView: UIView {
 
             var items: [Item] = [.spacer(Layout.topContentInset)]
             if let timeline = lyrics.timeline {
-                let activeIndex = timeline.progress(at: currentTime)?.index
+                let activeRange = timeline.activeLineRange(at: currentTime)
                 for (index, text) in lyrics.lines.enumerated() {
-                    items.append(.line(index, text, index == activeIndex))
+                    items.append(.line(index, text, activeRange?.contains(index) ?? false))
                 }
             } else {
                 for (index, text) in lyrics.lines.enumerated() {
@@ -315,16 +315,16 @@ final class TVLyricTimelineView: UIView {
 
         let timeline = TVLyricTimeline(lrc: trimmed)
 
-        if !timeline.lines.isEmpty {
+        if timeline.isSynced {
             return ParsedLyrics(lines: timeline.lines.map(\.text), timeline: timeline)
         }
 
-        let plainLines = trimmed
-            .components(separatedBy: .newlines)
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
+        if !timeline.lines.isEmpty {
+            let untimedLines = timeline.lines.map(\.text).filter { !$0.isEmpty }
+            return ParsedLyrics(lines: untimedLines, timeline: nil)
+        }
 
-        return ParsedLyrics(lines: plainLines, timeline: nil)
+        return ParsedLyrics(lines: TVLyricParser.plainLines(from: trimmed), timeline: nil)
     }
 
     // MARK: - Scroll Helpers

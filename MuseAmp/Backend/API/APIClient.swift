@@ -29,6 +29,12 @@ final class APIClient: @unchecked Sendable {
         synchronizedState().baseURL
     }
 
+    /// False while the placeholder server is in place; every request then
+    /// fails with "No server configured".
+    nonisolated var hasConfiguredServer: Bool {
+        baseURL.host != AppPreferences.defaultAPIBaseURL.host
+    }
+
     init(
         baseURL: URL,
         session: URLSession = .shared,
@@ -127,10 +133,12 @@ final class APIClient: @unchecked Sendable {
         }
     }
 
-    nonisolated func lyrics(id: String) async throws -> String {
-        AppLog.verbose(self, "lyrics id=\(id)")
+    /// Pass `bypassCache` to ask the server again instead of returning the
+    /// lyrics response cached earlier in this session (Reload, Rebuild).
+    nonisolated func lyrics(id: String, bypassCache: Bool = false) async throws -> String {
+        AppLog.verbose(self, "lyrics id=\(id) bypassCache=\(bypassCache)")
         do {
-            let response = try await synchronizedState().service.lyrics(id: id)
+            let response = try await synchronizedState().service.lyrics(id: id, bypassCache: bypassCache)
             AppLog.info(self, "lyrics id=\(id) length=\(response.lyrics.count)")
             return response.lyrics
         } catch {

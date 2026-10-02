@@ -208,16 +208,29 @@ struct PlaybackQueue {
         return nowPlaying
     }
 
+    /// Jumps to a position in `snapshot().orderedItems` (history, then the
+    /// current item, then upcoming), the indexing the queue UI shows. This is
+    /// not a position in `effectiveOrder`: a queue started mid-list keeps the
+    /// earlier items in `items` without showing them as history.
     mutating func jump(to queueIndex: Int) -> PlayerItem? {
-        let order = effectiveOrder
-        guard currentIndex != nil,
-              order.indices.contains(queueIndex)
-        else {
+        guard currentIndex != nil, queueIndex >= 0 else {
             return nil
         }
 
-        playedIndices = queueIndex > 0 ? Array(order.prefix(queueIndex)) : []
-        currentIndex = queueIndex
+        let historyCount = playedIndices.count
+        if queueIndex == historyCount {
+            return nowPlaying
+        }
+        if queueIndex > historyCount {
+            return skip(to: queueIndex - historyCount - 1)
+        }
+
+        let targetCanonical = playedIndices[queueIndex]
+        guard let targetPosition = effectiveOrder.firstIndex(of: targetCanonical) else {
+            return nil
+        }
+        playedIndices = Array(playedIndices.prefix(queueIndex))
+        currentIndex = targetPosition
         return nowPlaying
     }
 
@@ -431,7 +444,9 @@ struct PlaybackQueue {
 
         // Adjust playedIndices: remove references and shift down
         playedIndices = playedIndices.compactMap { idx in
-            if idx == canonicalIndex { return nil }
+            if idx == canonicalIndex {
+                return nil
+            }
             return idx > canonicalIndex ? idx - 1 : idx
         }
 
@@ -442,7 +457,9 @@ struct PlaybackQueue {
             // lookup points one past the real current item.
             let removedPosition = shufflePermutation.firstIndex(of: canonicalIndex)
             shufflePermutation = shufflePermutation.compactMap { idx in
-                if idx == canonicalIndex { return nil }
+                if idx == canonicalIndex {
+                    return nil
+                }
                 return idx > canonicalIndex ? idx - 1 : idx
             }
             if let ci = currentIndex {
