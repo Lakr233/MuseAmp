@@ -20,7 +20,7 @@
 #
 # Usage:
 #   run_xcodebuild.sh <xcodebuild arguments...>
-#   run_xcodebuild.sh --scan-log <log file>   Only run the error scan on an
+#   run_xcodebuild.sh --scan-log <log file>   Only normalize and scan an
 #                                             existing log; exit 1 on errors.
 #
 # Env:
@@ -46,21 +46,6 @@ IGNORED_ERR_RE='[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9:.]+[+-][0-9]{4} [^[:space:]]+\[[
 error_lines() {
     grep -En "$ERR_RE" "$1" | grep -Ev "$IGNORED_ERR_RE" || true
 }
-
-if [ "${1:-}" = "--scan-log" ]; then
-    if [ $# -ne 2 ] || [ ! -f "$2" ]; then
-        echo "usage: $0 --scan-log <log file>" >&2
-        exit 2
-    fi
-    SCAN_ERRORS=$(error_lines "$2")
-    if [ -n "$SCAN_ERRORS" ]; then
-        echo "❌ [$LABEL] errors in $2:" >&2
-        printf '%s\n' "$SCAN_ERRORS" | head -40 >&2
-        exit 1
-    fi
-    echo "[$LABEL] no errors in $2"
-    exit 0
-fi
 
 RAW_LOG=$(mktemp -t "museamp-${LABEL//\//_}.raw.XXXXXX.log")
 LOG=$(mktemp -t "museamp-${LABEL//\//_}.XXXXXX.log")
@@ -134,17 +119,33 @@ normalize_log() {
         next if m{CoreData: error: Failed to create NSXPCConnection};
         next if m{connection to service named com\.apple\.linkd\.autoShortcut};
         print;
-    ' "$RAW_LOG" >"$LOG"
+    ' "$1" >"$2"
 }
+
+if [ "${1:-}" = "--scan-log" ]; then
+    if [ $# -ne 2 ] || [ ! -f "$2" ]; then
+        echo "usage: $0 --scan-log <log file>" >&2
+        exit 2
+    fi
+    normalize_log "$2" "$LOG"
+    SCAN_ERRORS=$(error_lines "$LOG")
+    if [ -n "$SCAN_ERRORS" ]; then
+        echo "❌ [$LABEL] errors in $2:" >&2
+        printf '%s\n' "$SCAN_ERRORS" | head -40 >&2
+        exit 1
+    fi
+    echo "[$LABEL] no errors in $2"
+    exit 0
+fi
 
 select_xcode_container
 
 capture_direct "${ARGS[@]}"
-normalize_log
+normalize_log "$RAW_LOG" "$LOG"
 
 if [ "${XCBUILD_FORCE_PTY:-0}" = "1" ] && grep -F "is not a workspace file" "$LOG" >/dev/null 2>&1; then
     capture_with_script "${ARGS[@]}"
-    normalize_log
+    normalize_log "$RAW_LOG" "$LOG"
 fi
 
 if [ -n "$PROJECT_PATH" ] && grep -F "is not a workspace file" "$LOG" >/dev/null 2>&1; then
@@ -160,7 +161,7 @@ if [ -n "$PROJECT_PATH" ] && grep -F "is not a workspace file" "$LOG" >/dev/null
     done
     ARGS=(-project "$PROJECT_PATH" "${filtered_args[@]}")
     capture_direct "${ARGS[@]}"
-    normalize_log
+    normalize_log "$RAW_LOG" "$LOG"
 fi
 
 if command -v xcbeautify >/dev/null 2>&1; then
