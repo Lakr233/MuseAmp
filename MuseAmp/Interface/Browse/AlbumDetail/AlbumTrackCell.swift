@@ -7,6 +7,7 @@ class AlbumTrackCell: TableBaseCell {
         static let horizontalInset: CGFloat = 16
         static let rowInset: CGFloat = 12
         static let iconSize: CGFloat = 16
+        static let numberPointSize: CGFloat = 15
         static let titleSpacing: CGFloat = 12
         static let badgeSpacing: CGFloat = 4
         static let durationSpacing: CGFloat = 8
@@ -62,7 +63,12 @@ class AlbumTrackCell: TableBaseCell {
         return label
     }()
 
+    /// Fixed column the number badge centers in, so titles stay aligned when
+    /// a three-digit badge is wider than the column.
+    private let numberColumn = UILayoutGuide()
+
     private var numberLeadingConstraint: Constraint?
+    private var numberWidthConstraint: Constraint?
     private var downloadedTrailingConstraint: Constraint?
     private var durationTrailingConstraint: Constraint?
     private var durationToDownloadedConstraint: Constraint?
@@ -75,6 +81,7 @@ class AlbumTrackCell: TableBaseCell {
         titleStack.spacing = Layout.badgeSpacing
         titleStack.alignment = .center
 
+        contentView.addLayoutGuide(numberColumn)
         contentView.addSubview(highlightView)
         contentView.addSubview(numberImageView)
         contentView.addSubview(titleStack)
@@ -89,13 +96,19 @@ class AlbumTrackCell: TableBaseCell {
         highlightView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
-        numberImageView.snp.makeConstraints { make in
+        numberColumn.snp.makeConstraints { make in
             numberLeadingConstraint = make.leading.equalToSuperview().offset(Layout.horizontalInset).constraint
+            make.width.equalTo(Layout.iconSize)
+            make.top.bottom.equalToSuperview()
+        }
+        numberImageView.snp.makeConstraints { make in
+            make.centerX.equalTo(numberColumn.snp.centerX)
             make.centerY.equalTo(titleLabel.snp.centerY)
-            make.size.equalTo(Layout.iconSize)
+            make.height.equalTo(Layout.iconSize)
+            numberWidthConstraint = make.width.equalTo(Layout.iconSize).constraint
         }
         titleStack.snp.makeConstraints { make in
-            make.leading.equalTo(numberImageView.snp.trailing).offset(Layout.titleSpacing)
+            make.leading.equalTo(numberColumn.snp.trailing).offset(Layout.titleSpacing)
             make.top.equalToSuperview().offset(Layout.rowInset)
             make.bottom.equalToSuperview().offset(-Layout.rowInset)
         }
@@ -137,8 +150,11 @@ class AlbumTrackCell: TableBaseCell {
     func configure(content: AlbumTrackCellContent) {
         if content.isPlaying {
             numberImageView.image = playingImage()
+            numberWidthConstraint?.update(offset: Layout.iconSize)
         } else {
-            numberImageView.image = trackNumberImage(content.number)
+            let badge = TrackNumberBadge.rendering(for: content.number, pointSize: Layout.numberPointSize)
+            numberImageView.image = badge?.image
+            numberWidthConstraint?.update(offset: Layout.iconSize * (badge?.widthRatio ?? 1))
         }
         titleLabel.text = content.title
         explicitBadge.isHidden = !content.isExplicit
@@ -163,6 +179,7 @@ class AlbumTrackCell: TableBaseCell {
         highlightView.layer.removeAllAnimations()
         highlightView.alpha = 0
         numberImageView.image = nil
+        numberWidthConstraint?.update(offset: Layout.iconSize)
         numberImageView.tintColor = PlatformInterfacePalette.tertiaryText
         titleLabel.text = nil
         titleLabel.font = .systemFont(ofSize: 16, weight: .regular)
@@ -196,13 +213,8 @@ class AlbumTrackCell: TableBaseCell {
         }
     }
 
-    private func trackNumberImage(_ number: Int) -> UIImage? {
-        let configuration = UIImage.SymbolConfiguration(font: .systemFont(ofSize: 15, weight: .regular))
-        return UIImage(systemName: "\(number).circle.fill", withConfiguration: configuration)
-    }
-
     private func playingImage() -> UIImage? {
-        let configuration = UIImage.SymbolConfiguration(font: .systemFont(ofSize: 15, weight: .bold))
+        let configuration = UIImage.SymbolConfiguration(font: .systemFont(ofSize: Layout.numberPointSize, weight: .bold))
         return UIImage(systemName: "play.fill", withConfiguration: configuration)
     }
 }
