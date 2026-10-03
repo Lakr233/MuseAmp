@@ -56,7 +56,9 @@ nonisolated enum AppLog {
     /// - Finally the module prefix is stripped so `"MuseAmp.PlaybackController"`
     ///   collapses to `"PlaybackController"`.
     static func categoryName(for kind: Any) -> String {
-        if let string = kind as? String { return sanitizeCategoryName(string) }
+        if let string = kind as? String {
+            return sanitizeCategoryName(string)
+        }
         let typeName = if let type = kind as? Any.Type {
             String(describing: type)
         } else {

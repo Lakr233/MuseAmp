@@ -99,7 +99,9 @@ public extension MusicPlayer {
     func insertInQueue(_ item: PlayerItem, at index: Int) {
         log(.info, "insertInQueue index=\(index) item=\(describe(item: item))")
         playbackQueue.insert(item, at: index)
-        if index == 0 { preloadNextItem() }
+        if index == 0 {
+            preloadNextItem()
+        }
         delegate?.musicPlayer(self, didChangeQueue: queue)
         log(.verbose, "queue after insertInQueue \(describe(queue: queue))")
     }
@@ -108,7 +110,9 @@ public extension MusicPlayer {
     func removeFromQueue(at index: Int) -> PlayerItem? {
         log(.info, "removeFromQueue index=\(index)")
         let removed = playbackQueue.remove(at: index)
-        if index == 0 { preloadNextItem() }
+        if index == 0 {
+            preloadNextItem()
+        }
         delegate?.musicPlayer(self, didChangeQueue: queue)
         log(.verbose, "removeFromQueue removed=\(describe(item: removed)) queue=\(describe(queue: queue))")
         return removed
@@ -125,7 +129,9 @@ public extension MusicPlayer {
     func moveInQueue(from source: Int, to destination: Int) {
         log(.info, "moveInQueue source=\(source) destination=\(destination)")
         playbackQueue.move(from: source, to: destination)
-        if source == 0 || destination == 0 { preloadNextItem() }
+        if source == 0 || destination == 0 {
+            preloadNextItem()
+        }
         delegate?.musicPlayer(self, didChangeQueue: queue)
         log(.verbose, "queue after moveInQueue \(describe(queue: queue))")
     }

@@ -13,39 +13,60 @@ struct PreviousPlayerControlButtonTests {
     @Test
     func `Previous enables once the first track plays past three seconds`() async throws {
         let sandbox = TestLibrarySandbox()
-        let controller = try await makeControllerPlayingFirstTrack(sandbox: sandbox)
+        let engine = PreviousButtonTestEngine()
+        let controller = try await makeControllerPlayingFirstTrack(sandbox: sandbox, engine: engine)
         let button = PreviousPlayerControlButton(playbackController: controller)
-        try await Task.sleep(for: .milliseconds(100))
+        try await waitUntil(button.isEnabled == false)
         #expect(controller.snapshot.history.isEmpty)
-        #expect(button.isEnabled == false)
 
-        controller.musicPlayer(MusicPlayer(), didUpdateTime: 5, duration: 180)
-        try await Task.sleep(for: .milliseconds(100))
-
-        #expect(button.isEnabled)
+        report(time: 5, to: controller, engine: engine)
         #expect(controller.snapshot.currentTime < 3)
+
+        try await waitUntil(button.isEnabled)
         withExtendedLifetime(sandbox) {}
     }
 
     @Test
     func `Previous disables again when time falls back under three seconds`() async throws {
         let sandbox = TestLibrarySandbox()
-        let controller = try await makeControllerPlayingFirstTrack(sandbox: sandbox)
+        let engine = PreviousButtonTestEngine()
+        let controller = try await makeControllerPlayingFirstTrack(sandbox: sandbox, engine: engine)
         let button = PreviousPlayerControlButton(playbackController: controller)
 
-        controller.musicPlayer(MusicPlayer(), didUpdateTime: 8, duration: 180)
-        try await Task.sleep(for: .milliseconds(100))
-        #expect(button.isEnabled)
+        report(time: 8, to: controller, engine: engine)
+        try await waitUntil(button.isEnabled)
 
-        controller.musicPlayer(MusicPlayer(), didUpdateTime: 1, duration: 180)
-        try await Task.sleep(for: .milliseconds(100))
-        #expect(button.isEnabled == false)
+        report(time: 1, to: controller, engine: engine)
+        try await waitUntil(button.isEnabled == false)
         withExtendedLifetime(sandbox) {}
     }
 
     // MARK: - Helpers
 
-    private func makeControllerPlayingFirstTrack(sandbox: TestLibrarySandbox) async throws -> PlaybackController {
+    /// Moves the engine's clock before reporting the tick, as the real
+    /// player does, so a snapshot refresh after the tick keeps the time.
+    private func report(time: TimeInterval, to controller: PlaybackController, engine: PreviousButtonTestEngine) {
+        engine.mockCurrentTime = CMTime(seconds: time, preferredTimescale: 600)
+        controller.musicPlayer(MusicPlayer(), didUpdateTime: time, duration: 180)
+    }
+
+    /// The button applies state on the next main-queue turn, and suites run
+    /// in parallel, so the wait has a deadline instead of a fixed sleep.
+    private func waitUntil(
+        _ condition: @autoclosure () -> Bool,
+        sourceLocation: SourceLocation = #_sourceLocation,
+    ) async throws {
+        let deadline = Date().addingTimeInterval(5)
+        while !condition(), Date() < deadline {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(condition(), sourceLocation: sourceLocation)
+    }
+
+    private func makeControllerPlayingFirstTrack(
+        sandbox: TestLibrarySandbox,
+        engine: PreviousButtonTestEngine,
+    ) async throws -> PlaybackController {
         let locations = LibraryPaths(baseDirectory: sandbox.baseDirectory)
         try locations.ensureDirectoriesExist()
         let database = try sandbox.makeDatabase()
@@ -57,7 +78,7 @@ struct PreviousPlayerControlButtonTests {
             metadataReader: EmbeddedMetadataReader(),
             paths: locations,
             playlistStore: PlaylistStore(database: database),
-            player: MusicPlayer(engine: PreviousButtonTestEngine()),
+            player: MusicPlayer(engine: engine),
         )
 
         let fileURL = locations.absoluteAudioURL(for: "Artist/Album/First.wav")
@@ -109,12 +130,12 @@ struct PreviousPlayerControlButtonTests {
     }
 }
 
-/// Never plays audio or reports time on its own, so only the time updates
-/// a test sends reach the playback controller.
+/// Never plays audio or advances its clock on its own, so only the times a
+/// test sets reach the playback controller.
 @MainActor
 private final class PreviousButtonTestEngine: AudioPlaybackEngine {
     private var mockRate: Float = 0
-    private var mockCurrentTime: CMTime = .zero
+    var mockCurrentTime: CMTime = .zero
     private var mockCurrentItem: AVPlayerItem?
 
     var rate: Float {

@@ -70,8 +70,6 @@
 			</array>
 		</dict>
 	</array>
-	<key>NSAppleMusicUsageDescription</key>
-	<string>Muse Amp reads your Apple Music playlists so you can import them into this library.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

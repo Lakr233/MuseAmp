@@ -17,6 +17,8 @@
 #      halts the chain. macOS system-log lines that the test host prints for
 #      accessibility bundles missing from the OS are not build errors and are
 #      skipped by the scan (they stay in the printed log).
+#   5. On failure, print the error lines and the failed or crashed tests,
+#      which xcbeautify leaves out of the replayed log.
 #
 # Usage:
 #   run_xcodebuild.sh <xcodebuild arguments...>
@@ -45,6 +47,18 @@ IGNORED_ERR_RE='[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9:.]+[+-][0-9]{4} [^[:space:]]+\[[
 # Prints the "line:text" of every error line in the given log, or nothing.
 error_lines() {
     grep -En "$ERR_RE" "$1" | grep -Ev "$IGNORED_ERR_RE" || true
+}
+
+# Prints what xcbeautify leaves out of a failed test run: the "Failing tests:"
+# and "Testing failed:" blocks, which name each failed or crashed test, and the
+# lines where the test host crashed and xcodebuild relaunched it.
+failure_details() {
+    awk '
+        /^(Failing tests|Testing failed):$/ { block = 1; print; next }
+        block && /^[[:space:]]*$/ { block = 0; next }
+        block { print; next }
+        /Restarting after unexpected exit|encountered an error \(|[Cc]rash(ed)? with signal|Test crashed/ { print }
+    ' "$1"
 }
 
 RAW_LOG=$(mktemp -t "museamp-${LABEL//\//_}.raw.XXXXXX.log")
@@ -183,6 +197,12 @@ if [ "$XC_STATUS" -ne 0 ] || [ "$FOUND_ERRORS" -ne 0 ]; then
         echo "---- first 40 error lines from log ----" >&2
         printf '%s\n' "$ERROR_LINES" | head -40 >&2
         echo "---------------------------------------" >&2
+    fi
+    DETAILS=$(failure_details "$LOG")
+    if [ -n "$DETAILS" ]; then
+        echo "---- failed and crashed tests ----" >&2
+        printf '%s\n' "$DETAILS" | head -80 >&2
+        echo "----------------------------------" >&2
     fi
     # Prefer propagating the original xcodebuild exit status when it's non-zero;
     # otherwise fail with 1 because the log says the run is bad.

@@ -237,9 +237,15 @@ class NowPlayingQueueSectionView: UIView, UITableViewDataSource, UITableViewDele
 
         if update.appliedSnapshot {
             var changedSections = IndexSet()
-            if didHistoryIdentityChange { changedSections.insert(QueueSection.history.rawValue) }
-            if didQueueIdentityChange { changedSections.insert(QueueSection.queue.rawValue) }
-            if didFooterVisibilityChange { changedSections.insert(QueueSection.footer.rawValue) }
+            if didHistoryIdentityChange {
+                changedSections.insert(QueueSection.history.rawValue)
+            }
+            if didQueueIdentityChange {
+                changedSections.insert(QueueSection.queue.rawValue)
+            }
+            if didFooterVisibilityChange {
+                changedSections.insert(QueueSection.footer.rawValue)
+            }
             applyQueueSnapshot(changedSections: changedSections)
         } else {
             if didHeaderContentChange {

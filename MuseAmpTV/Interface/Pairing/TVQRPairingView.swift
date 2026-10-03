@@ -182,14 +182,30 @@ final class TVQRPairingView: UIStackView {
 
     private static func symbolName(for deviceName: String) -> String {
         let lower = deviceName.lowercased()
-        if lower.contains("iphone") { return "iphone" }
-        if lower.contains("ipad") { return "ipad.landscape" }
-        if lower.contains("macbook") { return "laptopcomputer" }
-        if lower.contains("imac") { return "desktopcomputer" }
-        if lower.contains("mac mini") { return "macmini" }
-        if lower.contains("mac studio") { return "macstudio" }
-        if lower.contains("mac pro") { return "macpro.gen3" }
-        if lower.contains("mac") { return "laptopcomputer" }
+        if lower.contains("iphone") {
+            return "iphone"
+        }
+        if lower.contains("ipad") {
+            return "ipad.landscape"
+        }
+        if lower.contains("macbook") {
+            return "laptopcomputer"
+        }
+        if lower.contains("imac") {
+            return "desktopcomputer"
+        }
+        if lower.contains("mac mini") {
+            return "macmini"
+        }
+        if lower.contains("mac studio") {
+            return "macstudio"
+        }
+        if lower.contains("mac pro") {
+            return "macpro.gen3"
+        }
+        if lower.contains("mac") {
+            return "laptopcomputer"
+        }
         return "wifi"
     }
 }

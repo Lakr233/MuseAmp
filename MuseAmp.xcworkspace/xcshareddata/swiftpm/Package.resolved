@@ -1,5 +1,5 @@
 {
-  "originHash" : "245be185879408fcb14a2eac10cecf1b7b27d0601e9745d4fb2ee97618373315",
+  "originHash" : "4e06b1a1aced18f059240ca9de72dbd90fb4ca7cdd71587adaee8488e2f28f38",
   "pins" : [
     {
       "identity" : "alertcontroller",
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Lakr233/ColorfulX",
       "state" : {
-        "revision" : "bdf19698a9fdd3d2cd3ade4a9434d443b4313b36",
-        "version" : "6.1.0"
+        "revision" : "2f933d3c6be349c5c36084fb644f46988ba1f401",
+        "version" : "6.1.1"
       }
     },
     {
@@ -47,12 +47,21 @@
       }
     },
     {
+      "identity" : "displaylink",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Lakr233/DisplayLink.git",
+      "state" : {
+        "revision" : "41bea2661e04bebcb1c4f15fc0b6197850100fdd",
+        "version" : "3.0.1"
+      }
+    },
+    {
       "identity" : "dog",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Lakr233/Dog",
       "state" : {
-        "revision" : "3697b6b0e3df29f85e1194a49f67144a0dcd7ec9",
-        "version" : "0.1.1"
+        "revision" : "68e7bce39115914dcb280c702843c1da8d72e24d",
+        "version" : "0.1.2"
       }
     },
     {
@@ -69,8 +78,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/onevcat/Kingfisher.git",
       "state" : {
-        "revision" : "ac632bd26a1c00f139ff62fd01806f21cf67325e",
-        "version" : "8.10.0"
+        "revision" : "8648fe649c5d62be38721110f835821906e9242a",
+        "version" : "8.13.0"
       }
     },
     {
@@ -87,17 +96,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/nicklockwood/LRUCache",
       "state" : {
-        "revision" : "cb5b2bd0da83ad29c0bec762d39f41c8ad0eaf3e",
-        "version" : "1.2.1"
-      }
-    },
-    {
-      "identity" : "msdisplaylink",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/Lakr233/MSDisplayLink.git",
-      "state" : {
-        "revision" : "1ba3e769b734e456317fa7e45321fa7f53eefb67",
-        "version" : "2.1.0"
+        "revision" : "f0570e943ea4445d258113ba73f50cb2b7e564ac",
+        "version" : "1.3.0"
       }
     },
     {
@@ -132,8 +132,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-collections",
       "state" : {
-        "revision" : "a0cb0954ecb21e4e31b0070e6ed5674e8556685a",
-        "version" : "1.6.0"
+        "revision" : "98ef3c98609a1e31b7e157b5b619579001a789d6",
+        "version" : "1.7.1"
       }
     },
     {
@@ -159,8 +159,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Lakr233/wcdb-spm-prebuilt",
       "state" : {
-        "revision" : "9077e295997fd8cc1e0c0f669a40b2314af20a1a",
-        "version" : "2.1.15"
+        "revision" : "619a4ce1b5b3b59b14832ec5bbe414d542703469",
+        "version" : "2.1.16"
       }
     }
   ],

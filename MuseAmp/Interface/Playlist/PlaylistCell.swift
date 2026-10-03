@@ -105,7 +105,9 @@ class PlaylistCell: AmMediaCell {
             return
         }
 
-        if shouldPreserve { return }
+        if shouldPreserve {
+            return
+        }
 
         if let cachedImage = Self.renderedArtworkCache.object(forKey: artworkKey as NSString) {
             hasLoadedArtwork = true

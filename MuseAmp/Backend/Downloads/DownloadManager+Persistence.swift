@@ -95,8 +95,12 @@ extension DownloadManager {
         pendingProgressPublish = nil
         lastProgressPublishDate = Date()
         let sorted = tasks.values.sorted { lhs, rhs in
-            if lhs.state == .failed, rhs.state != .failed { return false }
-            if lhs.state != .failed, rhs.state == .failed { return true }
+            if lhs.state == .failed, rhs.state != .failed {
+                return false
+            }
+            if lhs.state != .failed, rhs.state == .failed {
+                return true
+            }
             return lhs.queueOrder < rhs.queueOrder
         }
         updateScreenAwakeState()

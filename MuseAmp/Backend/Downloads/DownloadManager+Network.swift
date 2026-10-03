@@ -96,8 +96,12 @@ extension DownloadManager {
 
     func shouldDeferForNetwork(trackID: String) -> Bool {
         let connection = networkMonitor.connectionType
-        if connection == .wifi { return false }
-        if connection == .none { return true }
+        if connection == .wifi {
+            return false
+        }
+        if connection == .none {
+            return true
+        }
         return !cellularAllowedTrackIDs.contains(trackID)
     }
 }
