@@ -3,6 +3,7 @@ import Dispatch
 import Foundation
 @testable import MuseAmp
 import MuseAmpDatabaseKit
+import os
 import Testing
 
 @Suite(.serialized)
@@ -474,22 +475,26 @@ struct ExportMetadataProcessorTests {
 }
 
 struct DownloadArtworkProcessorTimeoutTests {
+    /// Asserts the timeout does not wait for the work, rather than a
+    /// wall-clock bound: on a loaded CI runner the utility-QoS timer itself
+    /// can start seconds late.
     @Test
     func `overall timeout returns promptly for non-cooperative work`() async {
-        let startedAt = Date()
+        let workFinished = OSAllocatedUnfairLock(initialState: false)
 
         do {
             try await DownloadArtworkProcessor.withOverallTimeout(seconds: 0.05) {
                 await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
                     DispatchQueue.global(qos: .utility).async {
-                        Thread.sleep(forTimeInterval: 1)
+                        Thread.sleep(forTimeInterval: 5)
+                        workFinished.withLock { $0 = true }
                         continuation.resume()
                     }
                 }
             }
             Issue.record("Expected timeout")
         } catch {
-            #expect(Date().timeIntervalSince(startedAt) < 0.5)
+            #expect(!workFinished.withLock { $0 })
         }
     }
 
