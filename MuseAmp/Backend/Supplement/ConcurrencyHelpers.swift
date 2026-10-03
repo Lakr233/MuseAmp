@@ -42,7 +42,9 @@ extension Publisher where Failure == Never, Output: Sendable {
             }
             return box.value
                 .compactMap {
-                    if case let .ready(result) = $0 { return result }
+                    if case let .ready(result) = $0 {
+                        return result
+                    }
                     return nil
                 }
                 .handleEvents(receiveCancel: { task.cancel() })
@@ -77,7 +79,9 @@ final nonisolated class OnceGuard: @unchecked Sendable {
             fired = true
             return true
         }
-        if shouldFire { block() }
+        if shouldFire {
+            block()
+        }
     }
 }
 
@@ -96,7 +100,9 @@ final nonisolated class ContinuationOnceGuard<Value>: @unchecked Sendable {
             didResume = true
             return true
         }
-        if shouldResume { continuation.resume(returning: value) }
+        if shouldResume {
+            continuation.resume(returning: value)
+        }
     }
 
     nonisolated func resume(
@@ -108,6 +114,8 @@ final nonisolated class ContinuationOnceGuard<Value>: @unchecked Sendable {
             didResume = true
             return true
         }
-        if shouldResume { continuation.resume(throwing: error) }
+        if shouldResume {
+            continuation.resume(throwing: error)
+        }
     }
 }

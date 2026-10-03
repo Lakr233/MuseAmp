@@ -145,7 +145,13 @@ extension SearchViewController {
         func score(names: [String]) -> Int {
             var best = 0
             for n in names {
-                let l = n.lowercased(); if l == query { return 3 }; if l.hasPrefix(query) { best = max(best, 2) } else if l.contains(query) { best = max(best, 1) }
+                let l = n.lowercased(); if l == query {
+                    return 3
+                }; if l.hasPrefix(query) {
+                    best = max(best, 2)
+                } else if l.contains(query) {
+                    best = max(best, 1)
+                }
             }
             return best
         }
@@ -158,7 +164,9 @@ extension SearchViewController {
             let sa: Int; let sb: Int
             switch a { case .songs: sa = songScore; case .albums: sa = albumScore; case .lyrics: sa = 0; case .loading: sa = -1 }
             switch b { case .songs: sb = songScore; case .albums: sb = albumScore; case .lyrics: sb = 0; case .loading: sb = -1 }
-            if sa != sb { return sa > sb }; return tb[a]! < tb[b]!
+            if sa != sb {
+                return sa > sb
+            }; return tb[a]! < tb[b]!
         }
     }
 

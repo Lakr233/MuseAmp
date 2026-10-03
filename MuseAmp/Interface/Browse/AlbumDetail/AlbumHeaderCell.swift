@@ -43,8 +43,12 @@ final class AlbumHeaderCell: TableBaseCell {
 
     func configure(album: CatalogAlbum, artworkURL: URL?) {
         var meta: [String] = []
-        if let genres = album.attributes.genreNames, let first = genres.first { meta.append(first) }
-        if let date = album.attributes.releaseDate { meta.append(String(date.prefix(4))) }
+        if let genres = album.attributes.genreNames, let first = genres.first {
+            meta.append(first)
+        }
+        if let date = album.attributes.releaseDate {
+            meta.append(String(date.prefix(4)))
+        }
         headerView.configure(content: AlbumHeaderContent(
             albumName: album.attributes.name,
             artistName: album.attributes.artistName,

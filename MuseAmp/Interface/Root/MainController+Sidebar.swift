@@ -297,11 +297,11 @@ final class SidebarViewController: UIViewController {
             (collectionView: UICollectionView, indexPath: IndexPath, item: SidebarItem) -> UICollectionViewCell? in
             switch item {
             case let .destination(destination):
-                return collectionView.dequeueConfiguredReusableCell(
+                collectionView.dequeueConfiguredReusableCell(
                     using: destinationRegistration, for: indexPath, item: destination,
                 )
             case let .playlist(id):
-                return collectionView.dequeueConfiguredReusableCell(
+                collectionView.dequeueConfiguredReusableCell(
                     using: playlistRegistration, for: indexPath, item: id,
                 )
             }

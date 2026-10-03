@@ -21,7 +21,9 @@ extension AlbumDetailViewController: UITableViewDelegate {
 
     func tableView(_: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
         guard let item = dataSource.itemIdentifier(for: indexPath) else { return false }
-        if case .track = item { return true }
+        if case .track = item {
+            return true
+        }
         return false
     }
 

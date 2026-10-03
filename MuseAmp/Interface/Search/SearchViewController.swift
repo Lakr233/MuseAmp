@@ -295,11 +295,15 @@ class SearchViewController: UIViewController {
                 case .albums where !searchState.albums.items.isEmpty:
                     snapshot.appendSections([.albums])
                     snapshot.appendItems(searchState.albums.items.map { .album($0.id) }, toSection: .albums)
-                    if searchState.albums.hasMore { snapshot.appendItems([.showMore(.albums)], toSection: .albums) }
+                    if searchState.albums.hasMore {
+                        snapshot.appendItems([.showMore(.albums)], toSection: .albums)
+                    }
                 case .songs where !searchState.songs.items.isEmpty:
                     snapshot.appendSections([.songs])
                     snapshot.appendItems(searchState.songs.items.map { .song($0.id) }, toSection: .songs)
-                    if searchState.songs.hasMore { snapshot.appendItems([.showMore(.songs)], toSection: .songs) }
+                    if searchState.songs.hasMore {
+                        snapshot.appendItems([.showMore(.songs)], toSection: .songs)
+                    }
                 case .lyrics where !searchState.lyricsMatches.isEmpty:
                     snapshot.appendSections([.lyrics])
                     snapshot.appendItems(
@@ -313,7 +317,9 @@ class SearchViewController: UIViewController {
             }
         }
         let showMoreItems = snapshot.itemIdentifiers.filter {
-            if case .showMore = $0 { return true }; return false
+            if case .showMore = $0 {
+                return true
+            }; return false
         }
         if !showMoreItems.isEmpty {
             snapshot.reconfigureItems(showMoreItems)
