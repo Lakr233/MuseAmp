@@ -510,6 +510,7 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
 				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_NSAppleMusicUsageDescription = "Muse Amp reads your Apple Music playlists so you can import them into this library.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Your camera is used to scan a QR code displayed on another device during local-network song transfers. The camera feed is processed on-device in real time and is never recorded, stored, or shared.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Your local network is used to discover nearby devices and transfer songs between them. All data stays on your local network and is never sent to external servers.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -561,6 +562,7 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
 				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_NSAppleMusicUsageDescription = "Muse Amp reads your Apple Music playlists so you can import them into this library.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Your camera is used to scan a QR code displayed on another device during local-network song transfers. The camera feed is processed on-device in real time and is never recorded, stored, or shared.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Your local network is used to discover nearby devices and transfer songs between them. All data stays on your local network and is never sent to external servers.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
