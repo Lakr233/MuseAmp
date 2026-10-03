@@ -1,0 +1,1 @@
+../../../MuseAmp/Backend/Lyrics/EmbeddedLyricsReader.swift

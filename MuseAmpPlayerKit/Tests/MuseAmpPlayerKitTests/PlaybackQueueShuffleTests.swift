@@ -164,4 +164,50 @@ struct PlaybackQueueShuffleTests {
         #expect(queue.history == [items[0]])
         #expect(queue.upcoming == Array(items[2...]))
     }
+
+    @Test func `jump uses the visible queue index after a mid-list start`() {
+        var queue = PlaybackQueue()
+        let items = Self.makeItems(9)
+        queue.load(items: items, startIndex: 6, shuffle: false)
+        let visible = queue.snapshot().orderedItems
+        #expect(visible == Array(items[6...]))
+
+        let played = queue.jump(to: 2)
+
+        #expect(played == visible[2])
+        #expect(queue.nowPlaying == items[8])
+        #expect(queue.history == [items[6], items[7]])
+        #expect(queue.upcoming.isEmpty)
+    }
+
+    @Test func `jump back into history after a mid-list start`() {
+        var queue = PlaybackQueue()
+        let items = Self.makeItems(9)
+        queue.load(items: items, startIndex: 6, shuffle: false)
+        _ = queue.advance()
+        _ = queue.advance()
+        let visible = queue.snapshot().orderedItems
+        #expect(visible == Array(items[6...]))
+
+        let played = queue.jump(to: 1)
+
+        #expect(played == visible[1])
+        #expect(queue.nowPlaying == items[7])
+        #expect(queue.history == [items[6]])
+        #expect(queue.upcoming == [items[8]])
+    }
+
+    @Test func `jump uses the visible queue index while shuffled`() {
+        var queue = PlaybackQueue()
+        let items = Self.makeItems(8)
+        queue.load(items: items, startIndex: 5, shuffle: true)
+        _ = queue.advance()
+        let visible = queue.snapshot().orderedItems
+
+        let played = queue.jump(to: 4)
+
+        #expect(played == visible[4])
+        #expect(queue.snapshot().orderedItems == visible)
+        #expect(queue.snapshot().currentIndex == 4)
+    }
 }

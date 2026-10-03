@@ -21,6 +21,7 @@ MODULE_CACHE    = $(DERIVED_DATA)/ModuleCache.noindex
 HOST_ARCH := $(shell uname -m)
 
 IOS_DESTINATION            := generic/platform=iOS
+SIM_DESTINATION            := generic/platform=iOS Simulator
 CATALYST_DESTINATION       := generic/platform=macOS,variant=Mac Catalyst
 CATALYST_TEST_DESTINATION  := platform=macOS,variant=Mac Catalyst,arch=$(HOST_ARCH)
 TVOS_DESTINATION           := generic/platform=tvOS
@@ -54,6 +55,8 @@ XCODEBUILD := $(XCODEBUILD_WRAPPER) \
 .PHONY: all help \
         build build-ios build-catalyst build-tvos \
         build-device install-device launch-device run-device \
+        build-sim install-sim launch-sim run-sim \
+        launch-catalyst \
         test test-unit \
         package-resolve scan-license \
         format format-lint \
@@ -79,6 +82,16 @@ help:
 	@echo "  install-device     Install the built app (device=<name-or-udid>)"
 	@echo "  launch-device      Launch the installed app (device=<name-or-udid>)"
 	@echo "  run-device         build-device + install-device + launch-device"
+	@echo ""
+	@echo "Simulator:"
+	@echo "  build-sim          Build the iOS app for the iOS Simulator (unsigned)"
+	@echo "  install-sim        Install the built app (sim=<name-or-udid>, must be booted)"
+	@echo "  launch-sim         Launch the installed app (sim=<name-or-udid>)"
+	@echo "  run-sim            build-sim + install-sim + launch-sim"
+	@echo ""
+	@echo "Mac Catalyst run:"
+	@echo "  launch-catalyst    Launch the built Catalyst app in the background (prints pid) with"
+	@echo "                     CFFIXED_USER_HOME=<home> (home=<dir> [log=<file>])"
 	@echo ""
 	@echo "Test:"
 	@echo "  test               Build all platforms, then run the full test suite"
@@ -169,6 +182,41 @@ launch-device:
 	xcrun devicectl device process launch --device "$(device)" $(DEVICE_BUNDLE_ID)
 
 run-device: build-device install-device launch-device
+
+# =============================================================================
+# Simulator deploy
+# =============================================================================
+
+SIM_APP       := $(DERIVED_DATA)/Build/Products/$(CONFIGURATION)-iphonesimulator/MuseAmp.app
+CATALYST_APP  := $(DERIVED_DATA)/Build/Products/$(CONFIGURATION)-maccatalyst/MuseAmp.app
+
+build-sim:
+	mkdir -p "$(BUILD_HOME)" "$(XDG_CACHE_HOME)" "$(MODULE_CACHE)"
+	HOME="$(BUILD_HOME)" XDG_CACHE_HOME="$(XDG_CACHE_HOME)" CLANG_MODULE_CACHE_PATH="$(MODULE_CACHE)" SWIFTPM_MODULECACHE_OVERRIDE="$(MODULE_CACHE)" XCBUILD_LABEL=build-sim $(XCODEBUILD) \
+	    -scheme $(IOS_SCHEME) \
+	    -destination "$(SIM_DESTINATION)" \
+	    build
+
+install-sim:
+	@test -n "$(sim)" || { echo "usage: make install-sim sim=<name-or-udid>"; exit 1; }
+	xcrun simctl install "$(sim)" "$(SIM_APP)"
+
+launch-sim:
+	@test -n "$(sim)" || { echo "usage: make launch-sim sim=<name-or-udid>"; exit 1; }
+	xcrun simctl launch --terminate-running-process "$(sim)" $(DEVICE_BUNDLE_ID)
+
+run-sim: build-sim install-sim launch-sim
+
+# Runs the unsigned (therefore unsandboxed) Catalyst build with a redirected
+# home so it never touches the real ~/Documents or ~/Library. The binary is
+# executed directly because `open` does not reliably forward the environment.
+# The Debug build is coverage-instrumented, so its .profraw output is also kept
+# inside <home> rather than the repository root.
+launch-catalyst:
+	@test -n "$(home)" || { echo "usage: make launch-catalyst home=<dir> [log=<file>]"; exit 1; }
+	@test -x "$(CATALYST_APP)/Contents/MacOS/MuseAmp" || { echo "missing $(CATALYST_APP); run make build-catalyst first"; exit 1; }
+	mkdir -p "$(abspath $(home))"
+	cd "$(abspath $(home))" || exit 1; CFFIXED_USER_HOME="$(abspath $(home))" LLVM_PROFILE_FILE="$(abspath $(home))/museamp-%p.profraw" nohup "$(CATALYST_APP)/Contents/MacOS/MuseAmp" >"$(or $(log),$(abspath $(home))/museamp-stdout.log)" 2>&1 & echo "launched pid=$$!"
 
 # =============================================================================
 # Test

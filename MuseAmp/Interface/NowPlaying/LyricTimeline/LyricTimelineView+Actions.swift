@@ -10,17 +10,30 @@ import UIKit
 // MARK: - Actions
 
 extension LyricTimelineView {
-    func seekToLine(at row: Int) {
-        guard let timeline = currentTimeline(),
-              case let .line(index, _, _) = items[row],
+    /// The time a tap on `item` seeks to. Blank lines (the synthetic lead-in
+    /// before the first lyric, empty instrumental stamps) are not seek targets.
+    nonisolated static func seekTime(for item: Item, in timeline: LyricTimeline?) -> TimeInterval? {
+        guard case let .line(index, text, _) = item,
+              !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let timeline,
               timeline.lines.indices.contains(index)
+        else {
+            return nil
+        }
+        return timeline.lines[index].time
+    }
+
+    func seekToLine(at row: Int) {
+        guard items.indices.contains(row),
+              let time = Self.seekTime(for: items[row], in: currentTimeline())
         else { return }
-        let time = timeline.lines[index].time
         environment.playbackController.seek(to: time)
         environment.playbackController.play()
     }
 
-    func makeLineContextMenu(at row: Int) -> UIMenu? {
+    func makeLineMenuContext(at row: Int) -> LyricLineMenuProvider.Context? {
+        guard items.indices.contains(row) else { return nil }
+
         let lineIndex: Int
         let lineText: String
         var lineTime: TimeInterval?
@@ -28,12 +41,13 @@ extension LyricTimelineView {
             .copyLine, .copyAllLyrics, .selectAndCopy,
         ]
 
-        switch items[row] {
+        let item = items[row]
+        switch item {
         case let .line(index, text, _):
             lineIndex = index
             lineText = text
-            if let timeline = currentTimeline(), timeline.lines.indices.contains(index) {
-                lineTime = timeline.lines[index].time
+            if let time = Self.seekTime(for: item, in: currentTimeline()) {
+                lineTime = time
                 allowedInteractionTypes.insert(.playFromLine)
             }
         case let .staticLine(index, text):
@@ -44,13 +58,14 @@ extension LyricTimelineView {
         }
 
         let selection = makeSelectionContext(preferredLineIndex: lineIndex)
-        return lineMenuProvider.menu(context: .init(
+        return LyricLineMenuProvider.Context(
             allowedInteractionTypes: allowedInteractionTypes,
+            trackID: environment.playbackController.snapshot.currentTrack?.id,
             lineText: lineText,
             lineTime: lineTime,
             allLines: selection.lines,
             selectedLineIndex: selection.selectedIndex,
-        ))
+        )
     }
 
     func presentLyricSelectionSheet(lyrics: [String], activeIndex: Int?) {

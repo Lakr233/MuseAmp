@@ -15,27 +15,16 @@ actor RequestCoalescer {
         work: @escaping @Sendable () async throws -> Data,
     ) async throws -> Data {
         if let existing = inFlight[key] {
-            do {
-                let result = try await existing.value
-                try Task.checkCancellation()
-                return result
-            } catch {
-                try Task.checkCancellation()
-                throw error
-            }
+            let result = await existing.result
+            try Task.checkCancellation()
+            return try result.get()
         }
 
         let task = Task.detached { try await work() }
         inFlight[key] = task
-        do {
-            let result = try await task.value
-            inFlight[key] = nil
-            try Task.checkCancellation()
-            return result
-        } catch {
-            inFlight[key] = nil
-            try Task.checkCancellation()
-            throw error
-        }
+        let result = await task.result
+        inFlight[key] = nil
+        try Task.checkCancellation()
+        return try result.get()
     }
 }

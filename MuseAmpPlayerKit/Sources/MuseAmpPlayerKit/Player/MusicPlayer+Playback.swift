@@ -25,11 +25,7 @@ public extension MusicPlayer {
         log(.info, "startPlayback count=\(items.count) startIndex=\(startIndex.map(String.init) ?? "nil") shuffle=\(shuffle)")
         playbackQueue.load(items: items, startIndex: startIndex, shuffle: shuffle)
         log(.verbose, "queue loaded \(describe(queue: queue))")
-        sessionManager.activate()
-        remoteCommandManager.unregister()
-        remoteCommandManager.register(player: self)
-        setupTimeObserver()
-        setupItemEndObserver()
+        preparePlaybackSession()
         loadAndPlay(playbackQueue.nowPlaying, reason: .natural)
     }
 
@@ -105,36 +101,8 @@ public extension MusicPlayer {
         }
 
         log(.info, "loadAndPlay item=\(describe(item: item)) reason=\(reason)")
-        teardownItemObservers()
-
-        currentItem = item
-        let avItem = AVPlayerItem(url: item.url)
-        engine.replaceCurrentItem(with: avItem)
-        observeItemStatus(avItem, for: item)
-        observeBuffering(avItem)
-        preloadNextItem()
-        engine.play()
-        mediaCenterCoordinator.activateSessionIfPossible()
-        setState(.playing)
-
-        nowPlayingManager.setTrack(item)
-        nowPlayingManager.updateRate(1.0)
-
-        let snap = queue
-        nowPlayingManager.updateQueueInfo(
-            index: snap.history.count,
-            count: snap.totalCount,
-        )
-        remoteCommandManager.updateEnabledCommands(queue: snap)
-        remoteCommandManager.updateLikeCommand(
-            isEnabled: canHandleLikeCommand,
-            isActive: currentItemLiked,
-            localizedTitle: likeCommandLocalizedTitle,
-            localizedShortTitle: likeCommandLocalizedShortTitle,
-        )
-
-        delegate?.musicPlayer(self, didTransitionTo: item, reason: reason)
-        delegate?.musicPlayer(self, didChangeQueue: snap)
+        attachItem(item)
+        let snap = startTransition(to: item, reason: reason)
         log(.verbose, "loadAndPlay completed \(describe(queue: snap))")
     }
 
@@ -151,28 +119,34 @@ public extension MusicPlayer {
             // The preloaded item may have already failed before we started observing.
             if avItem.status == .failed {
                 log(.warning, "preloaded item already failed item=\(describe(item: item))")
-                let error = avItem.error ?? NSError(
-                    domain: "MuseAmpPlayerKit",
-                    code: -1,
-                    userInfo: [
-                        NSLocalizedDescriptionKey: String(
-                            localized: "Unknown playback error",
-                            bundle: .module,
-                        ),
-                    ],
-                )
-                delegate?.musicPlayer(self, didFailItem: item, error: error)
-                if let nextItem = playbackQueue.advance() {
-                    loadAndPlay(nextItem, reason: .itemFailed)
-                } else {
-                    delegate?.musicPlayerDidReachEndOfQueue(self)
-                    stop()
-                }
+                handleItemFailure(avItem, for: item)
                 return
             }
         }
 
         engine.clearPreloadedReference()
+        let snap = startTransition(to: item, reason: reason)
+        log(.verbose, "continueWithCurrentEngineItem completed \(describe(queue: snap))")
+    }
+
+    internal func preparePlaybackSession() {
+        sessionManager.activate()
+        remoteCommandManager.unregister()
+        remoteCommandManager.register(player: self)
+        setupTimeObserver()
+        setupItemEndObserver()
+    }
+
+    internal func attachItem(_ item: PlayerItem) {
+        teardownItemObservers()
+        currentItem = item
+        let avItem = AVPlayerItem(url: item.url)
+        engine.replaceCurrentItem(with: avItem)
+        observeItemStatus(avItem, for: item)
+        observeBuffering(avItem)
+    }
+
+    internal func startTransition(to item: PlayerItem, reason: TransitionReason) -> QueueSnapshot {
         preloadNextItem()
         engine.play()
         mediaCenterCoordinator.activateSessionIfPossible()
@@ -187,16 +161,11 @@ public extension MusicPlayer {
             count: snap.totalCount,
         )
         remoteCommandManager.updateEnabledCommands(queue: snap)
-        remoteCommandManager.updateLikeCommand(
-            isEnabled: canHandleLikeCommand,
-            isActive: currentItemLiked,
-            localizedTitle: likeCommandLocalizedTitle,
-            localizedShortTitle: likeCommandLocalizedShortTitle,
-        )
+        refreshLikeCommand()
 
         delegate?.musicPlayer(self, didTransitionTo: item, reason: reason)
         delegate?.musicPlayer(self, didChangeQueue: snap)
-        log(.verbose, "continueWithCurrentEngineItem completed \(describe(queue: snap))")
+        return snap
     }
 
     internal func preloadNextItem() {

@@ -64,18 +64,24 @@ final class SyncTransferProgressViewController: StackScrollController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
+        scrollView.applySoftEdgeEffects()
         backgroundInterruptionObserver.start()
         startTransfer()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        screenAwakeCoordinator.acquire(.syncSession)
+        screenAwakeCoordinator.acquire(.syncSession, owner: self)
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        screenAwakeCoordinator.release(.syncSession)
+        screenAwakeCoordinator.release(.syncSession, owner: self)
+        // Leaving stops the transfer; whatever finished downloading is still
+        // imported before this controller (and its session) goes away.
+        if isLeavingNavigationStack {
+            transferTask?.cancel()
+        }
     }
 
     override func setupContentViews() {
@@ -193,6 +199,7 @@ private extension SyncTransferProgressViewController {
                 return
             }
 
+            var offeredCount = 0
             var missingEntries: [SyncManifestEntry] = []
             var downloadedURLs: [URL] = []
             do {
@@ -205,6 +212,7 @@ private extension SyncTransferProgressViewController {
                     token: token,
                 )
                 AppLog.info(self, "startTransfer manifest entries=\(manifest.entries.count) session=\(manifest.session != nil)")
+                offeredCount = manifest.entries.count
                 missingEntries = await session.missingEntries(in: manifest)
 
                 phase = .comparing(
@@ -219,6 +227,11 @@ private extension SyncTransferProgressViewController {
                     presentAlertAndPop(
                         title: String(localized: "Nothing to Import"),
                         message: String(localized: "All songs are already in your library."),
+                    )
+                    await session.reportTransferCompletion(
+                        endpoint: endpoint,
+                        token: token,
+                        alreadyInLibraryTrackCount: offeredCount,
                     )
                     return
                 }
@@ -254,24 +267,34 @@ private extension SyncTransferProgressViewController {
                         refreshUI()
                     },
                 )
-                let downloadFailures = max(missingEntries.count - downloadedURLs.count, 0)
-                let failedCount = importResult.errors + importResult.noMetadata + downloadFailures
+                let summary = SyncReceiveSummary(
+                    offeredCount: offeredCount,
+                    requestedCount: missingEntries.count,
+                    downloadedCount: downloadedURLs.count,
+                    importResult: importResult,
+                )
                 AppLog.info(
                     self,
-                    "startTransfer complete imported=\(importResult.succeeded) duplicates=\(importResult.duplicates) errors=\(importResult.errors) noMetadata=\(importResult.noMetadata) downloadFailures=\(downloadFailures)",
+                    "startTransfer complete imported=\(importResult.succeeded) duplicates=\(importResult.duplicates) errors=\(importResult.errors) noMetadata=\(importResult.noMetadata) alreadyInLibrary=\(offeredCount - missingEntries.count) skipped=\(summary.skipped) failed=\(summary.failed)",
                 )
 
                 session.stopReceiver()
                 phase = .complete(
-                    imported: importResult.succeeded,
-                    skipped: importResult.duplicates,
-                    failed: failedCount,
+                    imported: summary.imported,
+                    skipped: summary.skipped,
+                    failed: summary.failed,
                 )
                 refreshUI()
+                await session.reportTransferCompletion(
+                    endpoint: endpoint,
+                    token: token,
+                    alreadyInLibraryTrackCount: offeredCount - missingEntries.count,
+                )
             } catch let error as SyncTransferSession.PartialDownloadError {
                 AppLog.warning(self, "startTransfer partialDownload urls=\(error.downloadedURLs.count)")
                 await finishInterruptedTransfer(
                     downloadedURLs: error.downloadedURLs,
+                    offeredCount: offeredCount,
                     expectedEntries: missingEntries.count,
                     message: String(localized: "Transfer was interrupted. Imported the files that finished downloading."),
                 )
@@ -279,6 +302,7 @@ private extension SyncTransferProgressViewController {
                 AppLog.warning(self, "startTransfer cancelled downloaded=\(downloadedURLs.count)")
                 await finishInterruptedTransfer(
                     downloadedURLs: downloadedURLs,
+                    offeredCount: offeredCount,
                     expectedEntries: missingEntries.count,
                     message: String(localized: "Transfer was interrupted. Imported the files that finished downloading."),
                 )
@@ -286,6 +310,7 @@ private extension SyncTransferProgressViewController {
                 AppLog.error(self, "startTransfer failed: \(error.localizedDescription)")
                 await finishInterruptedTransfer(
                     downloadedURLs: downloadedURLs,
+                    offeredCount: offeredCount,
                     expectedEntries: missingEntries.count,
                     message: error.localizedDescription,
                 )
@@ -381,6 +406,7 @@ private extension SyncTransferProgressViewController {
 
     func finishInterruptedTransfer(
         downloadedURLs: [URL],
+        offeredCount: Int,
         expectedEntries: Int,
         message: String,
     ) async {
@@ -405,11 +431,17 @@ private extension SyncTransferProgressViewController {
             },
         )
 
+        let summary = SyncReceiveSummary(
+            offeredCount: offeredCount,
+            requestedCount: expectedEntries,
+            downloadedCount: downloadedURLs.count,
+            importResult: importResult,
+        )
         session.stopReceiver()
         phase = .complete(
-            imported: importResult.succeeded,
-            skipped: importResult.duplicates,
-            failed: importResult.errors + importResult.noMetadata + max(expectedEntries - downloadedURLs.count, 0),
+            imported: summary.imported,
+            skipped: summary.skipped,
+            failed: summary.failed,
         )
         refreshUI()
     }

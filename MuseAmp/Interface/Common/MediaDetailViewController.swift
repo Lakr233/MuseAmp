@@ -18,6 +18,7 @@ class MediaDetailViewController: UIViewController {
     func configureDetailTableView(backgroundColor: UIColor = PlatformInterfacePalette.primaryBackground) {
         tableView.separatorStyle = .none
         tableView.backgroundColor = backgroundColor
+        tableView.applySoftEdgeEffects()
         view.addSubview(tableView)
         tableView.snp.makeConstraints { make in
             make.edges.equalToSuperview()

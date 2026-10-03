@@ -26,9 +26,7 @@ extension NowPlayingRelaxedController {
         )
     }
 
-    func applySupplementalPlaybackProgress(for _: PlaybackSnapshot) {
-        guard currentRightPanel == .lyrics else { return }
-    }
+    func applySupplementalPlaybackProgress(for _: PlaybackSnapshot) {}
 
     func animateTrackTransitionIfNeeded(shouldAnimate: Bool) {
         guard shouldAnimate else { return }
@@ -70,23 +68,5 @@ extension NowPlayingRelaxedController {
             ),
         )
         relaxedTransportView.setSongMenu(menu)
-    }
-
-    private func makeShowLyricsAction() -> UIAction {
-        UIAction(
-            title: String(localized: "Show Lyrics"),
-            image: UIImage(systemName: "text.quote"),
-        ) { [weak self] _ in
-            self?.controlIslandViewModel.setContentSelector(.lyrics)
-        }
-    }
-
-    private func makeShowPlaybackQueueAction() -> UIAction {
-        UIAction(
-            title: String(localized: "Show Playback Queue"),
-            image: UIImage(systemName: "list.bullet"),
-        ) { [weak self] _ in
-            self?.controlIslandViewModel.setContentSelector(.queue)
-        }
     }
 }

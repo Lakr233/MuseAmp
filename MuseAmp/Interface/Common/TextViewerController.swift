@@ -31,6 +31,7 @@ class TextViewerController: UIViewController {
         textView.textContainerInset = .init(top: 10, left: 10, bottom: 10, right: 10)
         textView.textContainer.lineFragmentPadding = .zero
         textView.showsVerticalScrollIndicator = true
+        textView.applySoftEdgeEffects()
 
         view.addSubview(textView)
 

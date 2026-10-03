@@ -128,7 +128,7 @@ extension SettingsViewController {
         ConfigurableObject(
             icon: "text.quote",
             title: "Rebuild All Lyrics Index",
-            explain: "List every song, clear all cached lyrics, fetch lyrics again, and rewrite the lyrics index from scratch.",
+            explain: "List every song, fetch its lyrics again, and rewrite the lyrics index. Songs whose lyrics can't be fetched keep the lyrics they have.",
             ephemeralAnnotation: .action { [weak self] _ in
                 guard let self else { return }
                 confirmRebuildAllLyricsIndex()
@@ -140,7 +140,7 @@ extension SettingsViewController {
         ConfirmationAlertPresenter.present(
             on: self,
             title: String(localized: "Rebuild All Lyrics Index"),
-            message: String(localized: "This will list every song, delete all cached lyrics, fetch lyrics again, and rewrite the lyrics index from scratch. Existing lyric data will be refreshed for every song."),
+            message: String(localized: "List every song, fetch its lyrics again, and rewrite the lyrics index. Songs whose lyrics can't be fetched keep the lyrics they have."),
             confirmTitle: String(localized: "Rebuild"),
         ) { [weak self] in
             self?.rebuildAllLyricsIndex()
@@ -245,7 +245,7 @@ extension SettingsViewController {
     func rebuildAllLyricsIndex() {
         let progressAlert = AlertProgressIndicatorViewController(
             title: String(localized: "Rebuilding Lyrics Index"),
-            message: String(localized: "Listing songs and clearing cached lyrics..."),
+            message: String(localized: "Listing songs..."),
         )
         present(progressAlert, animated: true)
 

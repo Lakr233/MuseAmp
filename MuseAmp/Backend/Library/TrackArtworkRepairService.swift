@@ -129,12 +129,10 @@ private extension TrackArtworkRepairService {
 
     func embeddedArtworkURL(in fileURL: URL) async throws -> URL? {
         let asset = AVURLAsset(url: fileURL)
-        let metadataItems = try await DownloadArtworkProcessor.collectMetadataItems(from: asset)
+        let metadataItems = try await AVMetadataHelper.collectMetadataItems(from: asset)
 
         for item in metadataItems {
-            guard item.identifier == .iTunesMetadataUserComment
-                || AVMetadataHelper.matches(item, tokens: ["comment", "cmt"])
-            else {
+            guard AVMetadataHelper.isComment(item) else {
                 continue
             }
 

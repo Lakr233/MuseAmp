@@ -42,6 +42,7 @@ class NowPlayingPagingSectionView: UIView {
         scrollView.isPagingEnabled = true
         scrollView.showsHorizontalScrollIndicator = false
         scrollView.showsVerticalScrollIndicator = false
+        scrollView.applySoftEdgeEffects()
         return scrollView
     }()
 

@@ -11,7 +11,7 @@ import MuseAmpPlayerKit
 import SnapKit
 import UIKit
 
-class NowPlayingRelaxedController: UIViewController, NowPlayingQueueShellController, NowPlayingArtworkShellController, NowPlayingLyricsPlaybackShellController, NowPlayingLifecycleShellController, NowPlayingTransportShellController {
+class NowPlayingRelaxedController: UIViewController, NowPlayingQueueShellController, NowPlayingArtworkShellController, NowPlayingLifecycleShellController {
     let environment: AppEnvironment
     let backgroundView = NowPlayingArtworkBackgroundView()
     lazy var artworkBackgroundCoordinator = NowPlayingArtworkBackgroundCoordinator(
@@ -61,10 +61,9 @@ class NowPlayingRelaxedController: UIViewController, NowPlayingQueueShellControl
         lyricsPanelView: lyricTimelineView,
         queuePanelView: queuePanelView,
     )
+    lazy var closeButton = makeCloseButton()
 
     // MARK: - Right Panel
-
-    // MARK: - Layout Containers
 
     private(set) var currentRightPanel: NowPlayingRelaxedPanel = .lyrics
 
@@ -97,6 +96,8 @@ class NowPlayingRelaxedController: UIViewController, NowPlayingQueueShellControl
         installContentLayout()
         installLeftPanel()
         installRightPanel()
+        installCloseButton()
+        hideTitlebarScrollEdgeEffects()
         bindQueueSectionActions()
         bindContentSelector()
         bindQueueSnapshot()
@@ -126,10 +127,6 @@ class NowPlayingRelaxedController: UIViewController, NowPlayingQueueShellControl
         )
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-    }
-
     override var prefersStatusBarHidden: Bool {
         false
     }
@@ -147,7 +144,7 @@ class NowPlayingRelaxedController: UIViewController, NowPlayingQueueShellControl
     }
 
     @objc private func escapeKeyPressed() {
-        popupPresentationContainer?.closePopup(animated: true)
+        closeBySlidingDown()
     }
 
     override func viewForPopupTransition(
@@ -156,8 +153,6 @@ class NowPlayingRelaxedController: UIViewController, NowPlayingQueueShellControl
     ) -> UIView? {
         nil
     }
-
-    deinit {}
 
     func installQueueActionHandlers(
         onToggleShuffle: @escaping () -> Void,
@@ -179,8 +174,6 @@ class NowPlayingRelaxedController: UIViewController, NowPlayingQueueShellControl
             onCycleRepeatMode: onCycleRepeatMode,
         )
     }
-
-    // MARK: - Background Setup
 
     // MARK: - Content Layout
 
@@ -207,6 +200,24 @@ class NowPlayingRelaxedController: UIViewController, NowPlayingQueueShellControl
             make.top.bottom.equalToSuperview()
             make.leading.trailing.equalToSuperview().inset(16)
         }
+    }
+
+    /// On Mac every scroll view that reaches the top of the window gets a
+    /// hard edge effect under the hidden title bar. Now Playing has no bar
+    /// there, so the effect only draws an empty tinted strip with a divider
+    /// over the artwork and lyric columns.
+    private func hideTitlebarScrollEdgeEffects() {
+        #if targetEnvironment(macCatalyst)
+            guard #available(iOS 26.0, *) else { return }
+            let scrollViews: [UIScrollView] = [
+                centerSectionView.scrollView,
+                lyricTimelineView.tableView,
+                listSectionView.queueTableView,
+            ]
+            for scrollView in scrollViews {
+                scrollView.topEdgeEffect.isHidden = true
+            }
+        #endif
     }
 
     @objc private func segmentedControlChanged(_ sender: UISegmentedControl) {

@@ -66,8 +66,7 @@ extension TVAppContext {
             let didStartPlayback = restored ? true : await playCurrentSession()
             if didStartPlayback {
                 playbackController.setRepeatMode(.queue)
-            }
-            if !didStartPlayback {
+            } else {
                 setPendingSessionAlert(
                     title: String(localized: "Playback Failed"),
                     message: String(localized: "The transferred playlist is still available on Apple TV, but playback could not start automatically."),
@@ -141,9 +140,8 @@ extension TVAppContext {
                     title: String(localized: "Playback Failed"),
                     message: String(localized: "The transferred playlist was saved, but playback could not start."),
                 )
-                return true
             }
-            return started
+            return true
         }
     }
 

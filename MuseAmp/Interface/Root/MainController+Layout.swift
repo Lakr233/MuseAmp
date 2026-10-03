@@ -5,6 +5,7 @@
 //  Created by @Lakr233 on 2026/04/11.
 //
 
+import LNPopupController
 import SnapKit
 import UIKit
 
@@ -25,8 +26,13 @@ extension MainController {
         compactTabBarController.didMove(toParent: self)
     }
 
+    /// Detaches the tab shell but keeps it, so its tabs and navigation stacks
+    /// survive a size-class round trip. Detaching releases its Now Playing;
+    /// the next install rebuilds it.
     func teardownCompactLayout() {
-        guard compactTabBarController.parent != nil else { return }
+        guard let compactTabBarController = compactTabBarControllerIfLoaded,
+              compactTabBarController.parent != nil
+        else { return }
         AppLog.Layout.info(self, "teardownCompactLayout")
         compactTabBarController.willMove(toParent: nil)
         compactTabBarController.view.removeFromSuperview()
@@ -80,12 +86,42 @@ extension MainController {
         rootSplitViewController.displayModeButtonVisibility = .never
 
         #if targetEnvironment(macCatalyst)
-            // Keep the split view's column bars in-content instead of hosted
-            // in an NSToolbar, so the hidden title bar fully collapses and
-            // only the traffic lights float over the content.
-            sidebarViewController.navigationController?.navigationBar.preferredBehavioralStyle = .pad
+            updateDetailColumnTitlebarInset()
         #endif
     }
+
+    #if targetEnvironment(macCatalyst)
+        /// The hidden title bar still reserves its height as a top safe-area
+        /// inset. While the sidebar is shown it sits under the traffic
+        /// lights, so the detail column gives the inset back and its
+        /// navigation bar sits in the traffic-light row instead of under an
+        /// empty band. With the sidebar hidden (View > Hide Sidebar) the
+        /// detail column keeps the inset, so its back button clears the
+        /// traffic lights.
+        func updateDetailColumnTitlebarInset(sidebarVisible: Bool? = nil) {
+            guard currentLayoutMode == .catalyst else { return }
+            let sidebarVisible = sidebarVisible ?? rootSplitViewController.isSidebarVisible
+            let titlebarHeight = sidebarVisible ? view.safeAreaInsets.top : 0
+            let insets = UIEdgeInsets(top: -titlebarHeight, left: 0, bottom: 0, right: 0)
+            guard contentContainerController.additionalSafeAreaInsets != insets else { return }
+            contentContainerController.additionalSafeAreaInsets = insets
+            relayoutDetailNavigationControllers()
+        }
+
+        /// When the inset shrinks and no size changes, UINavigationController
+        /// moves its bar up in the next layout pass but leaves its top view
+        /// controller's safe area at the old, taller value, so the content
+        /// sits a titlebar height below the bar. A second pass, with the bar
+        /// already in place, corrects it.
+        private func relayoutDetailNavigationControllers() {
+            contentContainerController.view.layoutIfNeeded()
+            for child in contentContainerController.children {
+                child.view.setNeedsLayout()
+                child.view.layoutIfNeeded()
+            }
+        }
+
+    #endif
 
     func teardownRelaxedLayout() {
         AppLog.Layout.info(self, "teardownRelaxedLayout")
@@ -146,6 +182,10 @@ extension MainController: UISplitViewControllerDelegate {
     ) {
         guard column == .primary else { return }
         rootSplitViewController.animatePopupBarToCurrentLayout(sidebarWillBeVisible: true)
+        #if targetEnvironment(macCatalyst)
+            animateDetailColumnWithSidebar(sidebarVisible: true)
+            sidebarToggleWillChange(sidebarVisible: true)
+        #endif
     }
 
     func splitViewController(
@@ -154,5 +194,9 @@ extension MainController: UISplitViewControllerDelegate {
     ) {
         guard column == .primary else { return }
         rootSplitViewController.animatePopupBarToCurrentLayout(sidebarWillBeVisible: false)
+        #if targetEnvironment(macCatalyst)
+            animateDetailColumnWithSidebar(sidebarVisible: false)
+            sidebarToggleWillChange(sidebarVisible: false)
+        #endif
     }
 }

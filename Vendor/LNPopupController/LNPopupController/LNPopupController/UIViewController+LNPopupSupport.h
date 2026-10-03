@@ -348,20 +348,6 @@ NS_SWIFT_UI_ACTOR
 /// - Note: Starting with iOS 26.0, this property is only supported for custom bars.
 @property (nonatomic, assign, readonly) BOOL shouldFadePopupBarOnDismiss;
 
-/// Returns the layout frame for the popup bar within the container controller's view coordinate space.
-///
-/// Override this property to constrain the popup bar to a specific horizontal region of the container's view (for example, the secondary column of a split view controller), while keeping the opened popup content covering the full container view.
-///
-/// Only the `origin.x` and `size.width` of the returned rect are used — the vertical position is still determined by the bottom docking view.
-///
-/// Defaults to `CGRectNull`, meaning the popup bar uses the full width of the container controller's view.
-@property (nonatomic, assign, readonly) CGRect popupBarLayoutFrameForPopupBar;
-
-/// When `YES`, the popup controller skips updating the popup bar's frame during internal layout passes.
-/// Set this to `YES` before performing a custom bar frame animation, and reset to `NO` afterwards.
-/// Defaults to `NO`.
-@property (nonatomic, assign) BOOL popupBarFrameUpdateSuspended;
-
 @end
 
 @interface UITabBarController (LNPopupPresentation)

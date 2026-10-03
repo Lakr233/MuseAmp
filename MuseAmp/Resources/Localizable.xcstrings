@@ -1,6 +1,38 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%1$lld of %2$lld songs could not be prepared and were excluded from this transfer." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld of %2$lld songs could not be prepared and were excluded from this transfer."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共 %2$lld 首歌曲中有 %1$lld 首未能完成准备，已从本次传输中排除。"
+          }
+        }
+      }
+    },
+    "%1$lld of %2$lld songs could not be prepared and won't be included." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld of %2$lld songs could not be prepared and won't be included."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共 %2$lld 首歌曲中有 %1$lld 首未能完成准备，将不会包含在分享中。"
+          }
+        }
+      }
+    },
     "%1$lld of %2$lld songs could not be read and were excluded from this transfer." : {
       "localizations" : {
         "en" : {
@@ -641,6 +673,22 @@
         }
       }
     },
+    "All Playlists" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Playlists"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部歌单"
+          }
+        }
+      }
+    },
     "All Song Names" : {
       "localizations" : {
         "en" : {
@@ -909,6 +957,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apple TV 清除了部分已传输的播放列表。请从 iPhone 重新发送。"
+          }
+        }
+      }
+    },
+    "Apple TV finished, but some audio files were not delivered." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV finished, but some audio files were not delivered."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple TV 已完成，但部分音频文件未送达。"
           }
         }
       }
@@ -1325,6 +1389,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "清除日志"
+          }
+        }
+      }
+    },
+    "Close Now Playing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close Now Playing"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭正在播放"
           }
         }
       }
@@ -2689,6 +2769,22 @@
         }
       }
     },
+    "Hide Sidebar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide Sidebar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏边栏"
+          }
+        }
+      }
+    },
     "How Muse Amp handles server settings, local music files, transfers, and on-device data." : {
       "localizations" : {
         "en" : {
@@ -3265,34 +3361,34 @@
         }
       }
     },
-    "List every song, clear all cached lyrics, fetch lyrics again, and rewrite the lyrics index from scratch." : {
+    "List every song, fetch its lyrics again, and rewrite the lyrics index. Songs whose lyrics can't be fetched keep the lyrics they have." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "List every song, clear all cached lyrics, fetch lyrics again, and rewrite the lyrics index from scratch."
+            "value" : "List every song, fetch its lyrics again, and rewrite the lyrics index. Songs whose lyrics can't be fetched keep the lyrics they have."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "列出所有歌曲、清空全部歌词缓存、重新获取歌词，并从头重写歌词索引。"
+            "value" : "列出所有歌曲、重新获取歌词，并重写歌词索引。无法获取歌词的歌曲会保留现有歌词。"
           }
         }
       }
     },
-    "Listing songs and clearing cached lyrics..." : {
+    "Listing songs..." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Listing songs and clearing cached lyrics..."
+            "value" : "Listing songs..."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "正在列出歌曲并清空歌词缓存..."
+            "value" : "正在列出歌曲..."
           }
         }
       }
@@ -4115,6 +4211,22 @@
         }
       }
     },
+    "Not Prepared" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not Prepared"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未能准备"
+          }
+        }
+      }
+    },
     "Nothing Playing" : {
       "localizations" : {
         "en" : {
@@ -4718,7 +4830,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "播放列表"
+            "value" : "歌单"
           }
         }
       }
@@ -5263,22 +5375,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在通过局域网从发送端接收音频文件。"
-          }
-        }
-      }
-    },
-    "Receiving was interrupted because the app left the foreground." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Receiving was interrupted because the app left the foreground."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "应用离开前台，接收已中断。"
           }
         }
       }
@@ -6355,22 +6451,6 @@
         }
       }
     },
-    "Sending was interrupted because the app left the foreground." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sending was interrupted because the app left the foreground."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "应用离开前台，发送已中断。"
-          }
-        }
-      }
-    },
     "Sending was interrupted because the app moved to the background." : {
       "localizations" : {
         "en" : {
@@ -6579,6 +6659,22 @@
         }
       }
     },
+    "Show Sidebar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Sidebar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示边栏"
+          }
+        }
+      }
+    },
     "Show in Album" : {
       "localizations" : {
         "en" : {
@@ -6771,22 +6867,6 @@
         }
       }
     },
-    "Songs that could not be read and were left out of this transfer." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Songs that could not be read and were left out of this transfer."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无法读取而被排除在本次传输之外的歌曲。"
-          }
-        }
-      }
-    },
     "Songs that were added to your library successfully." : {
       "localizations" : {
         "en" : {
@@ -6799,6 +6879,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已成功加入资料库的歌曲。"
+          }
+        }
+      }
+    },
+    "Songs that were left out of this transfer." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Songs that were left out of this transfer."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "被排除在本次传输之外的歌曲。"
           }
         }
       }
@@ -7411,6 +7507,22 @@
         }
       }
     },
+    "The receiving device finished, but some songs were not delivered." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The receiving device finished, but some songs were not delivered."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接收设备已完成，但部分歌曲未送达。"
+          }
+        }
+      }
+    },
     "The receiving device is actively downloading prepared songs from this sender." : {
       "localizations" : {
         "en" : {
@@ -7699,6 +7811,22 @@
         }
       }
     },
+    "These songs could not be prepared and were left out." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "These songs could not be prepared and were left out."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这些歌曲未能完成准备，已被排除。"
+          }
+        }
+      }
+    },
     "These songs could not be read from local storage and were left out." : {
       "localizations" : {
         "en" : {
@@ -7855,22 +7983,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "此发送方使用了不兼容的传输协议版本。"
-          }
-        }
-      }
-    },
-    "This will list every song, delete all cached lyrics, fetch lyrics again, and rewrite the lyrics index from scratch. Existing lyric data will be refreshed for every song." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This will list every song, delete all cached lyrics, fetch lyrics again, and rewrite the lyrics index from scratch. Existing lyric data will be refreshed for every song."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "这会列出所有歌曲、删除全部歌词缓存、重新获取歌词，并从头重写歌词索引。每一首歌的现有歌词数据都会被重新刷新。"
           }
         }
       }
@@ -8159,6 +8271,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "无法共享播放列表"
+          }
+        }
+      }
+    },
+    "Unable to load lyrics" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to load lyrics"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法加载歌词"
           }
         }
       }

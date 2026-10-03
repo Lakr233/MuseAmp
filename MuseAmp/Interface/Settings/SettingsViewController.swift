@@ -36,6 +36,7 @@ final class SettingsViewController: StackScrollController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
+        scrollView.applySoftEdgeEffects()
     }
 
     override func viewWillAppear(_ animated: Bool) {

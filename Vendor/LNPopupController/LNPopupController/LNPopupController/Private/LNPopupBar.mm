@@ -258,7 +258,7 @@ __attribute__((objc_direct_members))
 	
 	BOOL _animatesItemSetter;
 	
-	UINavigationBar* _layoutBar;
+	_LNPopupLayoutBar* _layoutBar;
 }
 
 static BOOL __animatesItemSetter = NO;
@@ -397,7 +397,8 @@ LNPopupBarProgressViewStyle _LNPopupResolveProgressViewStyleFromProgressViewStyl
 			rightView.frame = CGRectMake(0, 0, 44, 44);
 			item.rightBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:rightView];
 			
-			_layoutBar = [UINavigationBar new];
+			_layoutBar = [_LNPopupLayoutBar new];
+			_layoutBar._layoutDelegate = self;
 			_layoutBar.userInteractionEnabled = NO;
 			_layoutBar.hidden = YES;
 			[_layoutBar setItems:@[item]];
@@ -770,6 +771,93 @@ LNPopupBarProgressViewStyle _LNPopupResolveProgressViewStyleFromProgressViewStyl
 
 #endif
 
+- (void)_layoutProgressView
+{
+	CGFloat width = 0;
+	CGFloat height = 0;
+	CGFloat offset = 0;
+	CGFloat offsetAfter = 0;
+	if(_resolvedIsFloating)
+	{
+		if(LNPopupEnvironmentHasGlass())
+		{
+			offset = -10;
+		}
+		width = _contentView.bounds.size.width;
+		height = _contentView.bounds.size.height;
+	}
+	else
+	{
+		offset = 0;
+		width = self.contentView.bounds.size.width;
+		height = self.bounds.size.height;
+	}
+	
+	CGFloat cornerRadius;
+	if(@available(iOS 26.0, *))
+	{
+		cornerRadius = [_contentView.effectView effectiveRadiusForCorner:UIRectCornerAllCorners];
+	}
+	else
+	{
+		cornerRadius = _contentView.cornerRadius / 2.5;
+	}
+	
+	CGFloat progressViewHeight = [_progressView systemLayoutSizeFittingSize:UILayoutFittingCompressedSize].height;
+	UIEdgeInsets titleInsets = [self contentInsetsIncludingImage:NO];
+	
+	BOOL isMacIdiom = NO;
+	if(@available(iOS 14.0, *))
+	{
+		isMacIdiom = self.traitCollection.userInterfaceIdiom == UIUserInterfaceIdiomMac;
+	}
+	
+	CGRect potentialProgressViewFrame = UIEdgeInsetsInsetRect(_contentView.bounds, titleInsets);
+	if(isMacIdiom && titleInsets.left >= 25 && titleInsets.right >= 25 && potentialProgressViewFrame.size.width > 2 * __LNPopupScaledFloat(LNPopupBarFloatingPadImageWidth, self.traitCollection) && LNPopupEnvironmentHasGlass())
+	{
+		static const CGFloat position = 4;
+		if(self.progressViewStyle == LNPopupBarProgressViewStyleTop)
+		{
+			potentialProgressViewFrame.origin.y = position;
+		}
+		else
+		{
+			potentialProgressViewFrame.origin.y = potentialProgressViewFrame.size.height - position - progressViewHeight;
+		}
+		potentialProgressViewFrame.size.height = progressViewHeight;
+		
+		_progressView.frame = potentialProgressViewFrame;
+		_progressView.alpha = potentialProgressViewFrame.size.width >= __LNPopupScaledFloat(LNPopupBarFloatingPadImageWidth, self.traitCollection);
+		
+		if(@available(iOS 26.0, *))
+		{
+			_progressView.clipsToBounds = YES;
+			_progressView.cornerConfiguration = [UICornerConfiguration capsuleConfiguration];
+		}
+		
+		_progressView.trackTintColor = UIColor.tertiaryLabelColor;
+		_progressView.trackImage = nil;
+	}
+	else
+	{
+		if(self.progressViewStyle == LNPopupBarProgressViewStyleTop)
+		{
+			_progressView.frame = CGRectMake(cornerRadius + offset, 0, width - 2 * (cornerRadius + offset), progressViewHeight);
+		}
+		else
+		{
+			_progressView.frame = CGRectMake(cornerRadius + offset, height - progressViewHeight, width - 2 * (cornerRadius + offset), progressViewHeight);
+		}
+		
+		if(@available(iOS 26.0, *))
+		{
+			_progressView.cornerConfiguration = [UICornerConfiguration configurationWithRadius:[UICornerRadius fixedRadius:0.0]];
+		}
+		
+		_progressView.trackImage = [UIImage new];
+	}
+}
+
 - (void)layoutSubviews
 {
 	_inLayout = YES;
@@ -999,6 +1087,21 @@ LNPopupBarProgressViewStyle _LNPopupResolveProgressViewStyleFromProgressViewStyl
 	BOOL needsLeftPadding = leadingSpace < 15 && firstCustomAndUnhidden == NO && leftViewFirst && [self _isBarButtonViewPadded:leftViewFirst inEdge:UIRectEdgeLeft] == NO;
 	BOOL needsRightPadding = trailingSpace < 15 && lastCustomAndUnhidden == NO && rightViewLast && [self _isBarButtonViewPadded:rightViewLast inEdge:UIRectEdgeRight] == NO;
 	
+	if(@available(iOS 27.1, *))
+	{
+		//Custom bar button items on iOS 27.1 and newer are no longer padded.
+		
+		if(firstCustomAndUnhidden)
+		{
+			needsLeftPadding = YES;
+		}
+		
+		if(lastCustomAndUnhidden)
+		{
+			needsRightPadding = YES;
+		}
+	}
+	
 	static constexpr CGFloat padding = 16;
 	
 	CGRect bounds = CGRectMake(0, 0, _contentView.bounds.size.width, LNPopupBarToolbarHeight);
@@ -1048,94 +1151,9 @@ LNPopupBarProgressViewStyle _LNPopupResolveProgressViewStyleFromProgressViewStyl
 		_bottomShadowView.frame = CGRectMake(0, _backgroundView.bounds.size.height - h, _backgroundView.bounds.size.width, h);
 	}
 	
-	CGFloat cornerRadius;
-	if(@available(iOS 26.0, *))
-	{
-		cornerRadius = [_contentView.effectView effectiveRadiusForCorner:UIRectCornerAllCorners];
-	}
-	else
-	{
-		cornerRadius = _contentView.cornerRadius / 2.5;
-	}
-	
 	[_contentView.contentView insertSubview:_progressView aboveSubview:_toolbar];
 	
-	CGFloat width = 0;
-	CGFloat height = 0;
-	CGFloat offset = 0;
-	CGFloat offsetAfter = 0;
-	if(_resolvedIsFloating)
-	{
-		
-		
-		if(LNPopupEnvironmentHasGlass())
-		{
-			offset = -10;
-		}
-		width = _contentView.bounds.size.width;
-		height = _contentView.bounds.size.height;
-	}
-	else
-	{
-		offset = 0;
-		width = self.contentView.bounds.size.width;
-		height = self.bounds.size.height;
-	}
-	
-	CGFloat progressViewHeight = [_progressView systemLayoutSizeFittingSize:UILayoutFittingCompressedSize].height;
-	UIEdgeInsets titleInsets = [self contentInsetsIncludingImage:NO];
-	
-	BOOL isMacIdiom = NO;
-	if(@available(iOS 14.0, *))
-	{
-		isMacIdiom = self.traitCollection.userInterfaceIdiom == UIUserInterfaceIdiomMac;
-	}
-	
-	if(LNPopupEnvironmentHasGlass() && isMacIdiom && titleInsets.left >= 20 && titleInsets.right >= 20)
-	{
-		CGRect progressViewFrame = UIEdgeInsetsInsetRect(_contentView.bounds, titleInsets);
-		static const CGFloat position = 4;
-		if(self.progressViewStyle == LNPopupBarProgressViewStyleTop)
-		{
-			progressViewFrame.origin.y = position;
-			
-		}
-		else
-		{
-			progressViewFrame.origin.y = progressViewFrame.size.height - position - progressViewHeight;
-		}
-		progressViewFrame.size.height = progressViewHeight;
-		
-		_progressView.frame = progressViewFrame;
-		_progressView.alpha = progressViewFrame.size.width >= __LNPopupScaledFloat(LNPopupBarFloatingPadImageWidth, self.traitCollection);
-		
-		if(@available(iOS 26.0, *))
-		{
-			_progressView.clipsToBounds = YES;
-			_progressView.cornerConfiguration = [UICornerConfiguration capsuleConfiguration];
-		}
-		
-		_progressView.trackTintColor = UIColor.tertiaryLabelColor;
-		_progressView.trackImage = nil;
-	}
-	else
-	{
-		if(self.progressViewStyle == LNPopupBarProgressViewStyleTop)
-		{
-			_progressView.frame = CGRectMake(cornerRadius + offset, 0, width - 2 * (cornerRadius + offset), progressViewHeight);
-		}
-		else
-		{
-			_progressView.frame = CGRectMake(cornerRadius + offset, height - progressViewHeight, width - 2 * (cornerRadius + offset), progressViewHeight);
-		}
-		
-		if(@available(iOS 26.0, *))
-		{
-			_progressView.cornerConfiguration = [UICornerConfiguration configurationWithRadius:[UICornerRadius fixedRadius:0.0]];
-		}
-		
-		_progressView.trackImage = [UIImage new];
-	}
+	[self _layoutProgressView];
 	
 	CGFloat titleSpacing = 1 + (1 / MAX(1, screen.scale));
 	if(_resolvedIsCompact)
@@ -1663,7 +1681,7 @@ static NSString* __ln_effectGroupingIdentifierKey = LNPopupHiddenString("groupNa
 	
 	if(_swiftuiTitleContentViewController.view != nil)
 	{
-		[_swiftuiTitleContentView removeFromSuperview];
+		[_swiftuiTitleContentViewController.view removeFromSuperview];
 	}
 	
 	_swiftuiTitleContentViewController = swiftuiTitleContentViewController;
@@ -1985,6 +2003,21 @@ static Class systemBarButtonItemButtonClass = NSClassFromString(LNPopupHiddenStr
 	CGFloat extraLeftPadding = lastLeftLastSystemAndUnhidden ? 8 : leftViewLast && [self _isBarButtonViewPadded:leftViewLast inEdge:UIRectEdgeRight] == NO ? -8 : 0;
 	CGFloat extraRightPadding = firstRightFirstSystemAndUnhidden ? 8 : rightViewFirst && [self _isBarButtonViewPadded:rightViewFirst inEdge:UIRectEdgeLeft] == NO ? -8 : 0;
 	
+	if(@available(iOS 27.1, *))
+	{
+		//Bar system button items on iOS 27.1 and newer are no longer padded.
+		
+		if(lastLeftLastSystemAndUnhidden)
+		{
+			extraLeftPadding = -8;
+		}
+		
+		if(firstRightFirstSystemAndUnhidden)
+		{
+			extraRightPadding = -8;
+		}
+	}
+	
 	CGRect leftViewFrame = CGRectZero;
 	if(leftViewLast != nil)
 	{
@@ -2001,7 +2034,14 @@ static Class systemBarButtonItemButtonClass = NSClassFromString(LNPopupHiddenStr
 	
 	if(LNPopupEnvironmentHasGlass())
 	{
-		emptyPadding = 16;
+		if(LNPopupBar.isCatalystApp)
+		{
+			emptyPadding = 20;
+		}
+		else
+		{
+			emptyPadding = 16;
+		}
 	}
 	else
 	{
@@ -2387,15 +2427,17 @@ static CGSize LNMakeSizeWithAspectRatioInsideSize(CGSize aspectRatio, CGSize siz
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context
 {
-	if([keyPath isEqualToString:@"preferredContentSize"] == YES && object == _customBarViewController)
+	if([keyPath isEqualToString:@"preferredContentSize"] == YES)
 	{
-		[self._barDelegate _popupBarMetricsDidChange:self];
-	}
-	
-	if([keyPath isEqualToString:@"preferredContentSize"] == YES && object == _swiftuiImageController)
-	{
-		[self _layoutImageView];
-		[self _setNeedsTitleLayoutByRemovingLabels:NO];
+		if(object == _customBarViewController)
+		{
+			[self._barDelegate _popupBarMetricsDidChange:self];
+		}
+		else if(object == _swiftuiImageController)
+		{
+			[self _layoutImageView];
+			[self _setNeedsTitleLayoutByRemovingLabels:NO];
+		}
 	}
 }
 
@@ -2658,6 +2700,20 @@ static CGSize LNMakeSizeWithAspectRatioInsideSize(CGSize aspectRatio, CGSize siz
 	}
 	
 	[self setNeedsLayout];
+}
+
+#pragma mark _LNPopupLayoutBarLayoutDelegate
+
+- (void)_layoutBarDidLayoutSubviews
+{
+	if(_inLayout)
+	{
+		return;
+	}
+	
+	dispatch_async(dispatch_get_main_queue(), ^{
+		[self setNeedsLayout];
+	});
 }
 
 @end

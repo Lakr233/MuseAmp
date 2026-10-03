@@ -37,7 +37,7 @@ nonisolated enum RootDestination: Int, CaseIterable, Hashable {
         case .settings:
             String(localized: "Settings")
         case .playlistList:
-            String(localized: "Playlist")
+            String(localized: "All Playlists")
         }
     }
 
@@ -76,7 +76,18 @@ class MainController: UIViewController {
 
     // MARK: - Child Controllers
 
-    private(set) lazy var compactTabBarController = TabBarController(environment: environment)
+    /// Built the first time the compact layout is installed, so a relaxed or
+    /// Catalyst window never builds the tab shell or its Now Playing.
+    private(set) var compactTabBarControllerIfLoaded: TabBarController?
+    var compactTabBarController: TabBarController {
+        if let compactTabBarControllerIfLoaded {
+            return compactTabBarControllerIfLoaded
+        }
+        let controller = TabBarController(environment: environment)
+        compactTabBarControllerIfLoaded = controller
+        return controller
+    }
+
     private(set) lazy var sidebarViewController = SidebarViewController(environment: environment)
     private(set) lazy var contentContainerController = UIViewController()
     private(set) lazy var rootSplitViewController = PopupBarSplitViewController(style: .doubleColumn)
@@ -86,6 +97,10 @@ class MainController: UIViewController {
     var popupContainerController: UIViewController {
         rootSplitViewController
     }
+
+    #if targetEnvironment(macCatalyst)
+        private(set) lazy var sidebarToggleButton = makeSidebarToggleButton()
+    #endif
 
     // MARK: - Popup State (relaxed/catalyst)
 
@@ -184,9 +199,21 @@ class MainController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         let mode = computeLayoutMode()
-        guard mode != currentLayoutMode else { return }
-        transitionToMode(mode)
+        if mode != currentLayoutMode {
+            transitionToMode(mode)
+        }
+        #if targetEnvironment(macCatalyst)
+            updateSidebarTogglePosition()
+        #endif
     }
+
+    #if targetEnvironment(macCatalyst)
+        override func viewSafeAreaInsetsDidChange() {
+            super.viewSafeAreaInsetsDidChange()
+            updateFullScreenTitlebarRow()
+            updateDetailColumnTitlebarInset()
+        }
+    #endif
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
@@ -239,6 +266,9 @@ class MainController: UIViewController {
         case .catalyst:
             teardownCompactLayout()
             installCatalystLayout()
+            #if targetEnvironment(macCatalyst)
+                installSidebarToggleButton()
+            #endif
         }
 
         if mode != .compact, previousMode == nil || previousMode == .compact {

@@ -281,13 +281,6 @@ final class PlaybackController: ObservableObject {
         }
     }
 
-    func skipToUpcomingTrack(at index: Int) {
-        guard latestSnapshot.upcoming.indices.contains(index) else {
-            return
-        }
-        player.skip(to: index)
-    }
-
     func removeTracksFromQueue(trackIDs: Set<String>) {
         guard !trackIDs.isEmpty else { return }
 
@@ -426,12 +419,6 @@ final class PlaybackController: ObservableObject {
             return .playlistUnavailable
         }
         return toggleLiked(track)
-    }
-
-    // MARK: - Media Center
-
-    func deliverLyricLine(_ line: String?) {
-        player.updateNowPlayingSubtitle(line)
     }
 
     // MARK: - Cache

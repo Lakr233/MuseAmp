@@ -20,7 +20,13 @@ final class ScreenAwakeCoordinator {
         case syncSession
     }
 
+    private struct OwnedHold: Hashable {
+        let reason: Reason
+        let owner: ObjectIdentifier
+    }
+
     private var holdCounts: [Reason: Int] = [:]
+    private var ownedHolds: Set<OwnedHold> = []
     private nonisolated(unsafe) var didBecomeActiveObserver: NSObjectProtocol?
 
     init() {
@@ -39,6 +45,10 @@ final class ScreenAwakeCoordinator {
         if let didBecomeActiveObserver {
             NotificationCenter.default.removeObserver(didBecomeActiveObserver)
         }
+    }
+
+    func isHolding(_ reason: Reason) -> Bool {
+        holdCounts[reason] != nil
     }
 
     func setActive(_ active: Bool, for reason: Reason) {
@@ -63,6 +73,26 @@ final class ScreenAwakeCoordinator {
         holdCounts[reason] = count > 1 ? count - 1 : nil
         logCurrentHolds(after: "release \(reason.rawValue)")
         applyCurrentState()
+    }
+
+    /// Holds `reason` at most once per owner. Appearance callbacks are not
+    /// balanced (a cancelled swipe-back or sheet drag calls
+    /// `viewWillAppear` again without a `viewDidDisappear`), so screens use
+    /// this instead of counting their own acquires.
+    func acquire(_ reason: Reason, owner: AnyObject) {
+        let hold = OwnedHold(reason: reason, owner: ObjectIdentifier(owner))
+        guard ownedHolds.insert(hold).inserted else {
+            return
+        }
+        acquire(reason)
+    }
+
+    func release(_ reason: Reason, owner: AnyObject) {
+        let hold = OwnedHold(reason: reason, owner: ObjectIdentifier(owner))
+        guard ownedHolds.remove(hold) != nil else {
+            return
+        }
+        release(reason)
     }
 
     private func logCurrentHolds(after action: String) {

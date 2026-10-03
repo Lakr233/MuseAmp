@@ -62,6 +62,7 @@ final class SyncServerStatusViewController: StackScrollController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
+        scrollView.applySoftEdgeEffects()
         session.onSenderProgressChanged = { [weak self] progress in
             self?.applySenderProgress(progress)
         }
@@ -71,18 +72,19 @@ final class SyncServerStatusViewController: StackScrollController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        environment.screenAwakeCoordinator.acquire(.syncSession)
+        environment.screenAwakeCoordinator.acquire(.syncSession, owner: self)
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        environment.screenAwakeCoordinator.release(.syncSession)
-        if isMovingFromParent {
-            startupTask?.cancel()
-            startupTask = nil
-            Task {
-                await session.stopSender()
-            }
+        environment.screenAwakeCoordinator.release(.syncSession, owner: self)
+        guard isLeavingNavigationStack else {
+            return
+        }
+        startupTask?.cancel()
+        startupTask = nil
+        Task {
+            await session.stopSender()
         }
     }
 
@@ -138,7 +140,9 @@ final class SyncServerStatusViewController: StackScrollController {
                 addInfoView(
                     title: "Skipped",
                     value: "\(session.preparedSkippedItems.count)",
-                    description: String(localized: "These songs could not be read from local storage and were left out."),
+                    description: session.preparedSkippedItems.areAllSourcesUnreadable
+                        ? String(localized: "These songs could not be read from local storage and were left out.")
+                        : String(localized: "These songs could not be prepared and were left out."),
                 )
             }
 
@@ -188,14 +192,18 @@ private extension SyncServerStatusViewController {
                 try await session.prepareSender(
                     tracks: tracks,
                     progress: { [weak self] current, total in
-                        guard let self else {
+                        guard let self, case .preparing = state else {
                             return
                         }
                         state = .preparing(current: current, total: total)
                         refreshUI()
                     },
                 )
+                // A cancel that lands after the last song, or while the
+                // listener starts, must not leave a server advertising.
+                try Task.checkCancellation()
                 _ = try await session.startSender()
+                try Task.checkCancellation()
                 guard let connectionInfo = session.currentConnectionInfo else {
                     throw SyncTransferError.invalidServerResponse
                 }
@@ -210,8 +218,12 @@ private extension SyncServerStatusViewController {
                 refreshUI()
                 presentSkippedNoticeIfNeeded()
             } catch {
-                AppLog.error(self, "startSession failed: \(error.localizedDescription)")
                 await session.stopSender()
+                guard !Task.isCancelled else {
+                    AppLog.info(self, "startSession cancelled error=\(error.localizedDescription)")
+                    return
+                }
+                AppLog.error(self, "startSession failed: \(error.localizedDescription)")
                 presentFailureAndPop(message: error.localizedDescription)
             }
         }
@@ -225,7 +237,9 @@ private extension SyncServerStatusViewController {
         let alert = AlertViewController(
             title: String(localized: "Some Songs Skipped"),
             message: String(
-                format: String(localized: "%1$lld of %2$lld songs could not be read and were excluded from this transfer."),
+                format: skippedItems.areAllSourcesUnreadable
+                    ? String(localized: "%1$lld of %2$lld songs could not be read and were excluded from this transfer.")
+                    : String(localized: "%1$lld of %2$lld songs could not be prepared and were excluded from this transfer."),
                 skippedItems.count,
                 skippedItems.count + session.preparedSongCount,
             ),
@@ -256,7 +270,7 @@ private extension SyncServerStatusViewController {
         ConfigurableObject(
             icon: "exclamationmark.triangle",
             title: "View Skipped Songs",
-            explain: "Songs that could not be read and were left out of this transfer.",
+            explain: "Songs that were left out of this transfer.",
             ephemeralAnnotation: .action { [weak self] _ in
                 await MainActor.run { self?.presentSkippedSongsList() }
             },
@@ -344,7 +358,9 @@ private extension SyncServerStatusViewController {
             addInfoView(
                 title: "Status",
                 value: String(localized: "Sender Complete"),
-                description: String(localized: "All prepared tracks were served successfully to the receiving device."),
+                description: progress.isMissingTracks
+                    ? String(localized: "The receiving device finished, but some songs were not delivered.")
+                    : String(localized: "All prepared tracks were served successfully to the receiving device."),
             )
             addInfoView(
                 title: "Progress",

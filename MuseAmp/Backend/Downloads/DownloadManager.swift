@@ -69,7 +69,9 @@ final class DownloadManager {
 
     let tasksPublisher = CurrentValueSubject<[ActiveDownloadTask], Never>([])
     var isPausedAll = false
-    var isPausedForNetwork = false
+    var isPausedForNetwork: Bool {
+        !networkMonitor.isWiFi
+    }
 
     var maxConcurrent: Int {
         AppPreferences.maxConcurrentDownloads
@@ -271,9 +273,6 @@ final class DownloadManager {
             }
         }
         AppLog.info(self, "Resumed \(resumedCount) paused tasks")
-        if networkMonitor.isWiFi {
-            isPausedForNetwork = false
-        }
         publishSnapshot()
         processNextIfNeeded()
     }

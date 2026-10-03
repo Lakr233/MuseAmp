@@ -14,10 +14,37 @@ import MuseAmpPlayerKit
 import UIKit
 
 extension TabBarController {
+    /// While the shell is detached (a relaxed or Catalyst layout is
+    /// installed) it neither builds nor updates its Now Playing, so only the
+    /// active layout follows playback and lyrics.
+    private var hostsNowPlayingPopup: Bool {
+        parent != nil
+    }
+
     func prepareNowPlayingPopupContentViewController() {
-        let contentViewController = makeNowPlayingPopupContentViewController()
+        guard let contentViewController = makeNowPlayingPopupContentViewController() else { return }
         contentViewController.loadViewIfNeeded()
         updateNowPlayingPopupItem(using: environment.playbackController.snapshot)
+    }
+
+    override func willMove(toParent parent: UIViewController?) {
+        // Dismiss while the bar is still in the window: LNPopupController
+        // defers a dismissal requested off-window until the view returns,
+        // and keeps the content controller alive until then.
+        if parent == nil, popupPresentationState != .barHidden {
+            dismissPopupBar(animated: false)
+        }
+        super.willMove(toParent: parent)
+    }
+
+    override func didMove(toParent parent: UIViewController?) {
+        super.didMove(toParent: parent)
+        guard parent != nil else {
+            nowPlayingPopupContentViewController = nil
+            return
+        }
+        prepareNowPlayingPopupContentViewController()
+        syncPopupPresentation(with: environment.playbackController.snapshot)
     }
 
     func configurePopupBar() {
@@ -78,6 +105,7 @@ extension TabBarController {
     }
 
     private func syncPopupPresentation(with snapshot: PlaybackSnapshot) {
+        guard hostsNowPlayingPopup else { return }
         guard !isPagingCooldownActive else {
             updatePopupProgress(using: snapshot)
             return
@@ -100,7 +128,7 @@ extension TabBarController {
     }
 
     private func ensureNowPlayingPopupPresented(openFullscreen: Bool, animated: Bool) {
-        let contentViewController = nowPlayingPopupContentViewController ?? makeNowPlayingPopupContentViewController()
+        guard let contentViewController = makeNowPlayingPopupContentViewController() else { return }
         updateNowPlayingPopupItem(using: environment.playbackController.snapshot)
 
         if popupPresentationState == .barHidden || popupContent !== contentViewController {
@@ -114,10 +142,11 @@ extension TabBarController {
         openPopup(animated: animated)
     }
 
-    private func makeNowPlayingPopupContentViewController() -> NowPlayingCompactController {
+    private func makeNowPlayingPopupContentViewController() -> NowPlayingCompactController? {
         if let nowPlayingPopupContentViewController {
             return nowPlayingPopupContentViewController
         }
+        guard hostsNowPlayingPopup else { return nil }
 
         let controller = NowPlayingCompactController(environment: environment)
         controller.title = String(localized: "Now Playing")
@@ -126,6 +155,7 @@ extension TabBarController {
     }
 
     func updateNowPlayingPopupItem(using snapshot: PlaybackSnapshot) {
+        guard hostsNowPlayingPopup else { return }
         _ = makeNowPlayingPopupContentViewController()
 
         let popupItem: LNPopupItem

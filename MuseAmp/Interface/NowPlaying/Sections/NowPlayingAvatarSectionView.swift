@@ -5,8 +5,6 @@ import UIKit
 @MainActor
 class NowPlayingAvatarSectionView: UIView {
     private let artworkView: NowPlayingArtworkImageView
-    private var displayedArtworkURL: URL?
-    private var cancellables = Set<AnyCancellable>()
 
     var onArtworkLoaded: (URL, UIImage) -> Void = { _, _ in } {
         didSet {

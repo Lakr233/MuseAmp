@@ -18,12 +18,7 @@ extension NowPlayingControlIslandViewModel {
         return Presentation(
             content: content,
             backgroundSource: NowPlayingContentMapper.makeBackgroundSource(from: snapshot),
-            shouldAnimatePlaybackStateChange: previousContent.isPlaying != content.isPlaying,
             shouldAnimateTransition: previousContent.trackID != content.trackID,
         )
-    }
-
-    func content(for snapshot: PlaybackSnapshot) -> Content {
-        NowPlayingContentMapper.makeContent(from: snapshot)
     }
 }

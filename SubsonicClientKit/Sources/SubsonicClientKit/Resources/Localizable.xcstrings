@@ -17,38 +17,6 @@
         }
       }
     },
-    "Albums" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Albums"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "专辑"
-          }
-        }
-      }
-    },
-    "Artists" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Artists"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "艺人"
-          }
-        }
-      }
-    },
     "Failed to decode %@ from %@: %@" : {
       "localizations" : {
         "en" : {
@@ -93,22 +61,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "请求 %1$@ 失败：%2$@"
-          }
-        }
-      }
-    },
-    "Songs" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Songs"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "歌曲"
           }
         }
       }

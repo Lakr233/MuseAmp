@@ -42,8 +42,7 @@ extension NowPlayingLifecycleShellController where Self: UIViewController {
             return
         }
 
-        refreshControlIslandContent(animated: false)
-        refreshPlayingContent(animated: false)
+        applyCurrentPlaybackPresentation()
     }
 
     func updateLyricsScreenAwakeHold(

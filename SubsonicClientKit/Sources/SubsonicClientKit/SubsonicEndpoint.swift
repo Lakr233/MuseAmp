@@ -44,7 +44,7 @@ enum SubsonicEndpoint: Sendable {
     case song(id: String)
     case lyrics(id: String)
     case stream(id: String)
-    case coverArt(id: String, size: String?)
+    case coverArt(id: String)
 
     private static let apiVersion = "1.16.1"
     private static let clientName = "museamp"
@@ -63,8 +63,8 @@ enum SubsonicEndpoint: Sendable {
             "lyrics:\(id)"
         case let .stream(id):
             "stream:\(id)"
-        case let .coverArt(id, size):
-            "cover-art:\(id):\(size ?? "")"
+        case let .coverArt(id):
+            "cover-art:\(id)"
         }
     }
 
@@ -128,11 +128,11 @@ private extension SubsonicEndpoint {
     var requestQueryItems: [URLQueryItem] {
         switch self {
         case .ping:
-            return []
+            []
         case let .search(query, type, limit, offset):
             switch type {
             case .song:
-                return [
+                [
                     URLQueryItem(name: "query", value: query),
                     URLQueryItem(name: "songCount", value: "\(limit)"),
                     URLQueryItem(name: "songOffset", value: "\(offset)"),
@@ -140,7 +140,7 @@ private extension SubsonicEndpoint {
                     URLQueryItem(name: "artistCount", value: "0"),
                 ]
             case .album:
-                return [
+                [
                     URLQueryItem(name: "query", value: query),
                     URLQueryItem(name: "albumCount", value: "\(limit)"),
                     URLQueryItem(name: "albumOffset", value: "\(offset)"),
@@ -148,7 +148,7 @@ private extension SubsonicEndpoint {
                     URLQueryItem(name: "artistCount", value: "0"),
                 ]
             case .artist:
-                return [
+                [
                     URLQueryItem(name: "query", value: query),
                     URLQueryItem(name: "artistCount", value: "\(limit)"),
                     URLQueryItem(name: "artistOffset", value: "\(offset)"),
@@ -156,14 +156,8 @@ private extension SubsonicEndpoint {
                     URLQueryItem(name: "albumCount", value: "0"),
                 ]
             }
-        case let .album(id), let .song(id), let .lyrics(id), let .stream(id):
-            return [URLQueryItem(name: "id", value: id)]
-        case let .coverArt(id, size):
-            var items = [URLQueryItem(name: "id", value: id)]
-            if let size {
-                items.append(URLQueryItem(name: "size", value: size))
-            }
-            return items
+        case let .album(id), let .song(id), let .lyrics(id), let .stream(id), let .coverArt(id):
+            [URLQueryItem(name: "id", value: id)]
         }
     }
 }

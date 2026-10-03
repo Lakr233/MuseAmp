@@ -29,6 +29,7 @@ final class SyncReceiverViewController: StackScrollController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
+        scrollView.applySoftEdgeEffects()
 
         session.onDiscoveredDevicesChanged = { [weak self] _ in
             self?.refreshUI()
@@ -237,9 +238,12 @@ private extension SyncReceiverViewController {
     }
 
     func openTransferProgress(endpoint: SyncEndpoint, token: String) {
+        // Each transfer gets its own session, and with it its own download
+        // directory: leaving this screen, or starting another transfer, then
+        // never deletes files an earlier transfer has yet to import.
         navigationController?.pushViewController(
             SyncTransferProgressViewController(
-                session: session,
+                session: environment.makeSyncTransferSession(),
                 endpoint: endpoint,
                 token: token,
                 screenAwakeCoordinator: environment.screenAwakeCoordinator,

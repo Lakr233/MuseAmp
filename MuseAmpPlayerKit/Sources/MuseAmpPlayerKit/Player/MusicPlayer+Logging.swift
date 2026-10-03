@@ -8,10 +8,9 @@
 extension MusicPlayer {
     func log(
         _ level: MusicPlayerLogLevel,
-        component: String = "MusicPlayer",
         _ message: @autoclosure () -> String,
     ) {
-        logger.log(level: level, component: component, message: message())
+        logger.log(level: level, component: "MusicPlayer", message: message())
     }
 
     func describe(item: PlayerItem?) -> String {

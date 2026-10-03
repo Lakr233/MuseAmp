@@ -172,7 +172,7 @@ final class SongExportPresenter {
     }
 }
 
-private extension SongExportPresenter {
+extension SongExportPresenter {
     struct LyricsExportResult {
         let urls: [URL]
         let cleanupDirectory: URL
@@ -201,7 +201,10 @@ private extension SongExportPresenter {
             }
             guard let lyrics, !lyrics.isEmpty else { continue }
 
-            let baseName = sanitizeDisplayFileName(item.preferredFileBaseName, fallback: item.trackID)
+            let baseName = SyncPreparedTrackBuilder.fileSystemSafeBaseName(
+                item.preferredFileBaseName,
+                fallback: item.trackID,
+            )
             var fileName = "\(baseName).lrc"
             var suffix = 2
             while usedNames.contains(fileName.lowercased()) {
@@ -258,7 +261,9 @@ private extension SongExportPresenter {
         let alert = AlertViewController(
             title: String(localized: "Some Songs Skipped"),
             message: String(
-                format: String(localized: "%1$lld of %2$lld songs could not be read and won't be included."),
+                format: skippedItems.areAllSourcesUnreadable
+                    ? String(localized: "%1$lld of %2$lld songs could not be read and won't be included.")
+                    : String(localized: "%1$lld of %2$lld songs could not be prepared and won't be included."),
                 skippedItems.count,
                 totalCount,
             ),

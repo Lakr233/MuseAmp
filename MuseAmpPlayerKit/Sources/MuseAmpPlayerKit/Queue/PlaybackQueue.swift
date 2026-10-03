@@ -151,7 +151,7 @@ struct PlaybackQueue {
     }
 
     mutating func rewind(currentTime: TimeInterval) -> RewindResult {
-        guard currentIndex != nil else { return .restart }
+        guard let ci = currentIndex else { return .restart }
 
         if currentTime > 3.0 {
             return .restart
@@ -171,22 +171,16 @@ struct PlaybackQueue {
         }
 
         // Move current back to upcoming by decrementing currentIndex
-        if let ci = currentIndex, ci < order.count {
-            // Find position of lastPlayed in effectiveOrder
-            if let targetPos = order.firstIndex(of: lastPlayed) {
-                currentIndex = targetPos
-                return .previous(items[lastPlayed])
-            }
+        if ci < order.count, let targetPos = order.firstIndex(of: lastPlayed) {
+            currentIndex = targetPos
+            return .previous(items[lastPlayed])
         }
 
         // Fallback: insert at current position
         if shuffled {
-            if let ci = currentIndex {
-                shufflePermutation.insert(lastPlayed, at: ci)
-                // currentIndex stays the same, now pointing at the restored item
-            }
+            shufflePermutation.insert(lastPlayed, at: ci)
+            // currentIndex stays the same, now pointing at the restored item
         }
-        currentIndex = currentIndex ?? 0
         return .previous(items[lastPlayed])
     }
 
@@ -197,27 +191,35 @@ struct PlaybackQueue {
         let order = effectiveOrder
         guard actualIndex >= 0, actualIndex < order.count else { return nil }
 
-        // Mark current and skipped items as played
-        for i in ci ..< actualIndex {
-            if i < order.count {
-                playedIndices.append(order[i])
-            }
-        }
+        playedIndices.append(contentsOf: order[ci ..< actualIndex])
 
         currentIndex = actualIndex
         return nowPlaying
     }
 
+    /// Jumps to a position in `snapshot().orderedItems` (history, then the
+    /// current item, then upcoming), the indexing the queue UI shows. This is
+    /// not a position in `effectiveOrder`: a queue started mid-list keeps the
+    /// earlier items in `items` without showing them as history.
     mutating func jump(to queueIndex: Int) -> PlayerItem? {
-        let order = effectiveOrder
-        guard currentIndex != nil,
-              order.indices.contains(queueIndex)
-        else {
+        guard currentIndex != nil, queueIndex >= 0 else {
             return nil
         }
 
-        playedIndices = queueIndex > 0 ? Array(order.prefix(queueIndex)) : []
-        currentIndex = queueIndex
+        let historyCount = playedIndices.count
+        if queueIndex == historyCount {
+            return nowPlaying
+        }
+        if queueIndex > historyCount {
+            return skip(to: queueIndex - historyCount - 1)
+        }
+
+        let targetCanonical = playedIndices[queueIndex]
+        guard let targetPosition = effectiveOrder.firstIndex(of: targetCanonical) else {
+            return nil
+        }
+        playedIndices = Array(playedIndices.prefix(queueIndex))
+        currentIndex = targetPosition
         return nowPlaying
     }
 
@@ -252,25 +254,19 @@ struct PlaybackQueue {
         items.append(item)
 
         if shuffled {
-            let insertPos = insertionPosition(forUpcomingIndex: upcomingIndex)
-            shufflePermutation.insert(canonicalIndex, at: insertPos)
+            shufflePermutation.insert(canonicalIndex, at: insertionPosition(forUpcomingIndex: upcomingIndex))
+            return
         }
-        // When not shuffled, appending to items already puts it at the right
-        // canonical position — but we need to insert at the right spot.
-        // Since canonical order = effective order when not shuffled,
-        // we need to move the item from the end to the right position.
-        if !shuffled {
-            let targetCanonical = (currentIndex ?? -1) + 1 + upcomingIndex
-            let clampedTarget = min(max(targetCanonical, 0), items.count - 1)
-            if clampedTarget != canonicalIndex {
-                let removed = items.removeLast()
-                items.insert(removed, at: clampedTarget)
-                // Adjust playedIndices for shifted canonical indices
-                adjustPlayedIndicesAfterInsert(at: clampedTarget)
-                // Adjust currentIndex if needed
-                if let ci = currentIndex, clampedTarget <= ci {
-                    currentIndex = ci + 1
-                }
+
+        // Unshuffled, canonical order is play order: move the appended item into place.
+        let targetCanonical = (currentIndex ?? -1) + 1 + upcomingIndex
+        let clampedTarget = min(max(targetCanonical, 0), items.count - 1)
+        if clampedTarget != canonicalIndex {
+            let removed = items.removeLast()
+            items.insert(removed, at: clampedTarget)
+            adjustPlayedIndicesAfterInsert(at: clampedTarget)
+            if let ci = currentIndex, clampedTarget <= ci {
+                currentIndex = ci + 1
             }
         }
     }
@@ -431,7 +427,9 @@ struct PlaybackQueue {
 
         // Adjust playedIndices: remove references and shift down
         playedIndices = playedIndices.compactMap { idx in
-            if idx == canonicalIndex { return nil }
+            if idx == canonicalIndex {
+                return nil
+            }
             return idx > canonicalIndex ? idx - 1 : idx
         }
 
@@ -442,7 +440,9 @@ struct PlaybackQueue {
             // lookup points one past the real current item.
             let removedPosition = shufflePermutation.firstIndex(of: canonicalIndex)
             shufflePermutation = shufflePermutation.compactMap { idx in
-                if idx == canonicalIndex { return nil }
+                if idx == canonicalIndex {
+                    return nil
+                }
                 return idx > canonicalIndex ? idx - 1 : idx
             }
             if let ci = currentIndex {
@@ -456,13 +456,10 @@ struct PlaybackQueue {
         } else {
             if let ci = currentIndex, canonicalIndex < ci {
                 currentIndex = ci - 1
-            } else if let ci = currentIndex, canonicalIndex == ci {
-                // Shouldn't happen via upcoming removal, but handle gracefully
-                if ci < items.count {
-                    // currentIndex stays, now pointing at next item
-                } else {
-                    currentIndex = items.isEmpty ? nil : items.count - 1
-                }
+            } else if let ci = currentIndex, canonicalIndex == ci, ci >= items.count {
+                // Removing the current item is not reachable via upcoming removal. If it happens,
+                // currentIndex stays put (now the next item) and is clamped only when it fell off the end.
+                currentIndex = items.isEmpty ? nil : items.count - 1
             }
         }
     }
@@ -489,13 +486,5 @@ struct PlaybackQueue {
             }
             return idx
         }
-    }
-
-    private mutating func rebuildShufflePermutationIndices() {
-        // After removing items, canonical indices may have gaps.
-        // Rebuild mapping so indices are contiguous 0..<items.count.
-        // This is called after clearUpcoming which removes items.
-        let canonicalSet = Set(0 ..< items.count)
-        shufflePermutation = shufflePermutation.filter { canonicalSet.contains($0) }
     }
 }

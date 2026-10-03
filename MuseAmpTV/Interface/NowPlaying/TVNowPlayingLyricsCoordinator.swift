@@ -12,9 +12,8 @@ import Foundation
 @MainActor
 final class TVNowPlayingLyricsCoordinator {
     private let lyricsService: LyricsService
-    private let currentPlaybackTime: () -> TimeInterval
     private let shouldApplyLoadedLyrics: (String) -> Bool
-    private let updateLyricsView: (String?, Bool, TimeInterval) -> Void
+    private let updateLyricsView: (String?, Bool) -> Void
 
     private var lyricsTask: Task<Void, Never>?
     private var lyricsCache: [String: String] = [:]
@@ -22,12 +21,10 @@ final class TVNowPlayingLyricsCoordinator {
 
     init(
         lyricsService: LyricsService,
-        currentPlaybackTime: @escaping () -> TimeInterval,
         shouldApplyLoadedLyrics: @escaping (String) -> Bool,
-        updateLyricsView: @escaping (String?, Bool, TimeInterval) -> Void,
+        updateLyricsView: @escaping (String?, Bool) -> Void,
     ) {
         self.lyricsService = lyricsService
-        self.currentPlaybackTime = currentPlaybackTime
         self.shouldApplyLoadedLyrics = shouldApplyLoadedLyrics
         self.updateLyricsView = updateLyricsView
     }
@@ -40,49 +37,30 @@ final class TVNowPlayingLyricsCoordinator {
         lyricsTask?.cancel()
         lyricsTask = nil
         lyricsLoadingTrackID = nil
-        updateLyricsView(nil, false, currentPlaybackTime())
+        updateLyricsView(nil, false)
     }
 
     func loadLyrics(for trackID: String) {
-        if let lyrics = lyricsCache[trackID] {
+        if let lyrics = lyricsCache[trackID] ?? lyricsService.cachedLyrics(for: trackID) {
             lyricsLoadingTrackID = nil
-            updateLyricsView(nil, true, currentPlaybackTime())
+            lyricsCache[trackID] = lyrics
+            updateLyricsView(nil, true)
             lyricsTask = Task { @MainActor [weak self] in
                 guard let self else { return }
                 guard !Task.isCancelled else { return }
-                updateLyricsView(
-                    lyrics.isEmpty ? nil : lyrics,
-                    false,
-                    currentPlaybackTime(),
-                )
-            }
-            return
-        }
-
-        if let storedLyrics = lyricsService.cachedLyrics(for: trackID) {
-            lyricsLoadingTrackID = nil
-            lyricsCache[trackID] = storedLyrics
-            updateLyricsView(nil, true, currentPlaybackTime())
-            lyricsTask = Task { @MainActor [weak self] in
-                guard let self else { return }
-                guard !Task.isCancelled else { return }
-                updateLyricsView(
-                    storedLyrics.isEmpty ? nil : storedLyrics,
-                    false,
-                    currentPlaybackTime(),
-                )
+                updateLyricsView(lyrics.isEmpty ? nil : lyrics, false)
             }
             return
         }
 
         if lyricsLoadingTrackID == trackID {
-            updateLyricsView(nil, true, currentPlaybackTime())
+            updateLyricsView(nil, true)
             return
         }
 
         lyricsTask?.cancel()
         lyricsLoadingTrackID = trackID
-        updateLyricsView(nil, true, currentPlaybackTime())
+        updateLyricsView(nil, true)
 
         lyricsTask = Task { [weak self] in
             guard let self else { return }
@@ -97,11 +75,7 @@ final class TVNowPlayingLyricsCoordinator {
                     lyricsLoadingTrackID = nil
                     lyricsCache[trackID] = normalized
                     guard shouldApplyLoadedLyrics(trackID) else { return }
-                    updateLyricsView(
-                        normalized.isEmpty ? nil : normalized,
-                        false,
-                        currentPlaybackTime(),
-                    )
+                    updateLyricsView(normalized.isEmpty ? nil : normalized, false)
                     AppLog.info(self, "loadLyrics success trackID=\(trackID) length=\(normalized.count)")
                 }
             } catch {
@@ -110,7 +84,7 @@ final class TVNowPlayingLyricsCoordinator {
                     guard let self else { return }
                     lyricsLoadingTrackID = nil
                     guard shouldApplyLoadedLyrics(trackID) else { return }
-                    updateLyricsView(nil, false, currentPlaybackTime())
+                    updateLyricsView(nil, false)
                     AppLog.error(self, "loadLyrics failed trackID=\(trackID) error=\(error)")
                 }
             }

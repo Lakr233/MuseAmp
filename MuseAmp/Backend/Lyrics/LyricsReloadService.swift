@@ -37,17 +37,18 @@ final class LyricsReloadService {
     /// remote server. When fetched from the server and the track is downloaded, the new lyrics are
     /// re-embedded into the file on disk. Always persists to the on-disk cache and posts
     /// `.lyricsDidUpdate` on success.
+    ///
+    /// A failed or empty server reply never discards lyrics the track already has: the cached
+    /// lyrics stay, or the file's embedded lyrics are cached. A failed fetch still throws so the
+    /// caller can report it; an empty reply returns the kept lyrics.
     @discardableResult
     func reloadLyrics(for trackID: String, forceRemoteFetch: Bool = false) async throws -> String {
         let track = database.trackOrNil(byID: trackID)
         let fileURL = track.map { paths.absoluteAudioURL(for: $0.relativePath) }
-        let fileExists = fileURL.map { FileManager.default.isReadableFile(atPath: $0.path) } ?? false
 
         if !forceRemoteFetch,
-           fileExists,
            let fileURL,
-           let embedded = await extractEmbeddedLyrics(fromFileAt: fileURL),
-           !embedded.isEmpty
+           let embedded = await EmbeddedLyricsReader.lyrics(fromFileAt: fileURL)
         {
             try lyricsCacheStore.saveLyrics(embedded, for: trackID)
             postLyricsDidUpdate(trackID: trackID)
@@ -59,11 +60,32 @@ final class LyricsReloadService {
         }
 
         AppLog.info(self, "reloadLyrics source=network-start trackID=\(trackID)")
-        let fetched = try await apiClient.lyrics(id: trackID)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let fetched: String
+        do {
+            fetched = try await apiClient.lyrics(id: trackID, bypassCache: true)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+        } catch {
+            _ = await keepLocalLyrics(for: trackID, fileURL: fileURL)
+            throw error
+        }
+
+        guard !fetched.isEmpty else {
+            if let kept = await keepLocalLyrics(for: trackID, fileURL: fileURL) {
+                AppLog.info(
+                    self,
+                    "reloadLyrics source=network-empty kept local lyrics trackID=\(trackID) length=\(kept.count)",
+                )
+                return kept
+            }
+            try lyricsCacheStore.saveLyrics(fetched, for: trackID)
+            postLyricsDidUpdate(trackID: trackID)
+            AppLog.info(self, "reloadLyrics source=network-empty trackID=\(trackID)")
+            return fetched
+        }
+
         try lyricsCacheStore.saveLyrics(fetched, for: trackID)
 
-        if fileExists, let fileURL, let track {
+        if let fileURL, let track, FileManager.default.isReadableFile(atPath: fileURL.path) {
             await embedLyricsIfPossible(fetched, into: fileURL, track: track)
         }
 
@@ -75,6 +97,8 @@ final class LyricsReloadService {
         return fetched
     }
 
+    /// Re-fetches lyrics for every track. Tracks whose fetch fails keep their current lyrics
+    /// (see `reloadLyrics`); cache entries for tracks no longer in the library are removed.
     func rebuildAllLyricsIndex(
         progressCallback: (@Sendable (_ current: Int, _ total: Int, _ trackTitle: String) -> Void)? = nil,
     ) async throws -> RebuildAllLyricsIndexResult {
@@ -92,7 +116,7 @@ final class LyricsReloadService {
             }
 
         AppLog.info(self, "rebuildAllLyricsIndex started total=\(tracks.count)")
-        try lyricsCacheStore.removeAllLyrics()
+        removeOrphanedLyrics(keeping: tracks.map(\.trackID))
 
         var tracksSucceeded = 0
         var tracksFailed = 0
@@ -122,29 +146,45 @@ final class LyricsReloadService {
         )
     }
 
-    private func extractEmbeddedLyrics(fromFileAt url: URL) async -> String? {
-        let asset = AVURLAsset(url: url)
-        guard let items = try? await AVMetadataHelper.collectMetadataItems(from: asset) else {
+    /// Lyrics the track already has after a failed or empty fetch: its non-empty cached lyrics,
+    /// or else its embedded lyrics, which are cached so the lyric page and search find them.
+    private func keepLocalLyrics(for trackID: String, fileURL: URL?) async -> String? {
+        if let cached = lyricsCacheStore.lyrics(for: trackID),
+           !cached.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        {
+            return cached
+        }
+        guard let fileURL, let embedded = await EmbeddedLyricsReader.lyrics(fromFileAt: fileURL) else {
             return nil
         }
-        for item in items {
-            let isLyrics = item.identifier == .iTunesMetadataLyrics
-                || AVMetadataHelper.matches(item, tokens: ["lyrics", "lyr"])
-            guard isLyrics else { continue }
-            if let value = try? await item.load(.stringValue)?
-                .trimmingCharacters(in: .whitespacesAndNewlines),
-                !value.isEmpty
-            {
-                return value
-            }
-            if let value = try? await item.load(.value) as? String {
-                let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !trimmed.isEmpty {
-                    return trimmed
-                }
+        do {
+            try lyricsCacheStore.saveLyrics(embedded, for: trackID)
+        } catch {
+            AppLog.error(self, "keepLocalLyrics cache write failed trackID=\(trackID) error=\(error.localizedDescription)")
+            return nil
+        }
+        postLyricsDidUpdate(trackID: trackID)
+        AppLog.info(self, "keepLocalLyrics source=embedded trackID=\(trackID) length=\(embedded.count)")
+        return embedded
+    }
+
+    private func removeOrphanedLyrics(keeping trackIDs: [String]) {
+        let directory = paths.lyricsCacheDirectory
+        let keptFileNames = Set(trackIDs.map { paths.lyricsCacheURL(for: $0).lastPathComponent })
+        let fileNames: [String]
+        do {
+            fileNames = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+        } catch {
+            AppLog.warning(self, "removeOrphanedLyrics listing failed error=\(error.localizedDescription)")
+            return
+        }
+        for fileName in fileNames where !keptFileNames.contains(fileName) {
+            do {
+                try FileManager.default.removeItem(at: directory.appendingPathComponent(fileName))
+            } catch {
+                AppLog.error(self, "removeOrphanedLyrics remove failed file=\(fileName) error=\(error.localizedDescription)")
             }
         }
-        return nil
     }
 
     private func embedLyricsIfPossible(

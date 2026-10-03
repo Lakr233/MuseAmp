@@ -12,13 +12,7 @@
 
     @MainActor
     final class ArtworkLoader {
-        private var currentItemID: String?
-
-        func loadArtwork(url: URL, for itemID: String) async -> MPMediaItemArtwork? {
-            currentItemID = itemID
-
-            let capturedID = itemID
-
+        func loadArtwork(url: URL) async -> MPMediaItemArtwork? {
             let image: UIImage? = await withCheckedContinuation { continuation in
                 KingfisherManager.shared.retrieveImage(with: url) { result in
                     switch result {
@@ -30,12 +24,8 @@
                 }
             }
 
-            guard currentItemID == capturedID, let image else { return nil }
+            guard let image else { return nil }
             return Self.makeArtwork(from: image)
-        }
-
-        func cancelCurrent() {
-            currentItemID = nil
         }
 
         private nonisolated static func makeArtwork(from image: UIImage) -> MPMediaItemArtwork {
@@ -48,10 +38,8 @@
 
     @MainActor
     final class ArtworkLoader {
-        func loadArtwork(url _: URL, for _: String) async -> Any? {
+        func loadArtwork(url _: URL) async -> Any? {
             nil
         }
-
-        func cancelCurrent() {}
     }
 #endif

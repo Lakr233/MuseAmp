@@ -12,30 +12,19 @@ import UIKit
 final class TVSessionStateAdapter {
     private enum TransferPhase {
         case waiting
-        case connecting(deviceName: String)
+        case connecting
         case receiving(
             sourceDeviceName: String,
-            playlistName: String,
             receivedTrackCount: Int,
             totalTrackCount: Int,
             currentTrackTitle: String?,
-            progress: Double,
         )
-        case importing(sourceDeviceName: String, playlistName: String, currentTrackCount: Int, totalTrackCount: Int)
-        case completed(
-            sourceDeviceName: String,
-            playlistName: String,
-            importedTrackCount: Int,
-            skippedTrackCount: Int,
-            failedTrackCount: Int,
-        )
+        case importing(sourceDeviceName: String, currentTrackCount: Int, totalTrackCount: Int)
         case disconnected(
-            sourceDeviceName: String,
-            playlistName: String,
+            playlistSession: SyncPlaylistSession,
             endpoint: SyncEndpoint,
             token: String,
             manifest: SyncManifest,
-            completedEntryTrackIDs: Set<String>,
             downloadedURLs: [URL],
         )
         case failed(String)
@@ -67,12 +56,14 @@ final class TVSessionStateAdapter {
                 self?.notifyStateChanged()
             }
         }
-        startReceiverAvailability()
+        syncReceiverAvailability()
         notifyStateChanged()
     }
 
     var isDisconnectedTransfer: Bool {
-        if case .disconnected = transferPhase { return true }
+        if case .disconnected = transferPhase {
+            return true
+        }
         return false
     }
 
@@ -83,31 +74,49 @@ final class TVSessionStateAdapter {
         default:
             break
         }
-        startReceiverAvailability()
+        syncReceiverAvailability()
         notifyStateChanged()
     }
 
     func retryTransfer() {
         guard case let .disconnected(
-            sourceDeviceName, _, endpoint, token, manifest, completedIDs, previousURLs,
+            playlistSession, endpoint, token, manifest, previousURLs,
         ) = transferPhase else { return }
 
         transferTask?.cancel()
         transferTask = Task { @MainActor [weak self] in
             guard let self else { return }
             await resumeTransfer(
-                sourceDeviceName: sourceDeviceName,
+                playlistSession: playlistSession,
                 endpoint: endpoint,
                 token: token,
                 manifest: manifest,
-                completedEntryTrackIDs: completedIDs,
                 previousDownloadedURLs: previousURLs,
             )
         }
     }
 
     func syncReceiverAvailability() {
-        startReceiverAvailability()
+        let shouldAdvertiseReceiver: Bool = switch transferPhase {
+        case .connecting, .receiving, .importing, .disconnected:
+            false
+        case .waiting, .failed:
+            context.currentSessionManifest == nil
+        }
+
+        guard shouldAdvertiseReceiver else {
+            receiverAdvertiser.stop()
+            context.syncTransferSession.stopBrowsing()
+            return
+        }
+
+        receiverAdvertiser.start(
+            serviceName: context.receiverHandshakeInfo.serviceName,
+            deviceName: context.receiverHandshakeInfo.deviceName,
+            port: 1,
+            role: .receiver,
+        )
+        context.syncTransferSession.startBrowsing()
     }
 
     var sessionState: AMTVLibrarySessionState {
@@ -115,77 +124,59 @@ final class TVSessionStateAdapter {
         let snapshot = context.playbackController.snapshot
 
         if snapshot.currentTrack != nil {
-            return .playing(trackCount: max(trackCount, snapshot.queue.count))
+            return .playing
         }
 
         switch transferPhase {
-        case let .receiving(_, _, receivedTrackCount, totalTrackCount, _, _):
-            return .receivingTracks(count: receivedTrackCount, totalCount: totalTrackCount)
-        case let .importing(_, _, currentTrackCount, totalTrackCount):
-            return .receivingTracks(count: currentTrackCount, totalCount: totalTrackCount)
+        case .receiving, .importing:
+            return .receivingTracks
         case let .failed(message):
             if trackCount == 0 {
                 return .failed(message: message)
             }
-        case let .disconnected(_, playlistName, _, _, _, _, _):
+        case let .disconnected(playlistSession, _, _, _, _):
             if trackCount == 0 {
-                return .failed(message: String(localized: "Connection lost while receiving \"\(playlistName)\"."))
+                return .failed(
+                    message: String(localized: "Connection lost while receiving \"\(playlistSession.playlistName)\"."),
+                )
             }
-        case .waiting, .connecting, .completed:
+        case .waiting, .connecting:
             break
         }
 
         if trackCount > 0 {
-            return .playing(trackCount: trackCount)
+            return .playing
         }
         return .awaitingUpload
     }
 
     var uploadWaitingContent: AMTVUploadWaitingContent {
-        if case let .connecting(deviceName) = transferPhase {
-            return AMTVUploadWaitingContent(
-                title: String(localized: "Connecting to Sender"),
-                message: String(localized: "Authenticating with the selected iPhone sender and preparing the transfer manifest for this Apple TV session."),
-                deviceName: context.receiverHandshakeInfo.deviceName,
-                connectionCodeTitle: String(localized: "Selected Sender"),
-                connectionCode: deviceName,
-                qrPayload: receiverHandshakePayload(),
-            )
+        let message = if case .connecting = transferPhase {
+            String(localized: "Authenticating with the selected iPhone sender and preparing the transfer manifest for this Apple TV session.")
+        } else {
+            String(localized: "On an iPhone with Muse Amp installed, use the system camera to scan the QR code displayed on this Apple TV, then select the songs to transfer.")
         }
-
-        return AMTVUploadWaitingContent(
-            title: String(localized: "Awaiting Upload"),
-            message: String(localized: "On an iPhone with Muse Amp installed, use the system camera to scan the QR code displayed on this Apple TV, then select the songs to transfer."),
-            deviceName: context.receiverHandshakeInfo.deviceName,
-            connectionCodeTitle: nil,
-            connectionCode: nil,
-            qrPayload: receiverHandshakePayload(),
-        )
+        return AMTVUploadWaitingContent(message: message, qrPayload: receiverHandshakePayload())
     }
 
     var receivingTracksContent: AMTVReceivingTracksContent? {
         switch transferPhase {
-        case let .receiving(sourceDeviceName, playlistName, receivedTrackCount, totalTrackCount, currentTrackTitle, progress):
-            return AMTVReceivingTracksContent(
-                title: String(localized: "Receiving Playlist \"\(playlistName)\""),
+        case let .receiving(sourceDeviceName, receivedTrackCount, totalTrackCount, currentTrackTitle):
+            AMTVReceivingTracksContent(
                 sourceDeviceName: sourceDeviceName,
                 receivedTrackCount: receivedTrackCount,
                 totalTrackCount: totalTrackCount,
                 currentTrackTitle: currentTrackTitle,
-                progress: progress,
             )
-        case let .importing(sourceDeviceName, playlistName, currentTrackCount, totalTrackCount):
-            let progress = totalTrackCount > 0 ? Double(currentTrackCount) / Double(totalTrackCount) : 1
-            return AMTVReceivingTracksContent(
-                title: String(localized: "Finishing Playlist \"\(playlistName)\""),
+        case let .importing(sourceDeviceName, currentTrackCount, totalTrackCount):
+            AMTVReceivingTracksContent(
                 sourceDeviceName: sourceDeviceName,
                 receivedTrackCount: currentTrackCount,
                 totalTrackCount: totalTrackCount,
                 currentTrackTitle: String(localized: "Saving playlist session"),
-                progress: progress,
             )
-        case .waiting, .connecting, .completed, .disconnected, .failed:
-            return nil
+        case .waiting, .connecting, .disconnected, .failed:
+            nil
         }
     }
 
@@ -197,20 +188,6 @@ final class TVSessionStateAdapter {
             }
             let endpoints = [device.preferredEndpoint].compactMap(\.self) + device.fallbackEndpoints
             await runTransfer(sourceDeviceName: device.deviceName, endpoints: endpoints, password: password)
-        }
-    }
-
-    func connect(endpoint: SyncEndpoint, password: String) {
-        transferTask?.cancel()
-        transferTask = Task { @MainActor [weak self] in
-            guard let self else {
-                return
-            }
-            await runTransfer(
-                sourceDeviceName: endpoint.displayString,
-                endpoints: [endpoint],
-                password: password,
-            )
         }
     }
 
@@ -227,7 +204,7 @@ final class TVSessionStateAdapter {
             }
             await context.syncTransferSession.stopAll()
             transferPhase = .waiting
-            startReceiverAvailability()
+            syncReceiverAvailability()
             notifyStateChanged()
         }
     }
@@ -240,7 +217,7 @@ final class TVSessionStateAdapter {
             }
             await context.clearSessionLibrary()
             transferPhase = .waiting
-            startReceiverAvailability()
+            syncReceiverAvailability()
             notifyStateChanged()
         }
     }
@@ -252,22 +229,18 @@ private extension TVSessionStateAdapter {
         endpoints: [SyncEndpoint],
         password: String,
     ) async {
-        transferPhase = .connecting(deviceName: sourceDeviceName)
+        transferPhase = .connecting
         receiverAdvertiser.stop()
         notifyStateChanged()
 
         let session = context.syncTransferSession
         guard !endpoints.isEmpty else {
-            transferPhase = .failed(
-                SyncTransferError.noResolvableEndpoint.errorDescription
-                    ?? String(localized: "No reachable sender was available."),
-            )
+            transferPhase = .failed(SyncTransferError.noResolvableEndpoint.localizedDescription)
             notifyStateChanged()
             return
         }
 
-        var lastErrorMessage = SyncTransferError.noResolvableEndpoint.errorDescription
-            ?? String(localized: "No reachable sender was available.")
+        var lastErrorMessage = SyncTransferError.noResolvableEndpoint.localizedDescription
 
         for endpoint in endpoints {
             if Task.isCancelled {
@@ -294,7 +267,6 @@ private extension TVSessionStateAdapter {
 
         onConnectResult(false, lastErrorMessage)
         session.stopReceiver()
-        startReceiverAvailability()
         transferPhase = .failed(lastErrorMessage)
         notifyStateChanged()
     }
@@ -331,32 +303,28 @@ private extension TVSessionStateAdapter {
             )
             guard didSaveSession else {
                 let message = context.takePendingSessionAlertMessage()
-                    ?? SyncTransferError.invalidPlaylistSession.errorDescription
-                    ?? String(localized: "The transferred playlist could not be saved.")
+                    ?? SyncTransferError.invalidPlaylistSession.localizedDescription
                 AppLog.error(self, "receiveTransfer completeSession failed (no missing) message=\(message)")
                 transferPhase = .failed(message)
-                startReceiverAvailability()
+                syncReceiverAvailability()
                 notifyStateChanged()
                 return
             }
-            transferPhase = .completed(
-                sourceDeviceName: manifest.deviceName,
-                playlistName: playlistSession.playlistName,
-                importedTrackCount: 0,
-                skippedTrackCount: manifest.entries.count,
-                failedTrackCount: 0,
-            )
+            transferPhase = .waiting
             notifyStateChanged()
+            await session.reportTransferCompletion(
+                endpoint: endpoint,
+                token: token,
+                alreadyInLibraryTrackCount: manifest.entries.count,
+            )
             return
         }
 
         transferPhase = .receiving(
             sourceDeviceName: manifest.deviceName,
-            playlistName: playlistSession.playlistName,
             receivedTrackCount: 0,
             totalTrackCount: missingEntries.count,
             currentTrackTitle: nil,
-            progress: 0,
         )
         notifyStateChanged()
 
@@ -366,21 +334,15 @@ private extension TVSessionStateAdapter {
                 endpoint: endpoint,
                 token: token,
                 entries: missingEntries,
-                progress: { [weak self] current, total, entry, fractionCompleted in
+                progress: { [weak self] current, total, entry, _ in
                     guard let self else {
                         return
                     }
-                    let completed = max(current - 1, 0)
-                    let progress = total > 0
-                        ? (Double(completed) + fractionCompleted) / Double(total)
-                        : fractionCompleted
                     transferPhase = .receiving(
                         sourceDeviceName: manifest.deviceName,
-                        playlistName: playlistSession.playlistName,
                         receivedTrackCount: current,
                         totalTrackCount: total,
                         currentTrackTitle: String(localized: "\(entry.artistName) - \(entry.title)"),
-                        progress: progress,
                     )
                     notifyStateChanged()
                 },
@@ -401,108 +363,41 @@ private extension TVSessionStateAdapter {
         }
 
         let downloadFailureCount = missingEntries.count - downloadedURLs.count
-        if downloadFailureCount > 3,
-           missingEntries.count > 0,
-           Double(downloadFailureCount) / Double(missingEntries.count) > 0.5
-        {
-            let completedIDs = Set(downloadedURLs.compactMap { url -> String? in
-                url.deletingPathExtension().lastPathComponent
-            })
+        if isLikelyDisconnect(failureCount: downloadFailureCount, requestedCount: missingEntries.count) {
             AppLog.warning(
                 self,
                 "receiveTransfer disconnect detected failures=\(downloadFailureCount)/\(missingEntries.count), offering retry",
             )
             transferPhase = .disconnected(
-                sourceDeviceName: manifest.deviceName,
-                playlistName: playlistSession.playlistName,
+                playlistSession: playlistSession,
                 endpoint: endpoint,
                 token: token,
                 manifest: manifest,
-                completedEntryTrackIDs: completedIDs,
                 downloadedURLs: downloadedURLs,
             )
             notifyStateChanged()
             return
         }
 
-        transferPhase = .importing(
-            sourceDeviceName: manifest.deviceName,
-            playlistName: playlistSession.playlistName,
-            currentTrackCount: 0,
-            totalTrackCount: downloadedURLs.count,
+        await importAndComplete(
+            session: session,
+            endpoint: endpoint,
+            token: token,
+            manifest: manifest,
+            playlistSession: playlistSession,
+            missingEntries: missingEntries,
+            downloadedURLs: downloadedURLs,
         )
-        notifyStateChanged()
-
-        let importResult = await session.importDownloadedFiles(
-            downloadedURLs,
-            progress: { [weak self] current, total in
-                guard let self else {
-                    return
-                }
-                transferPhase = .importing(
-                    sourceDeviceName: manifest.deviceName,
-                    playlistName: playlistSession.playlistName,
-                    currentTrackCount: current,
-                    totalTrackCount: total,
-                )
-                notifyStateChanged()
-            },
-        )
-
-        let downloadFailures = max(missingEntries.count - downloadedURLs.count, 0)
-        let failedTrackCount = importResult.errors + importResult.noMetadata + downloadFailures
-        AppLog.info(
-            self,
-            "receiveTransfer importDone succeeded=\(importResult.succeeded) duplicates=\(importResult.duplicates) errors=\(importResult.errors) noMetadata=\(importResult.noMetadata) downloadFailures=\(downloadFailures)",
-        )
-
-        session.stopReceiver()
-        AppLog.info(self, "receiveTransfer saving playlist session id=\(playlistSession.sessionID) playlist='\(sanitizedLogText(playlistSession.playlistName))'")
-        let didSaveSession = await context.completeTransferredPlaylistSession(
-            from: manifest,
-            autoPlay: true,
-        )
-        guard didSaveSession else {
-            let message = context.takePendingSessionAlertMessage()
-                ?? SyncTransferError.invalidPlaylistSession.errorDescription
-                ?? String(localized: "The transferred playlist could not be saved.")
-            AppLog.error(self, "receiveTransfer completeSession failed message=\(message)")
-            transferPhase = .failed(message)
-            startReceiverAvailability()
-            notifyStateChanged()
-            return
-        }
-        AppLog.info(
-            self,
-            "receiveTransfer complete imported=\(importResult.succeeded) skipped=\(importResult.duplicates) failed=\(failedTrackCount)",
-        )
-        transferPhase = .completed(
-            sourceDeviceName: manifest.deviceName,
-            playlistName: playlistSession.playlistName,
-            importedTrackCount: importResult.succeeded,
-            skippedTrackCount: importResult.duplicates,
-            failedTrackCount: failedTrackCount,
-        )
-        notifyStateChanged()
     }
 
     func resumeTransfer(
-        sourceDeviceName: String,
+        playlistSession: SyncPlaylistSession,
         endpoint: SyncEndpoint,
         token: String,
         manifest: SyncManifest,
-        completedEntryTrackIDs: Set<String>,
         previousDownloadedURLs: [URL],
     ) async {
-        guard let playlistSession = manifest.session else {
-            transferPhase = .failed(
-                SyncTransferError.invalidPlaylistSession.errorDescription
-                    ?? String(localized: "The transferred playlist could not be saved."),
-            )
-            notifyStateChanged()
-            return
-        }
-
+        let completedEntryTrackIDs = Set(previousDownloadedURLs.map { $0.deletingPathExtension().lastPathComponent })
         let session = context.syncTransferSession
         let missingEntries = await session.missingEntries(in: manifest)
         let remainingEntries = missingEntries.filter {
@@ -513,6 +408,8 @@ private extension TVSessionStateAdapter {
             AppLog.info(self, "resumeTransfer all entries already downloaded, proceeding to import")
             await importAndComplete(
                 session: session,
+                endpoint: endpoint,
+                token: token,
                 manifest: manifest,
                 playlistSession: playlistSession,
                 missingEntries: missingEntries,
@@ -523,12 +420,10 @@ private extension TVSessionStateAdapter {
 
         let alreadyDownloaded = completedEntryTrackIDs.count
         transferPhase = .receiving(
-            sourceDeviceName: sourceDeviceName,
-            playlistName: playlistSession.playlistName,
+            sourceDeviceName: manifest.deviceName,
             receivedTrackCount: alreadyDownloaded,
             totalTrackCount: missingEntries.count,
             currentTrackTitle: String(localized: "Resuming transfer..."),
-            progress: Double(alreadyDownloaded) / Double(missingEntries.count),
         )
         notifyStateChanged()
 
@@ -538,21 +433,15 @@ private extension TVSessionStateAdapter {
                 endpoint: endpoint,
                 token: token,
                 entries: remainingEntries,
-                progress: { [weak self] current, _, entry, fractionCompleted in
+                progress: { [weak self] current, _, entry, _ in
                     guard let self else { return }
                     let adjustedCurrent = alreadyDownloaded + current
                     let adjustedTotal = missingEntries.count
-                    let completed = max(adjustedCurrent - 1, 0)
-                    let progress = adjustedTotal > 0
-                        ? (Double(completed) + fractionCompleted) / Double(adjustedTotal)
-                        : fractionCompleted
                     transferPhase = .receiving(
-                        sourceDeviceName: sourceDeviceName,
-                        playlistName: playlistSession.playlistName,
+                        sourceDeviceName: manifest.deviceName,
                         receivedTrackCount: adjustedCurrent,
                         totalTrackCount: adjustedTotal,
                         currentTrackTitle: String(localized: "\(entry.artistName) - \(entry.title)"),
-                        progress: progress,
                     )
                     notifyStateChanged()
                 },
@@ -573,21 +462,13 @@ private extension TVSessionStateAdapter {
         let allDownloadedURLs = previousDownloadedURLs + newDownloadedURLs
 
         let resumeFailureCount = remainingEntries.count - newDownloadedURLs.count
-        if resumeFailureCount > 3,
-           remainingEntries.count > 0,
-           Double(resumeFailureCount) / Double(remainingEntries.count) > 0.5
-        {
-            let allCompletedIDs = completedEntryTrackIDs.union(
-                newDownloadedURLs.compactMap { $0.deletingPathExtension().lastPathComponent },
-            )
+        if isLikelyDisconnect(failureCount: resumeFailureCount, requestedCount: remainingEntries.count) {
             AppLog.warning(self, "resumeTransfer disconnect again failures=\(resumeFailureCount)/\(remainingEntries.count)")
             transferPhase = .disconnected(
-                sourceDeviceName: sourceDeviceName,
-                playlistName: playlistSession.playlistName,
+                playlistSession: playlistSession,
                 endpoint: endpoint,
                 token: token,
                 manifest: manifest,
-                completedEntryTrackIDs: allCompletedIDs,
                 downloadedURLs: allDownloadedURLs,
             )
             notifyStateChanged()
@@ -596,6 +477,8 @@ private extension TVSessionStateAdapter {
 
         await importAndComplete(
             session: session,
+            endpoint: endpoint,
+            token: token,
             manifest: manifest,
             playlistSession: playlistSession,
             missingEntries: missingEntries,
@@ -605,6 +488,8 @@ private extension TVSessionStateAdapter {
 
     func importAndComplete(
         session: SyncTransferSession,
+        endpoint: SyncEndpoint,
+        token: String,
         manifest: SyncManifest,
         playlistSession: SyncPlaylistSession,
         missingEntries: [SyncManifestEntry],
@@ -612,7 +497,6 @@ private extension TVSessionStateAdapter {
     ) async {
         transferPhase = .importing(
             sourceDeviceName: manifest.deviceName,
-            playlistName: playlistSession.playlistName,
             currentTrackCount: 0,
             totalTrackCount: downloadedURLs.count,
         )
@@ -624,7 +508,6 @@ private extension TVSessionStateAdapter {
                 guard let self else { return }
                 transferPhase = .importing(
                     sourceDeviceName: manifest.deviceName,
-                    playlistName: playlistSession.playlistName,
                     currentTrackCount: current,
                     totalTrackCount: total,
                 )
@@ -632,63 +515,47 @@ private extension TVSessionStateAdapter {
             },
         )
 
-        let downloadFailures = max(missingEntries.count - downloadedURLs.count, 0)
-        let failedTrackCount = importResult.errors + importResult.noMetadata + downloadFailures
+        let summary = SyncReceiveSummary(
+            offeredCount: manifest.entries.count,
+            requestedCount: missingEntries.count,
+            downloadedCount: downloadedURLs.count,
+            importResult: importResult,
+        )
         AppLog.info(
             self,
-            "importAndComplete done succeeded=\(importResult.succeeded) duplicates=\(importResult.duplicates) errors=\(importResult.errors) noMetadata=\(importResult.noMetadata) downloadFailures=\(downloadFailures)",
+            "importAndComplete done succeeded=\(importResult.succeeded) duplicates=\(importResult.duplicates) errors=\(importResult.errors) noMetadata=\(importResult.noMetadata) skipped=\(summary.skipped) failed=\(summary.failed)",
         )
 
         session.stopReceiver()
+        AppLog.info(self, "importAndComplete saving playlist session id=\(playlistSession.sessionID) playlist='\(sanitizedLogText(playlistSession.playlistName))'")
         let didSaveSession = await context.completeTransferredPlaylistSession(
             from: manifest,
             autoPlay: true,
         )
         guard didSaveSession else {
             let message = context.takePendingSessionAlertMessage()
-                ?? SyncTransferError.invalidPlaylistSession.errorDescription
-                ?? String(localized: "The transferred playlist could not be saved.")
+                ?? SyncTransferError.invalidPlaylistSession.localizedDescription
             AppLog.error(self, "importAndComplete completeSession failed message=\(message)")
             transferPhase = .failed(message)
-            startReceiverAvailability()
+            syncReceiverAvailability()
             notifyStateChanged()
             return
         }
         AppLog.info(
             self,
-            "importAndComplete complete imported=\(importResult.succeeded) skipped=\(importResult.duplicates) failed=\(failedTrackCount)",
+            "importAndComplete complete imported=\(summary.imported) skipped=\(summary.skipped) failed=\(summary.failed)",
         )
-        transferPhase = .completed(
-            sourceDeviceName: manifest.deviceName,
-            playlistName: playlistSession.playlistName,
-            importedTrackCount: importResult.succeeded,
-            skippedTrackCount: importResult.duplicates,
-            failedTrackCount: failedTrackCount,
-        )
+        transferPhase = .waiting
         notifyStateChanged()
+        await session.reportTransferCompletion(
+            endpoint: endpoint,
+            token: token,
+            alreadyInLibraryTrackCount: manifest.entries.count - missingEntries.count,
+        )
     }
 
-    func startReceiverAvailability() {
-        let shouldAdvertiseReceiver: Bool = switch transferPhase {
-        case .connecting, .receiving, .importing, .disconnected:
-            false
-        case .waiting, .completed, .failed:
-            context.currentSessionManifest == nil
-        }
-
-        guard shouldAdvertiseReceiver else {
-            receiverAdvertiser.stop()
-            context.syncTransferSession.stopBrowsing()
-            return
-        }
-
-        receiverAdvertiser.start(
-            serviceName: context.receiverHandshakeInfo.serviceName,
-            deviceName: context.receiverHandshakeInfo.deviceName,
-            port: 1,
-            role: .receiver,
-        )
-        context.syncTransferSession.startBrowsing()
+    func isLikelyDisconnect(failureCount: Int, requestedCount: Int) -> Bool {
+        failureCount > 3 && Double(failureCount) / Double(requestedCount) > 0.5
     }
 
     func receiverHandshakePayload() -> String? {

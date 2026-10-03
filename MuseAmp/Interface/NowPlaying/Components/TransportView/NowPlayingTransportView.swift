@@ -131,11 +131,11 @@ class NowPlayingTransportView: UIView {
         addSubview(view)
 
         view.snp.makeConstraints { make in
-            make.top.equalTo(transportStack.snp.bottom).offset(spacing).priority(.high)
+            make.top.equalTo(transportStack.snp.bottom).offset(spacing).priority(NowPlayingArtworkLayout.contentPriority)
             make.leading.trailing.equalToSuperview().priority(.high)
             transportBottomConstraint = make.bottom.equalToSuperview()
                 .offset(-Layout.verticalInset)
-                .priority(.high)
+                .priority(NowPlayingArtworkLayout.contentPriority)
                 .constraint
         }
     }

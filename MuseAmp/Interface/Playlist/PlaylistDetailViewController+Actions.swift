@@ -224,19 +224,10 @@ extension PlaylistDetailViewController {
     }
 
     func localCatalogAlbum(albumID: String, selectedTrack: AudioTrackRecord) -> CatalogAlbum {
-        let albumTracks = localAlbumTracks(albumID: albumID)
-            .sorted { lhs, rhs in
-                if lhs.discNumber != rhs.discNumber {
-                    return (lhs.discNumber ?? .max) < (rhs.discNumber ?? .max)
-                }
-                if lhs.trackNumber != rhs.trackNumber {
-                    return (lhs.trackNumber ?? .max) < (rhs.trackNumber ?? .max)
-                }
-                return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
-            }
+        let albumTracks = localAlbumTracks(albumID: albumID).sortedInAlbumOrder()
 
         let attributes = CatalogAlbumAttributes(
-            artistName: selectedTrack.albumArtistName.nilIfEmpty ?? selectedTrack.artistName,
+            artistName: AlbumArtistResolver.albumArtistName(for: albumTracks) ?? selectedTrack.artistName,
             name: selectedTrack.albumTitle.nilIfEmpty ?? selectedTrack.title,
             trackCount: albumTracks.count,
             releaseDate: selectedTrack.releaseDate,

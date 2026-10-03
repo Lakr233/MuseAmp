@@ -62,8 +62,10 @@ extension LyricTimelineView: UITableViewDataSource, UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: false)
-        guard case .line = items[indexPath.row] else {
-            AppLog.verbose(self, "didSelectRow ignored non-line row=\(indexPath.row)")
+        guard items.indices.contains(indexPath.row),
+              Self.seekTime(for: items[indexPath.row], in: renderedTimeline) != nil
+        else {
+            AppLog.verbose(self, "didSelectRow ignored row without a seek target row=\(indexPath.row)")
             return
         }
         AppLog.info(self, "didSelectRow seeking row=\(indexPath.row)")
@@ -79,14 +81,32 @@ extension LyricTimelineView: UITableViewDataSource, UITableViewDelegate {
         contextMenuConfigurationForRowAt indexPath: IndexPath,
         point _: CGPoint,
     ) -> UIContextMenuConfiguration? {
-        switch items[indexPath.row] {
-        case .line, .staticLine: break
-        case .spacer, .message: return nil
+        // Resolve the pressed line now: the menu is built later, by which
+        // time a track change or reload may have replaced `items`.
+        guard let menuContext = makeLineMenuContext(at: indexPath.row) else {
+            return nil
         }
         interactionSubject.send()
         return UIContextMenuConfiguration(identifier: indexPath as NSIndexPath, previewProvider: nil) { [weak self] _ in
-            self?.makeLineContextMenu(at: indexPath.row)
+            self?.lineMenuProvider.menu(context: menuContext)
         }
+    }
+
+    func tableView(
+        _: UITableView,
+        willDisplayContextMenu _: UIContextMenuConfiguration,
+        animator _: (any UIContextMenuInteractionAnimating)?,
+    ) {
+        isLineMenuVisible = true
+    }
+
+    func tableView(
+        _: UITableView,
+        willEndContextMenuInteraction _: UIContextMenuConfiguration,
+        animator _: (any UIContextMenuInteractionAnimating)?,
+    ) {
+        isLineMenuVisible = false
+        interactionSubject.send()
     }
 
     func tableView(
@@ -122,14 +142,20 @@ extension LyricTimelineView: UITableViewDataSource, UITableViewDelegate {
         interactionSubject.send()
     }
 
-    func scrollViewDidEndDragging(_: UIScrollView, willDecelerate _: Bool) {}
+    /// Restart the cooldown from the moment the user lets go, so the list
+    /// returns to the active line about a second after the scroll ends.
+    func scrollViewDidEndDragging(_: UIScrollView, willDecelerate _: Bool) {
+        interactionSubject.send()
+    }
 
-    func scrollViewDidEndDecelerating(_: UIScrollView) {}
+    func scrollViewDidEndDecelerating(_: UIScrollView) {
+        interactionSubject.send()
+    }
 
     // MARK: - Programmatic Scroll
 
     func focusCurrentLine(isUserInitialed: Bool) {
-        if isProgrammaticScrollSuppressed, !isUserInitialed {
+        if isProgrammaticScrollSuppressed || isLineMenuVisible, !isUserInitialed {
             AppLog.verbose(self, "focusCurrentLine skipped, programmatic scroll suppressed")
             return
         }

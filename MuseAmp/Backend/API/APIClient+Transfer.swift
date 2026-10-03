@@ -81,6 +81,40 @@ extension APIClient {
         }
     }
 
+    nonisolated func reportTransferCompletion(
+        endpoint: SyncEndpoint,
+        token: String,
+        alreadyInLibraryTrackCount: Int,
+    ) async throws {
+        AppLog.verbose(self, "reportTransferCompletion endpoint=\(endpoint.displayString)")
+        let request = try makeTransferRequest(
+            endpoint: endpoint,
+            path: "/complete",
+            method: "POST",
+            token: token,
+            body: SyncTransferCompletion(alreadyInLibraryTrackCount: alreadyInLibraryTrackCount),
+        )
+
+        do {
+            let (data, response) = try await performRequest(for: request)
+            let httpResponse = try requireTransferHTTPResponse(response, data: data)
+            guard httpResponse.statusCode == 200 else {
+                AppLog.error(self, "reportTransferCompletion failed endpoint=\(endpoint.displayString) status=\(httpResponse.statusCode)")
+                throw SyncTransferError.httpFailure(
+                    httpResponse.statusCode,
+                    String(data: data, encoding: .utf8),
+                )
+            }
+            AppLog.info(
+                self,
+                "reportTransferCompletion succeeded endpoint=\(endpoint.displayString) alreadyInLibrary=\(alreadyInLibraryTrackCount)",
+            )
+        } catch {
+            AppLog.error(self, "reportTransferCompletion failed endpoint=\(endpoint.displayString) error=\(error.localizedDescription)")
+            throw error
+        }
+    }
+
     nonisolated func downloadTransferTrack(
         endpoint: SyncEndpoint,
         token: String,

@@ -21,7 +21,7 @@ extension NowPlayingTransportView {
 
     func setupLayout() {
         titleView.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(Layout.verticalInset).priority(.high)
+            make.top.equalToSuperview().offset(Layout.verticalInset).priority(NowPlayingArtworkLayout.contentPriority)
             make.leading.trailing.equalToSuperview().priority(.high)
         }
 
@@ -34,7 +34,7 @@ extension NowPlayingTransportView {
         }
 
         progressColumn.snp.makeConstraints { make in
-            make.top.equalTo(titleView.snp.bottom).offset(Layout.titleToProgressSpacing).priority(.high)
+            make.top.equalTo(titleView.snp.bottom).offset(Layout.titleToProgressSpacing).priority(NowPlayingArtworkLayout.contentPriority)
             make.leading.trailing.equalToSuperview().priority(.high)
         }
 
@@ -49,12 +49,12 @@ extension NowPlayingTransportView {
         }
 
         transportStack.snp.makeConstraints { make in
-            make.top.equalTo(progressColumn.snp.bottom).offset(Layout.verticalContentSpacing).priority(.high)
+            make.top.equalTo(progressColumn.snp.bottom).offset(Layout.verticalContentSpacing).priority(NowPlayingArtworkLayout.contentPriority)
             make.leading.trailing.equalToSuperview().priority(.high)
-            make.height.equalTo(Layout.buttonSize).priority(.high)
+            make.height.equalTo(Layout.buttonSize).priority(NowPlayingArtworkLayout.contentPriority)
             transportBottomConstraint = make.bottom.equalToSuperview()
                 .offset(-Layout.verticalInset)
-                .priority(.high)
+                .priority(NowPlayingArtworkLayout.contentPriority)
                 .constraint
         }
 
@@ -64,26 +64,5 @@ extension NowPlayingTransportView {
         routePickerContainer.snp.makeConstraints { make in
             make.height.equalTo(Layout.buttonSize)
         }
-    }
-
-    func makeIconButton(
-        systemName: String,
-        pointSize: CGFloat,
-        weight: UIImage.SymbolWeight,
-        accessibilityLabel: String,
-    ) -> UIButton {
-        let button = UIButton(type: .system)
-        var configuration = UIButton.Configuration.plain()
-        configuration.baseForegroundColor = Palette.primaryText
-        configuration.contentInsets = .zero
-        configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(
-            pointSize: pointSize,
-            weight: weight,
-        )
-        button.configuration = configuration
-        button.tintColor = Palette.primaryText
-        button.setImage(UIImage(systemName: systemName), for: .normal)
-        button.accessibilityLabel = accessibilityLabel
-        return button
     }
 }

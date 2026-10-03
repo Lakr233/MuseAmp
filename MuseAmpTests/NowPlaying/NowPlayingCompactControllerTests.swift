@@ -41,6 +41,33 @@ struct NowPlayingCompactControllerTests {
 
         #expect(controller.currentPlaybackSnapshot.currentTrack?.id == "track-2")
     }
+
+    @Test
+    func `Resuming after the queue ended while suspended switches the background to idle`() throws {
+        let sandbox = TestLibrarySandbox()
+        let controller = NowPlayingCompactController(environment: sandbox.makeEnvironment())
+        controller.loadViewIfNeeded()
+
+        let artworkURL = try makeArtworkFile(
+            in: sandbox.baseDirectory,
+            name: "last-artwork.png",
+            color: UIColor(red: 1, green: 0.5, blue: 0, alpha: 1),
+        )
+        controller.applyPresentationSnapshot(makeNowPlayingSnapshot(
+            trackID: "track-last",
+            title: "Last Track",
+            artworkURL: artworkURL,
+        ))
+        #expect(controller.artworkBackgroundCoordinator.lastBackgroundSource == .artwork(url: artworkURL))
+
+        controller.setInterfaceSuspended(true)
+        controller.applyPresentationSnapshot(.empty)
+        #expect(controller.artworkBackgroundCoordinator.lastBackgroundSource == .artwork(url: artworkURL))
+
+        controller.setInterfaceSuspended(false)
+        #expect(controller.artworkBackgroundCoordinator.lastBackgroundSource == .idle)
+        #expect(controller.currentPlaybackSnapshot.currentTrack == nil)
+    }
 }
 
 private func makeNowPlayingSnapshot(

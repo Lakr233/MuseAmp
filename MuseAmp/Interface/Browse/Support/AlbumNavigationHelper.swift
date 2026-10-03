@@ -80,15 +80,7 @@ final class AlbumNavigationHelper {
         }
         guard !tracks.isEmpty else { return nil }
 
-        let sorted = tracks.sorted { lhs, rhs in
-            if lhs.discNumber != rhs.discNumber {
-                return (lhs.discNumber ?? .max) < (rhs.discNumber ?? .max)
-            }
-            if lhs.trackNumber != rhs.trackNumber {
-                return (lhs.trackNumber ?? .max) < (rhs.trackNumber ?? .max)
-            }
-            return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
-        }
+        let sorted = tracks.sortedInAlbumOrder()
 
         let paths = environment.paths
         let catalogSongs = sorted.map { track -> CatalogSong in
@@ -100,15 +92,7 @@ final class AlbumNavigationHelper {
             return track.catalogSong(artwork: artwork)
         }
 
-        var seenArtists = Set<String>()
-        var uniqueArtists: [String] = []
-        for track in sorted {
-            let name = track.albumArtistName.nilIfEmpty ?? track.artistName
-            if seenArtists.insert(name).inserted {
-                uniqueArtists.append(name)
-            }
-        }
-        let resolvedArtistName = uniqueArtists.isEmpty ? artistName : uniqueArtists.joined(separator: ", ")
+        let resolvedArtistName = AlbumArtistResolver.albumArtistName(for: sorted) ?? artistName
 
         let firstTrack = sorted[0]
         let resolvedAlbumName = albumName.nilIfEmpty ?? firstTrack.albumTitle.nilIfEmpty ?? firstTrack.title

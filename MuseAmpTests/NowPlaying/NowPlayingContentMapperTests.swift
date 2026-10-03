@@ -52,7 +52,5 @@ struct NowPlayingContentMapperTests {
 
         #expect(content.trackID.isEmpty)
         #expect(content.hasActiveTrack == false)
-        #expect(content.isPlaying == false)
-        #expect(content.progress == 0)
     }
 }

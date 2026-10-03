@@ -28,10 +28,6 @@ enum AppPreferences {
     nonisolated static let playlistsSortOptionKey = "wiki.qaq.museamp.sort.playlists"
     nonisolated static let defaultAPIBaseURL = URL(string: "https://example.com/rest")!
 
-    nonisolated static var defaultSubsonicServerURL: String {
-        displayServerURL(for: defaultAPIBaseURL)
-    }
-
     nonisolated static var configuredSubsonicServerURL: URL? {
         #if canImport(ConfigurableKit)
             let value: String = ConfigurableKit.value(forKey: subsonicServerURLKey, defaultValue: "")
@@ -100,10 +96,6 @@ enum AppPreferences {
         #else
             1
         #endif
-    }
-
-    nonisolated static func effectiveAPIBaseURL(fallback: URL = defaultAPIBaseURL) -> URL {
-        configuredSubsonicServerURL ?? fallback
     }
 
     nonisolated static func normalizeSubsonicServerURL(_ input: String) -> URL? {

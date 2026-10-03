@@ -78,12 +78,4 @@ final class TVNowPlayingContentView: UIView {
         titleView.configure(title: title, subtitle: subtitle)
         albumImageView.configure(artworkURL: artworkURL)
     }
-
-    func setIsPlaying(_ isPlaying: Bool) {
-        transportBar.setIsPlaying(isPlaying)
-    }
-
-    func updateProgress(_ progress: CGFloat, currentTime: TimeInterval, duration: TimeInterval, animated: Bool = false) {
-        progressView.update(progress: progress, currentTime: currentTime, duration: duration, animated: animated)
-    }
 }

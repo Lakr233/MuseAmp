@@ -11,13 +11,19 @@ import MuseAmpDatabaseKit
 import UIKit
 
 extension AppEnvironment {
+    /// Opens the journal in the default library at launch, so work that runs
+    /// before the library boots is written to it instead of dropped.
+    static func bootstrapLogging() {
+        AppLog.bootstrap(with: LibraryPaths())
+    }
+
     static func initializeDatabaseManagerSynchronously(
         apiBaseURL: URL = AppPreferences.defaultAPIBaseURL,
         baseDirectory: URL? = nil,
     ) throws -> DatabaseManager {
         let paths = LibraryPaths(baseDirectory: baseDirectory)
         AppLog.bootstrap(with: paths)
-        let apiClient = makeAPIClient(apiBaseURL: apiBaseURL)
+        let apiClient = APIClient(baseURL: apiBaseURL)
         let metadataReader = EmbeddedMetadataReader()
         let manager = DatabaseManager(
             baseDirectory: paths.baseDirectory,
@@ -51,10 +57,6 @@ extension AppEnvironment {
             apiBaseURL: apiBaseURL,
             baseDirectory: baseDirectory,
         )
-    }
-
-    static func makeAPIClient(apiBaseURL: URL) -> APIClient {
-        APIClient(baseURL: apiBaseURL)
     }
 
     static func makeRuntimeDependencies(
@@ -128,18 +130,30 @@ extension AppEnvironment {
         )
     }
 
-    static func configureImageRequestAuthorization() {
+    /// Tracks indexed before album artist, track and disc numbers were read
+    /// correctly from file tags have them missing, and a library refresh
+    /// skips unchanged files. Fill them in once, in the background, by
+    /// re-reading only those tags.
+    func backfillTrackTagsIfNeeded() {
+        let databaseManager = databaseManager
+        let metadataReader = metadataReader
+        Task(priority: .utility) {
+            do {
+                try await databaseManager.backfillTrackTagsIfNeeded { fileURL in
+                    await metadataReader.trackTags(at: fileURL)
+                }
+            } catch {
+                AppLog.error("AppEnvironment", "backfillTrackTagsIfNeeded failed error=\(error.localizedDescription)")
+            }
+        }
+    }
+
+    static func configureImagePipeline() {
         let cache = ImageCache.default
         cache.memoryStorage.config.totalCostLimit = 100 * 1024 * 1024
         cache.memoryStorage.config.countLimit = 512
         cache.diskStorage.config.sizeLimit = 500 * 1024 * 1024
 
-        KingfisherManager.shared.defaultOptions =
-            KingfisherManager.shared.defaultOptions.filter { option in
-                if case .requestModifier = option {
-                    return false
-                }
-                return true
-            } + [.backgroundDecode]
+        KingfisherManager.shared.defaultOptions += [.backgroundDecode]
     }
 }

@@ -18,18 +18,12 @@ enum NowPlayingContentMapper {
                 trackID: "",
                 title: String(localized: "Nothing Playing"),
                 subtitle: String(localized: "Pick a song to get started"),
-                currentTime: 0,
-                duration: 0,
                 hasActiveTrack: false,
-                isPlaying: false,
-                isPreviousAvailable: false,
-                isFavorite: false,
                 routeName: routeName(for: snapshot.outputDevice),
                 routeSymbolName: routeSymbolName(for: snapshot.outputDevice),
             )
         }
 
-        let duration = max(snapshot.duration, track.durationInSeconds ?? 0)
         let title = cleanTitleEnabled
             ? TrackTitleSanitizer.sanitize(track.title, forceEnabled: true)
             : track.title
@@ -38,12 +32,7 @@ enum NowPlayingContentMapper {
             trackID: track.id,
             title: title,
             subtitle: track.artistName,
-            currentTime: snapshot.currentTime,
-            duration: duration,
             hasActiveTrack: true,
-            isPlaying: isPlaying(for: snapshot.state),
-            isPreviousAvailable: isPreviousAvailable(for: snapshot),
-            isFavorite: snapshot.isCurrentTrackLiked,
             routeName: routeName(for: snapshot.outputDevice),
             routeSymbolName: routeSymbolName(for: snapshot.outputDevice),
         )

@@ -399,6 +399,19 @@ static const void* _LNPopupContentControllerDiscoveredTransitionView = &_LNPopup
 	{
 		[self _ln_setDiscoveredTransitionView:nil];
 	}
+	
+	if(rv.object == nil)
+	{
+		for(UIViewController* child in self.childViewControllers)
+		{
+			LNPopupImageView* childTransitionView = child._ln_discoveredTransitionView;
+			if(childTransitionView != nil)
+			{
+				return childTransitionView;
+			}
+		}
+	}
+	
 	return rv.object;
 }
 
@@ -502,6 +515,17 @@ static const void* _LNPopupContentControllerDiscoveredTransitionView = &_LNPopup
 		return 0.0;
 	}
 	
+#if defined(__IPHONE_27_1)
+	if(@available(iOS 27.1, *))
+	{
+		if(self.traitCollection.verticalBarEdge != UIVerticalBarEdgeUnspecified)
+		{
+			//Adjustment for iPhone Duo with an edge bar
+			return 10.0;
+		}
+	}
+#endif
+	
 	if(popupBar.resolvedIsCustom && popupBar.customBarWantsFullBarWidth)
 	{
 		return 0.0;
@@ -535,6 +559,16 @@ static const void* _LNPopupContentControllerDiscoveredTransitionView = &_LNPopup
 	
 	return isPad || isRegular ? 0.0 : LNPopupEnvironmentHasGlass() ? 6.0 : 0.0;
 #endif
+}
+
+- (CGFloat)_ln_safeAreaCorrectiveOffset:(LNPopupBar*)popupBar
+{
+	return 0;
+}
+
+- (BOOL)_ln_wantsForcedAnimatedPopupBarLayout
+{
+	return NO;
 }
 
 - (CGRect)defaultFrameForBottomDockingView_internal
@@ -600,23 +634,6 @@ static const void* _LNPopupContentControllerDiscoveredTransitionView = &_LNPopup
 - (BOOL)requiresIndirectSafeAreaManagement
 {
 	return NO;
-}
-
-- (CGRect)popupBarLayoutFrameForPopupBar
-{
-	return CGRectNull;
-}
-
-static const void* LNPopupBarFrameUpdateSuspendedKey = &LNPopupBarFrameUpdateSuspendedKey;
-
-- (BOOL)popupBarFrameUpdateSuspended
-{
-	return [objc_getAssociatedObject(self, LNPopupBarFrameUpdateSuspendedKey) boolValue];
-}
-
-- (void)setPopupBarFrameUpdateSuspended:(BOOL)suspended
-{
-	objc_setAssociatedObject(self, LNPopupBarFrameUpdateSuspendedKey, @(suspended), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 + (void)_ln_beginTransitioningLockWithWindow:(UIWindow*)window userInteractionsEnabled:(BOOL)userInteractionEnabled allowedViews:(NSArray*)allowedViews lockRotation:(BOOL)lockRotation

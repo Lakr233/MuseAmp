@@ -9,8 +9,6 @@ import Foundation
 
 public enum LibraryEvent: Sendable, Hashable {
     case runtimeReady
-    case indexResetStarted(reason: DatabaseResetReason)
-    case indexResetFinished(reason: DatabaseResetReason)
     case indexRebuildStarted
     case indexRebuildFinished(scanned: Int, upserted: Int, deleted: Int)
     case invalidFilesRemoved(relativePaths: [String])

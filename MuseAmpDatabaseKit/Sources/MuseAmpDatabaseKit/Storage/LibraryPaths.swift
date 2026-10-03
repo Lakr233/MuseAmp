@@ -8,6 +8,9 @@
 import Foundation
 
 public struct LibraryPaths: Sendable {
+    static let artworkCacheFileExtension = "jpg"
+    static let lyricsCacheFileExtension = "lrc"
+
     public let baseDirectory: URL
     private let cacheRootDirectory: URL
     private let logger: DatabaseLogger
@@ -69,11 +72,17 @@ public struct LibraryPaths: Sendable {
     }
 
     public func artworkCacheURL(for trackID: String) -> URL {
-        artworkCacheDirectory.appendingPathComponent("\(sanitizePathComponent(trackID)).jpg", isDirectory: false)
+        artworkCacheDirectory.appendingPathComponent(
+            "\(sanitizePathComponent(trackID)).\(Self.artworkCacheFileExtension)",
+            isDirectory: false,
+        )
     }
 
     public func lyricsCacheURL(for trackID: String) -> URL {
-        lyricsCacheDirectory.appendingPathComponent("\(sanitizePathComponent(trackID)).lrc", isDirectory: false)
+        lyricsCacheDirectory.appendingPathComponent(
+            "\(sanitizePathComponent(trackID)).\(Self.lyricsCacheFileExtension)",
+            isDirectory: false,
+        )
     }
 
     public func absoluteAudioURL(for relativePath: String) -> URL {
@@ -117,7 +126,7 @@ public struct LibraryPaths: Sendable {
                     attributes: nil,
                 )
             } catch {
-                DBLog.error(logger, "LibraryPaths", "createDirectory failed path=\(directory.path) error=\(error.localizedDescription)")
+                logger.error("LibraryPaths", "createDirectory failed path=\(directory.path) error=\(error.localizedDescription)")
                 throw error
             }
         }
@@ -132,7 +141,7 @@ public struct LibraryPaths: Sendable {
             resourceValues.isExcludedFromBackup = true
             try mutableURL.setResourceValues(resourceValues)
         } catch {
-            DBLog.error(logger, "LibraryPaths", "excludeFromBackup failed path=\(url.path) error=\(error.localizedDescription)")
+            logger.error("LibraryPaths", "excludeFromBackup failed path=\(url.path) error=\(error.localizedDescription)")
         }
     }
 
@@ -151,7 +160,7 @@ public struct LibraryPaths: Sendable {
 
         guard !FileManager.default.fileExists(atPath: newBase.path) else {
             try? FileManager.default.removeItem(at: oldBase)
-            DBLog.info(logger, "LibraryPaths", "Application Support migration skipped because new base already exists")
+            logger.info("LibraryPaths", "Application Support migration skipped because new base already exists")
             return
         }
 
@@ -162,9 +171,9 @@ public struct LibraryPaths: Sendable {
                 attributes: nil,
             )
             try FileManager.default.moveItem(at: oldBase, to: newBase)
-            DBLog.info(logger, "LibraryPaths", "Migrated OfflineLibrary from Application Support")
+            logger.info("LibraryPaths", "Migrated OfflineLibrary from Application Support")
         } catch {
-            DBLog.error(logger, "LibraryPaths", "Application Support migration failed error=\(error.localizedDescription)")
+            logger.error("LibraryPaths", "Application Support migration failed error=\(error.localizedDescription)")
         }
     }
 
@@ -195,9 +204,9 @@ public struct LibraryPaths: Sendable {
                     attributes: nil,
                 )
                 try FileManager.default.moveItem(at: migration.from, to: migration.to)
-                DBLog.info(logger, "LibraryPaths", "Migrated legacy directory from \(migration.from.lastPathComponent)")
+                logger.info("LibraryPaths", "Migrated legacy directory from \(migration.from.lastPathComponent)")
             } catch {
-                DBLog.error(logger, "LibraryPaths", "Legacy directory migration failed source=\(migration.from.path) error=\(error.localizedDescription)")
+                logger.error("LibraryPaths", "Legacy directory migration failed source=\(migration.from.path) error=\(error.localizedDescription)")
             }
         }
     }

@@ -131,6 +131,7 @@ private extension AppleMusicImportViewController {
         tableView.frame = view.bounds
         tableView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         tableView.backgroundColor = .clear
+        tableView.applySoftEdgeEffects()
     }
 
     func configureStateViews() {

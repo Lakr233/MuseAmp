@@ -11,7 +11,7 @@ import MuseAmpPlayerKit
 import SnapKit
 import UIKit
 
-class NowPlayingCompactController: UIViewController, NowPlayingQueueShellController, NowPlayingArtworkShellController, NowPlayingLyricsPlaybackShellController, NowPlayingLifecycleShellController, NowPlayingTransportShellController {
+class NowPlayingCompactController: UIViewController, NowPlayingQueueShellController, NowPlayingArtworkShellController, NowPlayingLifecycleShellController {
     let environment: AppEnvironment
     let backgroundView = NowPlayingArtworkBackgroundView()
     lazy var artworkBackgroundCoordinator = NowPlayingArtworkBackgroundCoordinator(
@@ -71,6 +71,12 @@ class NowPlayingCompactController: UIViewController, NowPlayingQueueShellControl
         return handle
     }()
 
+    /// Takes drags that start around the handle, so they close Now Playing.
+    /// Without it they land on the lyric or queue list, which
+    /// LNPopupController scrolls instead of closing unless the list is at its
+    /// top.
+    private let grabHandleDragRegion = UIView()
+
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .black
@@ -123,10 +129,6 @@ class NowPlayingCompactController: UIViewController, NowPlayingQueueShellControl
         )
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-    }
-
     override var prefersStatusBarHidden: Bool {
         true
     }
@@ -141,8 +143,6 @@ class NowPlayingCompactController: UIViewController, NowPlayingQueueShellControl
     ) -> UIView? {
         nil
     }
-
-    deinit {}
 
     func installQueueActionHandlers(
         onToggleShuffle: @escaping () -> Void,
@@ -177,12 +177,17 @@ class NowPlayingCompactController: UIViewController, NowPlayingQueueShellControl
     }
 
     private func installGrabHandle() {
+        view.addSubview(grabHandleDragRegion)
         view.addSubview(grabHandle)
         grabHandle.snp.makeConstraints { make in
             make.centerX.equalToSuperview()
             make.top.equalTo(view.safeAreaLayoutGuide.snp.top).offset(8)
             make.width.equalTo(64)
             make.height.equalTo(5)
+        }
+        grabHandleDragRegion.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(grabHandle.snp.bottom).offset(16)
         }
     }
 

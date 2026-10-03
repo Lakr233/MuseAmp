@@ -1,5 +1,5 @@
 //
-//  PlaylistSong+AppModels.swift
+//  PlaylistEntry+AppModels.swift
 //  MuseAmp
 //
 //  Created by @Lakr233 on 2026/04/11.

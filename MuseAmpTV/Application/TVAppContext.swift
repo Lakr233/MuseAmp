@@ -16,16 +16,9 @@ final class TVAppContext {
     }
 
     let paths: LibraryPaths
-    let apiClient: APIClient
-    let databaseManager: DatabaseManager
     let libraryDatabase: MusicLibraryDatabase
-    let metadataReader: EmbeddedMetadataReader
-    let lyricsCacheStore: LyricsCacheStore
-    let playlistStore: PlaylistStore
-    let downloadStore: DownloadStore
     let playbackController: PlaybackController
     let lyricsService: LyricsService
-    let audioFileImporter: AudioFileImporter
     let syncTransferSession: SyncTransferSession
     let playlistSessionStore: TVPlaylistSessionStore
 
@@ -65,15 +58,15 @@ final class TVAppContext {
     ) {
         let paths = databaseManager.paths
         self.paths = paths
-        self.databaseManager = databaseManager
-        apiClient = Self.makeAPIClient(apiBaseURL: apiBaseURL)
-        Self.configureImageRequestAuthorization()
+        let apiClient = APIClient(baseURL: apiBaseURL)
+        Self.configureImagePipeline()
 
-        metadataReader = EmbeddedMetadataReader()
-        libraryDatabase = MusicLibraryDatabase(databaseManager: databaseManager, paths: paths)
-        lyricsCacheStore = databaseManager.lyricsCacheStore
-        playlistStore = PlaylistStore(database: libraryDatabase)
-        downloadStore = DownloadStore(database: libraryDatabase, paths: paths)
+        let metadataReader = EmbeddedMetadataReader()
+        let libraryDatabase = MusicLibraryDatabase(databaseManager: databaseManager, paths: paths)
+        self.libraryDatabase = libraryDatabase
+        let lyricsCacheStore = databaseManager.lyricsCacheStore
+        let playlistStore = PlaylistStore(database: libraryDatabase)
+        let downloadStore = DownloadStore(database: libraryDatabase, paths: paths)
         playbackController = PlaybackController(
             apiClient: apiClient,
             database: libraryDatabase,
@@ -87,7 +80,7 @@ final class TVAppContext {
             lyricsCacheStore: lyricsCacheStore,
             database: libraryDatabase,
         )
-        audioFileImporter = AudioFileImporter(
+        let audioFileImporter = AudioFileImporter(
             paths: paths,
             database: libraryDatabase,
             metadataReader: metadataReader,
@@ -96,7 +89,7 @@ final class TVAppContext {
         syncTransferSession = SyncTransferSession(
             paths: paths,
             libraryDatabase: libraryDatabase,
-            lyricsCacheStore: databaseManager.lyricsCacheStore,
+            lyricsCacheStore: lyricsCacheStore,
             audioFileImporter: audioFileImporter,
             apiClient: apiClient,
         )

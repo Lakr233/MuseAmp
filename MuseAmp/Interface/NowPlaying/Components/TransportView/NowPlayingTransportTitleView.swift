@@ -51,6 +51,9 @@ final class NowPlayingTransportTitleView: UIView {
         titleStack.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
+        for label in [titleLabel, artistLabel] {
+            label.setContentCompressionResistancePriority(NowPlayingArtworkLayout.contentPriority, for: .vertical)
+        }
         bindDataSource()
     }
 
@@ -82,7 +85,7 @@ final class NowPlayingTransportTitleView: UIView {
                     cleanTitleEnabled: cleanTitleEnabled,
                 )
             }
-            .map { ($0.title, $0.artist) }
+            .map { ($0.title, $0.subtitle) }
             .removeDuplicates { $0 == $1 }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] title, artist in

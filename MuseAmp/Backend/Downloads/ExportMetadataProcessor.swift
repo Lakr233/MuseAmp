@@ -7,6 +7,7 @@
 
 @preconcurrency import AVFoundation
 import Foundation
+import MuseAmpDatabaseKit
 
 enum ExportMetadataProcessor {
     nonisolated struct ExportInfo {
@@ -18,6 +19,14 @@ enum ExportMetadataProcessor {
         var title: String?
         var artistName: String?
         var albumName: String?
+        /// Written as the M4A `aART` atom, which is where
+        /// `EmbeddedMetadataReader` reads it back. When nil, the file keeps
+        /// whatever album artist it already has.
+        var albumArtistName: String?
+        /// Written as the M4A `trkn` / `disk` atoms, only when the file has
+        /// no track or disc number of its own, so a total it carries is kept.
+        var trackNumber: Int?
+        var discNumber: Int?
 
         init(trackID: String, albumID: String?) {
             self.trackID = trackID
@@ -96,7 +105,7 @@ enum ExportMetadataProcessor {
         AppLog.verbose(logger, "verifyEmbeddedMetadata loaded \(items.count) metadata item(s) trackID=\(expectedTrackID)")
 
         for item in items {
-            guard matchesComment(item) else { continue }
+            guard AVMetadataHelper.isComment(item) else { continue }
             guard let value = try? await item.load(.stringValue),
                   let data = value.data(using: .utf8),
                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
@@ -148,12 +157,15 @@ private extension ExportMetadataProcessor {
         )
 
         AppLog.verbose(logger, "collecting metadata trackID=\(info.trackID)")
-        let existingMetadata = try await DownloadArtworkProcessor.collectMetadataItems(from: asset)
+        let existingMetadata = try await AVMetadataHelper.collectMetadataItems(from: asset)
 
-        let hasExistingArtwork = await existingMetadataContainsArtwork(existingMetadata)
+        let hasExistingArtwork = await DownloadArtworkProcessor.containsArtwork(existingMetadata)
 
+        let replacesAlbumArtist = info.albumArtistName.nilIfEmpty != nil
         var metadata = existingMetadata.filter {
-            !matchesComment($0) && !matchesLyrics($0) && !matchesTitle($0) && !matchesArtist($0) && !matchesAlbum($0)
+            !AVMetadataHelper.isComment($0) && !AVMetadataHelper.isLyrics($0)
+                && !matchesTitle($0) && !matchesArtist($0) && !matchesAlbum($0)
+                && !(replacesAlbumArtist && AVMetadataHelper.albumArtistTag.priority(of: $0) != nil)
         }
 
         metadata.append(commentMetadataItem(for: info))
@@ -161,6 +173,17 @@ private extension ExportMetadataProcessor {
             metadata.append(lyricsMetadataItem(lyrics))
         }
         metadata.append(contentsOf: standardMetadataItems(for: info))
+
+        if await AVMetadataHelper.trackNumber(in: existingMetadata) == nil,
+           let trackNumber = info.trackNumber, trackNumber > 0
+        {
+            metadata.append(positionMetadataItem(.iTunesMetadataTrackNumber, position: trackNumber, byteCount: 8))
+        }
+        if await AVMetadataHelper.discNumber(in: existingMetadata) == nil,
+           let discNumber = info.discNumber, discNumber > 0
+        {
+            metadata.append(positionMetadataItem(.iTunesMetadataDiscNumber, position: discNumber, byteCount: 6))
+        }
 
         if !hasExistingArtwork, let artworkData = info.artworkData {
             AppLog.info(logger, "embedding artwork trackID=\(info.trackID) size=\(artworkData.count)")
@@ -197,18 +220,6 @@ private extension ExportMetadataProcessor {
             }
             throw error
         }
-    }
-
-    static func existingMetadataContainsArtwork(_ items: [AVMetadataItem]) async -> Bool {
-        for item in items {
-            guard DownloadArtworkProcessor.matchesArtwork(item) else { continue }
-            let hasData = await (try? item.load(.dataValue)) != nil
-            let hasValue = await (try? item.load(.value)) != nil
-            if hasData || hasValue {
-                return true
-            }
-        }
-        return false
     }
 
     enum ExportError: LocalizedError {
@@ -268,14 +279,23 @@ private extension ExportMetadataProcessor {
         return item.copy() as! AVMetadataItem
     }
 
-    static func matchesComment(_ item: AVMetadataItem) -> Bool {
-        item.identifier == .iTunesMetadataUserComment
-            || AVMetadataHelper.matches(item, tokens: ["comment", "cmt"])
-    }
-
-    static func matchesLyrics(_ item: AVMetadataItem) -> Bool {
-        item.identifier == .iTunesMetadataLyrics
-            || AVMetadataHelper.matches(item, tokens: ["lyrics", "lyr"])
+    /// `trkn` (8 bytes) and `disk` (6 bytes): two reserved bytes, the
+    /// position as a big-endian UInt16, then a total, left 0 because it is
+    /// unknown here.
+    static func positionMetadataItem(
+        _ identifier: AVMetadataIdentifier,
+        position: Int,
+        byteCount: Int,
+    ) -> AVMetadataItem {
+        var bytes = [UInt8](repeating: 0, count: byteCount)
+        let clamped = UInt16(clamping: position)
+        bytes[2] = UInt8(clamped >> 8)
+        bytes[3] = UInt8(clamped & 0xFF)
+        let item = AVMutableMetadataItem()
+        item.identifier = identifier
+        item.dataType = kCMMetadataBaseDataType_RawData as String
+        item.value = Data(bytes) as NSData
+        return item.copy() as! AVMetadataItem
     }
 
     static func matchesTitle(_ item: AVMetadataItem) -> Bool {
@@ -326,6 +346,13 @@ private extension ExportMetadataProcessor {
             let iTunes = AVMutableMetadataItem()
             iTunes.identifier = .iTunesMetadataAlbum
             iTunes.value = album as NSString
+            items.append(iTunes.copy() as! AVMetadataItem)
+        }
+
+        if let albumArtist = info.albumArtistName.nilIfEmpty {
+            let iTunes = AVMutableMetadataItem()
+            iTunes.identifier = .iTunesMetadataAlbumArtist
+            iTunes.value = albumArtist as NSString
             items.append(iTunes.copy() as! AVMetadataItem)
         }
 

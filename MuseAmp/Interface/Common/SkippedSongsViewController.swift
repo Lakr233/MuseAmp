@@ -52,7 +52,7 @@ final class SkippedSongsViewController: UIViewController {
                 self?.dismiss(animated: true)
             },
         )
-        if trackRemovalService != nil {
+        if canRemoveTracks {
             removeButton.isEnabled = false
             navigationItem.rightBarButtonItem = removeButton
         }
@@ -66,8 +66,9 @@ final class SkippedSongsViewController: UIViewController {
         tableView.frame = view.bounds
         tableView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         tableView.backgroundColor = .clear
+        tableView.applySoftEdgeEffects()
         tableView.allowsMultipleSelectionDuringEditing = true
-        tableView.setEditing(trackRemovalService != nil, animated: false)
+        tableView.setEditing(canRemoveTracks, animated: false)
 
         var snapshot = NSDiffableDataSourceSnapshot<Int, String>()
         snapshot.appendSections([0])
@@ -88,8 +89,18 @@ final class SkippedSongsViewController: UIViewController {
         onDismiss()
     }
 
-    private func makeDataSource() -> UITableViewDiffableDataSource<Int, String> {
-        UITableViewDiffableDataSource(tableView: tableView) { [weak self] tableView, indexPath, trackID in
+    /// Only songs whose file cannot be read are offered for removal; a song
+    /// skipped for another reason (a timeout, say) is still playable.
+    private var canRemoveTracks: Bool {
+        trackRemovalService != nil && items.contains(where: \.isSourceUnreadable)
+    }
+
+    private func isRemovable(trackID: String) -> Bool {
+        items.first(where: { $0.trackID == trackID })?.isSourceUnreadable == true
+    }
+
+    private func makeDataSource() -> SkippedSongsDataSource {
+        let dataSource = SkippedSongsDataSource(tableView: tableView) { [weak self] tableView, indexPath, trackID in
             let cell = tableView.dequeueReusableCell(
                 withIdentifier: String(describing: SkippedSongCell.self),
                 for: indexPath,
@@ -101,6 +112,13 @@ final class SkippedSongsViewController: UIViewController {
             }
             return cell
         }
+        dataSource.canEditItem = { [weak self] trackID in
+            guard let self, canRemoveTracks else {
+                return false
+            }
+            return isRemovable(trackID: trackID)
+        }
+        return dataSource
     }
 
     private func updateRemoveButton() {
@@ -155,12 +173,32 @@ final class SkippedSongsViewController: UIViewController {
 }
 
 extension SkippedSongsViewController: UITableViewDelegate {
+    func tableView(_: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath? {
+        guard let trackID = dataSource.itemIdentifier(for: indexPath),
+              isRemovable(trackID: trackID)
+        else {
+            return nil
+        }
+        return indexPath
+    }
+
     func tableView(_: UITableView, didSelectRowAt _: IndexPath) {
         updateRemoveButton()
     }
 
     func tableView(_: UITableView, didDeselectRowAt _: IndexPath) {
         updateRemoveButton()
+    }
+}
+
+private final class SkippedSongsDataSource: UITableViewDiffableDataSource<Int, String> {
+    var canEditItem: (String) -> Bool = { _ in false }
+
+    override func tableView(_: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        guard let trackID = itemIdentifier(for: indexPath) else {
+            return false
+        }
+        return canEditItem(trackID)
     }
 }
 

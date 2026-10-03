@@ -99,7 +99,7 @@ extension DownloadManager {
             if lhs.state != .failed, rhs.state == .failed { return true }
             return lhs.queueOrder < rhs.queueOrder
         }
-        updateScreenAwakeState(for: sorted)
+        updateScreenAwakeState()
         tasksPublisher.send(Array(sorted))
     }
 
@@ -138,10 +138,8 @@ extension DownloadManager {
         }
     }
 
-    func updateScreenAwakeState(for tasks: [ActiveDownloadTask]) {
-        let shouldKeepAwake = tasks.contains { task in
-            task.state == .resolving || task.state == .downloading || task.state == .finalizing
-        }
+    func updateScreenAwakeState() {
+        let shouldKeepAwake = hasExecutingTasks
         guard shouldKeepAwake != isKeepingScreenAwake else {
             return
         }

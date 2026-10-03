@@ -16,8 +16,6 @@ public enum LibraryCommand: Sendable {
     case upsertDownloadJob(DownloadJob)
     case deleteDownloadJobs(trackIDs: [String])
     case enqueueDownloads([DownloadRequest])
-    case pauseAllDownloads
-    case resumeAllDownloads
     case retryDownload(trackID: String)
     case cancelDownload(trackID: String)
     case createPlaylist(name: String)

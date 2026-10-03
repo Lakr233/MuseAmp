@@ -125,6 +125,7 @@ private extension DownloadsViewController {
         tableView.delegate = self
         tableView.rowHeight = 60
         tableView.separatorStyle = .none
+        tableView.applySoftEdgeEffects()
         tableView.register(DownloadProgressCell.self, forCellReuseIdentifier: DownloadProgressCell.reuseID)
         view.addSubview(tableView)
         tableView.snp.makeConstraints { $0.edges.equalToSuperview() }

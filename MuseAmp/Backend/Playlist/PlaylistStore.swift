@@ -79,7 +79,6 @@ final class PlaylistStore {
     func deletePlaylist(id: UUID) {
         performMutation(
             action: "deletePlaylist id=\(id.uuidString)",
-            previousPlaylists: playlists,
         ) {
             _ = try send(.deletePlaylist(id: id))
         }
@@ -88,7 +87,6 @@ final class PlaylistStore {
     func deletePlaylists(ids: [UUID]) {
         performMutation(
             action: "deletePlaylists count=\(ids.count)",
-            previousPlaylists: playlists,
         ) {
             for id in ids {
                 _ = try send(.deletePlaylist(id: id))
@@ -99,7 +97,6 @@ final class PlaylistStore {
     func renamePlaylist(id: UUID, name: String) {
         performMutation(
             action: "renamePlaylist id=\(id.uuidString)",
-            previousPlaylists: playlists,
         ) {
             _ = try send(.renamePlaylist(id: id, name: name))
         }
@@ -108,7 +105,6 @@ final class PlaylistStore {
     func updateCover(id: UUID, imageData: Data?) {
         performMutation(
             action: "updateCover id=\(id.uuidString)",
-            previousPlaylists: playlists,
         ) {
             _ = try send(.updatePlaylistCover(id: id, imageData: imageData))
         }
@@ -147,7 +143,6 @@ final class PlaylistStore {
     func updateLyrics(_ lyrics: String, trackID: String, playlistID: UUID) {
         performMutation(
             action: "updateLyrics trackID=\(trackID) playlistID=\(playlistID.uuidString)",
-            previousPlaylists: playlists,
         ) {
             _ = try send(.updateEntryLyrics(lyrics: lyrics, trackID: trackID, playlistID: playlistID))
         }
@@ -245,19 +240,7 @@ final class PlaylistStore {
                 trackNumber: refreshed.trackNumber ?? existing.trackNumber,
                 lyrics: existing.lyrics,
             )
-            let nameChanged = merged.title != existing.title
-            let artistChanged = merged.artistName != existing.artistName
-            let artworkChanged = merged.artworkURL != existing.artworkURL
-            let albumIDChanged = merged.albumID != existing.albumID
-            let albumNameChanged = merged.albumTitle != existing.albumTitle
-            let durationChanged = merged.durationMillis != existing.durationMillis
-            let trackNumChanged = merged.trackNumber != existing.trackNumber
-            guard
-                nameChanged || artistChanged || artworkChanged
-                || albumIDChanged || albumNameChanged || durationChanged || trackNumChanged
-            else {
-                continue
-            }
+            guard merged != existing else { continue }
             updateSong(in: playlistID, at: index, with: merged)
             updatedCount += 1
         }
@@ -273,7 +256,6 @@ final class PlaylistStore {
         performMutation(
             action:
             "moveSong playlistID=\(playlistID.uuidString) source=\(source) destination=\(destination)",
-            previousPlaylists: playlists,
         ) {
             _ = try send(.movePlaylistEntry(playlistID: playlistID, from: source, to: destination))
         }

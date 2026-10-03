@@ -89,30 +89,27 @@ extension MusicPlayer {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 if item.status == .failed {
-                    let error = item.error ?? NSError(
-                        domain: "MuseAmpPlayerKit",
-                        code: -1,
-                        userInfo: [
-                            NSLocalizedDescriptionKey: String(
-                                localized: "Unknown playback error",
-                                bundle: .module,
-                            ),
-                        ],
-                    )
-                    log(.error, "player item failed item=\(describe(item: playerItem)) error=\(error.localizedDescription)")
-                    delegate?.musicPlayer(self, didFailItem: playerItem, error: error)
-                    // Advance directly with .itemFailed reason instead of going through next()
-                    if let nextItem = playbackQueue.advance() {
-                        log(.warning, "advancing after failed item next=\(describe(item: nextItem))")
-                        loadAndPlay(nextItem, reason: .itemFailed)
-                    } else {
-                        log(.warning, "failed item ended queue playback")
-                        delegate?.musicPlayerDidReachEndOfQueue(self)
-                        stop()
-                    }
+                    handleItemFailure(item, for: playerItem)
                 }
             }
         }
+    }
+
+    func handleItemFailure(_ avItem: AVPlayerItem, for item: PlayerItem) {
+        let error = avItem.error ?? NSError(
+            domain: "MuseAmpPlayerKit",
+            code: -1,
+            userInfo: [
+                NSLocalizedDescriptionKey: String(
+                    localized: "Unknown playback error",
+                    bundle: .module,
+                ),
+            ],
+        )
+        log(.error, "player item failed item=\(describe(item: item)) error=\(error.localizedDescription)")
+        delegate?.musicPlayer(self, didFailItem: item, error: error)
+        // Advance directly with .itemFailed reason instead of going through next()
+        loadAndPlay(playbackQueue.advance(), reason: .itemFailed)
     }
 
     func observeBuffering(_ avItem: AVPlayerItem) {

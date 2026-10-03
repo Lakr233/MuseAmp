@@ -94,7 +94,6 @@ final class TVRootViewController: UIViewController {
                     self.transferProgressView.isHidden = true
                 }
                 self.nowPlayingController.view.isHidden = true
-                self.backgroundView.setVisible(true)
 
             case .receivingTracks:
                 if let content = self.sessionStateAdapter.receivingTracksContent {
@@ -104,36 +103,26 @@ final class TVRootViewController: UIViewController {
                     self.showProgress()
                 }
                 self.nowPlayingController.view.isHidden = true
-                self.backgroundView.setVisible(true)
 
             case .playing:
                 self.resetSlideState()
                 self.qrPairingView.isHidden = true
                 self.transferProgressView.isHidden = true
                 self.nowPlayingController.view.isHidden = false
-                self.backgroundView.setVisible(true)
             }
         }
 
-        if needsCrossfade {
-            let snapshot = view.snapshotView(afterScreenUpdates: false)
-            if let snapshot {
-                view.addSubview(snapshot)
-                snapshot.frame = view.bounds
-                snapshot.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-            }
+        if let snapshot = needsCrossfade ? view.snapshotView(afterScreenUpdates: false) : nil {
+            view.addSubview(snapshot)
+            snapshot.frame = view.bounds
+            snapshot.autoresizingMask = [.flexibleWidth, .flexibleHeight]
             applyState()
-            if let snapshot {
-                Interface.animate(duration: 0.35, options: .curveEaseInOut) {
-                    snapshot.alpha = 0
-                } completion: { _ in
-                    snapshot.removeFromSuperview()
-                    self.setNeedsFocusUpdate()
-                    self.updateFocusIfNeeded()
-                }
-            } else {
-                setNeedsFocusUpdate()
-                updateFocusIfNeeded()
+            Interface.animate(duration: 0.35, options: .curveEaseInOut) {
+                snapshot.alpha = 0
+            } completion: { _ in
+                snapshot.removeFromSuperview()
+                self.setNeedsFocusUpdate()
+                self.updateFocusIfNeeded()
             }
         } else {
             applyState()
@@ -145,7 +134,7 @@ final class TVRootViewController: UIViewController {
             if sessionStateAdapter.isDisconnectedTransfer {
                 presentTransferDisconnectedAlert(message: message)
             } else {
-                presentTransferFailedAlert(message: message)
+                presentFailureAlert(title: String(localized: "Transfer Failed"), message: message)
             }
         }
 
@@ -316,7 +305,10 @@ final class TVRootViewController: UIViewController {
             connectingAlert = nil
             presented.dismiss(animated: true) {
                 guard success else {
-                    self.presentAuthenticationFailedAlert(message: errorMessage ?? String(localized: "Authentication failed."))
+                    self.presentFailureAlert(
+                        title: String(localized: "Authentication Failed"),
+                        message: errorMessage ?? String(localized: "Authentication failed."),
+                    )
                     return
                 }
                 self.slideToProgress {
@@ -331,24 +323,12 @@ final class TVRootViewController: UIViewController {
         sessionStateAdapter.connect(to: device, password: context.pairingCode)
     }
 
-    private func presentAuthenticationFailedAlert(message: String) {
-        let alert = UIAlertController(
-            title: String(localized: "Authentication Failed"),
-            message: message,
-            preferredStyle: .alert,
-        )
-        alert.addAction(UIAlertAction(title: String(localized: "OK"), style: .default) { [weak self] _ in
-            self?.sessionStateAdapter.refreshDiscovery()
-        })
-        present(alert, animated: true)
-    }
-
     // MARK: - Alerts
 
-    private func presentTransferFailedAlert(message: String) {
+    private func presentFailureAlert(title: String, message: String) {
         guard presentedViewController == nil else { return }
         let alert = UIAlertController(
-            title: String(localized: "Transfer Failed"),
+            title: title,
             message: message,
             preferredStyle: .alert,
         )

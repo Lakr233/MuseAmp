@@ -23,9 +23,9 @@ struct CacheCoordinator {
         }
         do {
             try data.write(to: url, options: .atomic)
-            DBLog.verbose(logger, "CacheCoordinator", "writeArtwork trackID=\(trackID)")
+            logger.verbose("CacheCoordinator", "writeArtwork trackID=\(trackID)")
         } catch {
-            DBLog.error(logger, "CacheCoordinator", "writeArtwork failed trackID=\(trackID) error=\(error.localizedDescription)")
+            logger.error("CacheCoordinator", "writeArtwork failed trackID=\(trackID) error=\(error.localizedDescription)")
             throw error
         }
     }
@@ -46,7 +46,7 @@ struct CacheCoordinator {
         let directory = paths.artworkCacheDirectory
         guard FileManager.default.fileExists(atPath: directory.path) else { return }
         guard let urls = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) else {
-            DBLog.warning(logger, "CacheCoordinator", "clearArtworkCache failed to list directory")
+            logger.warning("CacheCoordinator", "clearArtworkCache failed to list directory")
             return
         }
         var removed = 0
@@ -55,25 +55,25 @@ struct CacheCoordinator {
                 try FileManager.default.removeItem(at: url)
                 removed += 1
             } catch {
-                DBLog.warning(logger, "CacheCoordinator", "clearArtworkCache failed to remove \(url.lastPathComponent): \(error.localizedDescription)")
+                logger.warning("CacheCoordinator", "clearArtworkCache failed to remove \(url.lastPathComponent): \(error.localizedDescription)")
             }
         }
-        DBLog.info(logger, "CacheCoordinator", "clearArtworkCache removed=\(removed)/\(urls.count)")
+        logger.info("CacheCoordinator", "clearArtworkCache removed=\(removed)/\(urls.count)")
     }
 
-    func pruneOrphanArtwork(validTrackIDs: Set<String>) throws -> [String] {
+    func pruneOrphanArtwork(validTrackIDs: Set<String>) throws {
         try pruneOrphans(
             in: paths.artworkCacheDirectory,
             validTrackIDs: validTrackIDs,
-            expectedExtension: "jpg",
+            expectedExtension: LibraryPaths.artworkCacheFileExtension,
         )
     }
 
-    func pruneOrphanLyrics(validTrackIDs: Set<String>) throws -> [String] {
+    func pruneOrphanLyrics(validTrackIDs: Set<String>) throws {
         try pruneOrphans(
             in: paths.lyricsCacheDirectory,
             validTrackIDs: validTrackIDs,
-            expectedExtension: "lrc",
+            expectedExtension: LibraryPaths.lyricsCacheFileExtension,
         )
     }
 
@@ -81,7 +81,7 @@ struct CacheCoordinator {
         try orphanTrackIDs(
             in: paths.artworkCacheDirectory,
             validTrackIDs: validTrackIDs,
-            expectedExtension: "jpg",
+            expectedExtension: LibraryPaths.artworkCacheFileExtension,
         )
     }
 
@@ -89,7 +89,7 @@ struct CacheCoordinator {
         try orphanTrackIDs(
             in: paths.lyricsCacheDirectory,
             validTrackIDs: validTrackIDs,
-            expectedExtension: "lrc",
+            expectedExtension: LibraryPaths.lyricsCacheFileExtension,
         )
     }
 
@@ -100,13 +100,12 @@ struct CacheCoordinator {
         return urls.count(where: { !$0.hasDirectoryPath })
     }
 
-    private func pruneOrphans(in directory: URL, validTrackIDs: Set<String>, expectedExtension: String) throws -> [String] {
+    private func pruneOrphans(in directory: URL, validTrackIDs: Set<String>, expectedExtension: String) throws {
         let trackIDs = try orphanTrackIDs(in: directory, validTrackIDs: validTrackIDs, expectedExtension: expectedExtension)
         for trackID in trackIDs {
             let fileURL = directory.appendingPathComponent("\(trackID).\(expectedExtension)", isDirectory: false)
             try FileManager.default.removeItem(at: fileURL)
         }
-        return trackIDs
     }
 
     private func orphanTrackIDs(in directory: URL, validTrackIDs: Set<String>, expectedExtension: String) throws -> [String] {

@@ -309,6 +309,9 @@ extension MainController: LNPopupPresentationDelegate {
         animated _: Bool,
     ) {
         isNowPlayingPopupOpen = true
+        #if targetEnvironment(macCatalyst)
+            updateSidebarToggleVisibility()
+        #endif
         nowPlayingPopupContentViewController?.prepareForPopupOpen()
         setNeedsStatusBarAppearanceUpdate()
     }
@@ -329,6 +332,9 @@ extension MainController: LNPopupPresentationDelegate {
         setNeedsStatusBarAppearanceUpdate()
 
         isNowPlayingPopupOpen = false
+        #if targetEnvironment(macCatalyst)
+            updateSidebarToggleVisibility()
+        #endif
     }
 }
 

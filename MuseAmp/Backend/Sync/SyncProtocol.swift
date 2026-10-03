@@ -265,6 +265,12 @@ nonisolated struct SyncSenderTransferProgress: Hashable {
     let totalTrackCount: Int
     let currentTrackTitle: String?
 
+    /// The receiver finished without getting every offered song, for
+    /// example because some downloads failed.
+    var isMissingTracks: Bool {
+        phase == .completed && currentTrackCount < totalTrackCount
+    }
+
     static func waiting(
         playlistName: String?,
         totalTrackCount: Int,
@@ -289,6 +295,13 @@ nonisolated struct SyncAuthResponse: Codable {
     let success: Bool
     let token: String?
     let message: String?
+}
+
+/// Sent by the receiver once it has finished a transfer, so the sender can
+/// stop waiting for songs the receiver never requests because it already
+/// has them.
+nonisolated struct SyncTransferCompletion: Codable {
+    let alreadyInLibraryTrackCount: Int
 }
 
 nonisolated struct DiscoveredDevice: Hashable {
@@ -323,8 +336,6 @@ nonisolated enum SyncTransferError: LocalizedError {
     case noResolvableEndpoint
     case invalidPlaylistSession
     case unsupportedProtocolVersion(String?)
-    case receiverInterrupted
-    case senderInterrupted
 
     var errorDescription: String? {
         switch self {
@@ -348,10 +359,6 @@ nonisolated enum SyncTransferError: LocalizedError {
                 return String(localized: "The other device is using incompatible transfer protocol version \(version). Update both devices and try again.")
             }
             return String(localized: "The other device is using an incompatible transfer protocol version. Update both devices and try again.")
-        case .receiverInterrupted:
-            return String(localized: "Receiving was interrupted because the app left the foreground.")
-        case .senderInterrupted:
-            return String(localized: "Sending was interrupted because the app left the foreground.")
         }
     }
 }

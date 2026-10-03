@@ -129,9 +129,9 @@ extension PlaylistStore {
 
     func performMutation(
         action: String,
-        previousPlaylists: [Playlist],
         operation: () throws -> Void,
     ) {
+        let previousPlaylists = playlists
         do {
             try operation()
         } catch {

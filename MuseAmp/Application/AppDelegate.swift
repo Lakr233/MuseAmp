@@ -24,6 +24,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     ) -> Bool {
         AlertControllerConfiguration.alertImage = Bundle.appIcon
         AlertControllerConfiguration.accentColor = .accent
+        AppEnvironment.bootstrapLogging()
+        // No transfer can be running yet, so any scratch directory left by
+        // a crash or kill is stale.
+        SyncTransferSession.removeStaleTemporaryDirectories()
         return true
     }
 
@@ -105,7 +109,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         func requestApplicationExit() {
             requestProtectedTermination { [weak self] in
-                self?.terminateCatalystApplication(reason: "requested from app delegate exit hook")
+                self?.terminateCatalystApplication()
             }
         }
 
@@ -161,8 +165,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             )
         }
 
-        private func terminateCatalystApplication(reason: String) {
-            AppLog.info(self, "terminateCatalystApplication reason=\(reason)")
+        private func terminateCatalystApplication() {
+            AppLog.info(self, "terminateCatalystApplication reason=requested from app delegate exit hook")
             preferredCatalystSceneDelegate()?.prepareForImmediateTermination()
             terminateApplication()
         }
@@ -199,29 +203,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             return candidate
         }
     #endif
-
-    // MARK: - Background URL Session
-
-    private var backgroundCompletionHandler: (() -> Void)?
-
-    func application(
-        _: UIApplication,
-        handleEventsForBackgroundURLSession _: String,
-        completionHandler: @escaping () -> Void,
-    ) {
-        backgroundCompletionHandler = completionHandler
-    }
-
-    func urlSessionDidFinishEvents(forBackgroundURLSession _: URLSession) {
-        Task { @MainActor in
-            if self.backgroundCompletionHandler != nil {
-                self.backgroundCompletionHandler?()
-                self.backgroundCompletionHandler = nil
-            } else {
-                AppLog.warning(self, "No background completion handler stored to invoke")
-            }
-        }
-    }
 }
 
 func terminateApplication() -> Never {

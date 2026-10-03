@@ -57,8 +57,8 @@ final class AppEnvironment {
         let paths = databaseManager.paths
         self.paths = paths
         self.databaseManager = databaseManager
-        apiClient = Self.makeAPIClient(apiBaseURL: apiBaseURL)
-        Self.configureImageRequestAuthorization()
+        apiClient = APIClient(baseURL: apiBaseURL)
+        Self.configureImagePipeline()
 
         metadataReader = EmbeddedMetadataReader()
         libraryDatabase = MusicLibraryDatabase(databaseManager: databaseManager, paths: paths)
@@ -136,23 +136,6 @@ final class AppEnvironment {
         progressCallback: (@Sendable (_ current: Int, _ total: Int, _ trackTitle: String) -> Void)? = nil,
     ) async throws -> LyricsReloadService.RebuildAllLyricsIndexResult {
         try await lyricsReloadService.rebuildAllLyricsIndex(progressCallback: progressCallback)
-    }
-
-    func deleteAllStoredSongs() async throws {
-        AppLog.warning(self, "deleteAllStoredSongs() entered")
-        try await libraryDatabase.removeAllStoredSongs()
-    }
-
-    func librarySummary() -> MusicLibrarySummary {
-        do {
-            return try libraryDatabase.storedLibrarySummary()
-        } catch {
-            AppLog.warning(
-                self,
-                "libraryDatabase.storedLibrarySummary() threw - returning empty summary",
-            )
-            return MusicLibrarySummary(trackCount: 0, totalBytes: 0)
-        }
     }
 
     func refreshTrackTitleSanitizer() {

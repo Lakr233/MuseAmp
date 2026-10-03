@@ -48,25 +48,3 @@ struct DatabaseLogger {
         log(.critical, scope, message)
     }
 }
-
-enum DBLog {
-    static func verbose(_ logger: DatabaseLogger, _ scope: String, _ message: String) {
-        logger.verbose(scope, message)
-    }
-
-    static func info(_ logger: DatabaseLogger, _ scope: String, _ message: String) {
-        logger.info(scope, message)
-    }
-
-    static func warning(_ logger: DatabaseLogger, _ scope: String, _ message: String) {
-        logger.warning(scope, message)
-    }
-
-    static func error(_ logger: DatabaseLogger, _ scope: String, _ message: String) {
-        logger.error(scope, message)
-    }
-
-    static func critical(_ logger: DatabaseLogger, _ scope: String, _ message: String) {
-        logger.critical(scope, message)
-    }
-}

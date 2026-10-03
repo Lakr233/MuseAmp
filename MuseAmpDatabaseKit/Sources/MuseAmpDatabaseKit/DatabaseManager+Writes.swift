@@ -14,9 +14,7 @@ extension DatabaseManager {
         forceArtwork: Bool = false,
         progressCallback: (@Sendable (Int, Int) -> Void)? = nil,
     ) async throws -> LibraryCommandResult {
-        guard let indexStore else {
-            return .rebuild(scanned: 0, upserted: 0, deleted: 0, removedInvalidFiles: [])
-        }
+        let indexStore = try requireIndexStore()
 
         eventSubject.send(.indexRebuildStarted)
         let result = try await libraryScanner().rebuildIndexFromDisk(
@@ -24,7 +22,7 @@ extension DatabaseManager {
             forceArtwork: forceArtwork,
             progressCallback: progressCallback,
         )
-        try indexStore.setLastRebuild(timestamp: .init(), succeeded: true)
+        try indexStore.setLastRebuild(timestamp: .init())
         try indexStore.setSchemaVersions(
             schema: DatabaseFormat.indexSchemaVersion,
             format: DatabaseFormat.indexFormatVersion,
@@ -33,7 +31,7 @@ extension DatabaseManager {
             eventSubject.send(.invalidFilesRemoved(relativePaths: result.removedInvalidFiles.map(\.relativePath)))
         }
         if !result.transientFailureRelativePaths.isEmpty {
-            DBLog.warning(logger, "DatabaseManager", "rebuild skipped \(result.transientFailureRelativePaths.count) file(s) after transient inspect failures; they remain on disk for the next rebuild")
+            logger.warning("DatabaseManager", "rebuild skipped \(result.transientFailureRelativePaths.count) file(s) after transient inspect failures; they remain on disk for the next rebuild")
         }
         eventSubject.send(
             .indexRebuildFinished(
@@ -54,18 +52,8 @@ extension DatabaseManager {
     func ingestAudioFile(url: URL, metadata: ImportedTrackMetadata) async throws
         -> AudioTrackRecord
     {
-        guard let indexStore else {
-            throw NSError(
-                domain: "DatabaseManager",
-                code: 2,
-                userInfo: [
-                    NSLocalizedDescriptionKey: String(
-                        localized: "DatabaseManager write runtime is unavailable",
-                        bundle: .module,
-                    ),
-                ],
-            )
-        }
+        let indexStore = try requireIndexStore()
+        let stateStore = try requireStateStore()
 
         let inputExtension = url.pathExtension.nilIfEmpty ?? "m4a"
         // Inspect before moving: a file that fails validation never enters the
@@ -86,7 +74,8 @@ extension DatabaseManager {
             try? cacheCoordinator.writeArtwork(data: artwork, trackID: metadata.trackID)
             eventSubject.send(.artworkCacheChanged(trackIDs: [metadata.trackID]))
         }
-        if let lyrics = metadata.lyrics.nilIfEmpty ?? inspection.metadata.lyrics.nilIfEmpty {
+        let lyrics = metadata.lyrics.nilIfEmpty ?? inspection.metadata.lyrics.nilIfEmpty
+        if let lyrics {
             try? cacheCoordinator.writeLyrics(text: lyrics, trackID: metadata.trackID)
             eventSubject.send(.lyricsCacheChanged(trackIDs: [metadata.trackID]))
         }
@@ -103,21 +92,22 @@ extension DatabaseManager {
             title: metadata.title,
             artistName: metadata.artistName,
             albumTitle: metadata.albumTitle,
-            albumArtistName: metadata.albumArtistName,
-            trackNumber: metadata.trackNumber,
-            discNumber: metadata.discNumber,
+            // Values the caller does not know (a download the server sent
+            // without them) come from the file's own tags.
+            albumArtistName: metadata.albumArtistName.nilIfEmpty ?? inspection.metadata.albumArtistName.nilIfEmpty,
+            trackNumber: metadata.trackNumber ?? inspection.metadata.trackNumber,
+            discNumber: metadata.discNumber ?? inspection.metadata.discNumber,
             genreName: metadata.genreName,
             composerName: metadata.composerName,
             releaseDate: metadata.releaseDate,
-            hasEmbeddedLyrics: (metadata.lyrics.nilIfEmpty ?? inspection.metadata.lyrics.nilIfEmpty)
-                != nil,
+            hasEmbeddedLyrics: lyrics != nil,
             hasEmbeddedArtwork: inspection.embeddedArtwork != nil,
             sourceKind: metadata.sourceKind,
             createdAt: existing?.createdAt ?? .init(),
             updatedAt: .init(),
         )
         try indexStore.upsertTracks([record])
-        try stateStore?.deleteDownload(trackID: metadata.trackID)
+        try stateStore.deleteDownload(trackID: metadata.trackID)
         eventSubject.send(
             .tracksChanged(
                 inserted: existing == nil ? [metadata.trackID] : [],
@@ -130,13 +120,9 @@ extension DatabaseManager {
         return record
     }
 
-    @DatabaseActor
-    func removeTrack(trackID: String) throws {
-        try removeTrackSynchronously(trackID: trackID)
-    }
-
     func removeTrackSynchronously(trackID: String) throws {
-        guard let indexStore, let track = try indexStore.track(byID: trackID) else {
+        let indexStore = try requireIndexStore()
+        guard let track = try indexStore.track(byID: trackID) else {
             return
         }
         try fileManager.removeTrackFile(relativePath: track.relativePath)
@@ -147,15 +133,8 @@ extension DatabaseManager {
         eventSubject.send(.lyricsCacheChanged(trackIDs: [trackID]))
     }
 
-    @DatabaseActor
-    func removeAlbum(albumID: String) throws {
-        try removeAlbumSynchronously(albumID: albumID)
-    }
-
     func removeAlbumSynchronously(albumID: String) throws {
-        guard let indexStore else {
-            return
-        }
+        let indexStore = try requireIndexStore()
         let tracks = try indexStore.tracks(inAlbumID: albumID)
         try fileManager.removeAlbumDirectory(albumID: albumID)
         for track in tracks {

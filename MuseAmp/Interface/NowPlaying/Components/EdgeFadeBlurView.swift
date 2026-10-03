@@ -25,10 +25,6 @@ final class EdgeFadeBlurView: UIVisualEffectView {
         fatalError()
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-    }
-
     override func didMoveToWindow() {
         super.didMoveToWindow()
         guard let window, let backdropLayer = subviews.first?.layer else {

@@ -17,8 +17,7 @@ struct LibraryFileManager {
         albumID: String,
         fileExtension: String,
     ) throws -> (finalURL: URL, relativePath: String) {
-        let safeExtension = sanitizePathComponent(fileExtension.nilIfEmpty ?? "m4a")
-        let relativePath = "\(sanitizePathComponent(albumID))/\(sanitizePathComponent(trackID)).\(safeExtension)"
+        let relativePath = paths.inferredRelativePath(for: trackID, albumID: albumID, fileExtension: fileExtension)
         let finalURL = paths.absoluteAudioURL(for: relativePath)
         let stagingURL = finalURL.deletingLastPathComponent()
             .appendingPathComponent(finalURL.lastPathComponent + ".tmp", isDirectory: false)
@@ -37,10 +36,10 @@ struct LibraryFileManager {
             }
             try FileManager.default.moveItem(at: sourceURL, to: stagingURL)
             try FileManager.default.moveItem(at: stagingURL, to: finalURL)
-            DBLog.info(logger, "LibraryFileManager", "moveToLibrary relativePath=\(relativePath)")
+            logger.info("LibraryFileManager", "moveToLibrary relativePath=\(relativePath)")
             return (finalURL, relativePath)
         } catch {
-            DBLog.error(logger, "LibraryFileManager", "moveToLibrary failed trackID=\(trackID) error=\(error.localizedDescription)")
+            logger.error("LibraryFileManager", "moveToLibrary failed trackID=\(trackID) error=\(error.localizedDescription)")
             throw error
         }
     }
@@ -53,7 +52,7 @@ struct LibraryFileManager {
             }
             try removeEmptyDirectoryIfNeeded(url.deletingLastPathComponent())
         } catch {
-            DBLog.error(logger, "LibraryFileManager", "removeTrackFile failed relativePath=\(relativePath) error=\(error.localizedDescription)")
+            logger.error("LibraryFileManager", "removeTrackFile failed relativePath=\(relativePath) error=\(error.localizedDescription)")
             throw error
         }
     }
@@ -65,7 +64,7 @@ struct LibraryFileManager {
                 try FileManager.default.removeItem(at: directory)
             }
         } catch {
-            DBLog.error(logger, "LibraryFileManager", "removeAlbumDirectory failed albumID=\(albumID) error=\(error.localizedDescription)")
+            logger.error("LibraryFileManager", "removeAlbumDirectory failed albumID=\(albumID) error=\(error.localizedDescription)")
             throw error
         }
     }

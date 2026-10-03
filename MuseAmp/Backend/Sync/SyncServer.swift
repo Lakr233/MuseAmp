@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import MuseAmpDatabaseKit
 import Network
 
 final nonisolated class SyncServer: @unchecked Sendable {
@@ -13,31 +14,6 @@ final nonisolated class SyncServer: @unchecked Sendable {
         let port: Int
         let serviceName: String
         let preferredEndpoints: [SyncEndpoint]
-    }
-
-    nonisolated struct HTTPRequest {
-        let method: String
-        let path: String
-        let headers: [String: String]
-        let body: Data
-    }
-
-    nonisolated enum ReceiveOutcome {
-        case request(HTTPRequest)
-        case needMoreData(Data)
-        case error(statusCode: Int, body: String)
-    }
-
-    nonisolated static let maxRequestBufferSize = 1024 * 1024
-    nonisolated static let oversizedRequestMessage = String(localized: "Request too large.")
-    nonisolated static let invalidRequestMessage = String(localized: "Invalid request.")
-
-    nonisolated static func receiveOutcome(
-        buffer: Data,
-        chunk: Data?,
-        isComplete: Bool,
-    ) -> ReceiveOutcome {
-        _receiveOutcome(buffer: buffer, chunk: chunk, isComplete: isComplete)
     }
 
     private let serviceName: String
@@ -162,12 +138,6 @@ private nonisolated extension SyncServer {
             return token
         }
 
-        func contains(_ token: String) -> Bool {
-            lock.lock()
-            defer { lock.unlock() }
-            return receiverNamesByToken[token] != nil
-        }
-
         func receiverDeviceName(for token: String) -> String? {
             lock.lock()
             defer { lock.unlock() }
@@ -242,102 +212,17 @@ private nonisolated extension SyncServer {
                 return
             }
 
-            switch Self._receiveOutcome(buffer: buffer, chunk: data, isComplete: isComplete) {
+            switch Self.receiveOutcome(buffer: buffer, chunk: data, isComplete: isComplete) {
             case let .request(request):
                 process(request, on: connection)
 
             case let .needMoreData(accumulated):
                 receiveRequest(on: connection, buffer: accumulated)
 
-            case let .error(statusCode, body):
-                if statusCode == HTTPStatus.badRequest.rawValue,
-                   body == Self.oversizedRequestMessage
-                {
-                    AppLog.warning(self, "receiveRequest buffer exceeded limit=\(Self.maxRequestBufferSize)")
-                }
-                sendPlainResponse(
-                    status: HTTPStatus(rawValue: statusCode) ?? .internalServerError,
-                    body: body,
-                    on: connection,
-                )
+            case let .error(body):
+                sendPlainResponse(status: .badRequest, body: body, on: connection)
             }
         }
-    }
-
-    nonisolated static func _receiveOutcome(
-        buffer: Data,
-        chunk: Data?,
-        isComplete: Bool,
-    ) -> ReceiveOutcome {
-        var accumulated = buffer
-        if let chunk, !chunk.isEmpty {
-            accumulated.append(chunk)
-        }
-
-        if accumulated.count > maxRequestBufferSize {
-            return .error(
-                statusCode: HTTPStatus.badRequest.rawValue,
-                body: oversizedRequestMessage,
-            )
-        }
-
-        if let request = parseRequest(from: accumulated) {
-            return .request(request)
-        }
-
-        if isComplete {
-            return .error(
-                statusCode: HTTPStatus.badRequest.rawValue,
-                body: invalidRequestMessage,
-            )
-        }
-
-        return .needMoreData(accumulated)
-    }
-
-    nonisolated static func parseRequest(from data: Data) -> HTTPRequest? {
-        let delimiter = Data("\r\n\r\n".utf8)
-        guard let range = data.range(of: delimiter) else {
-            return nil
-        }
-
-        let head = data[..<range.lowerBound]
-        guard let headString = String(data: head, encoding: .utf8) else {
-            return nil
-        }
-
-        let headerLines = headString.components(separatedBy: "\r\n")
-        guard let requestLine = headerLines.first else {
-            return nil
-        }
-        let requestParts = requestLine.split(separator: " ", omittingEmptySubsequences: true)
-        guard requestParts.count >= 2 else {
-            return nil
-        }
-
-        var headers: [String: String] = [:]
-        for line in headerLines.dropFirst() {
-            guard let separatorIndex = line.firstIndex(of: ":") else {
-                continue
-            }
-            let key = line[..<separatorIndex].trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-            let value = line[line.index(after: separatorIndex)...].trimmingCharacters(in: .whitespacesAndNewlines)
-            headers[key] = value
-        }
-
-        let bodyStart = range.upperBound
-        let contentLength = Int(headers["content-length"] ?? "") ?? 0
-        guard data.count >= bodyStart + contentLength else {
-            return nil
-        }
-
-        let body = Data(data[bodyStart ..< bodyStart + contentLength])
-        return HTTPRequest(
-            method: String(requestParts[0]),
-            path: String(requestParts[1]),
-            headers: headers,
-            body: body,
-        )
     }
 
     nonisolated func process(_ request: HTTPRequest, on connection: NWConnection) {
@@ -348,7 +233,7 @@ private nonisolated extension SyncServer {
             handleAuth(request, on: connection)
 
         case ("GET", "/manifest"):
-            guard let token = authorizedToken(for: request) else {
+            guard let receiverDeviceName = authorizedReceiverDeviceName(for: request) else {
                 sendPlainResponse(
                     status: .unauthorized,
                     body: String(localized: "Unauthorized."),
@@ -358,17 +243,32 @@ private nonisolated extension SyncServer {
             }
             reportProgress(
                 phase: .manifestServed,
-                receiverDeviceName: tokenStore.receiverDeviceName(for: token),
+                receiverDeviceName: receiverDeviceName,
                 currentTrackCount: 0,
                 currentTrackTitle: nil,
             )
             sendJSONResponse(status: .ok, payload: manifest, on: connection)
 
+        case ("POST", "/complete"):
+            guard let receiverDeviceName = authorizedReceiverDeviceName(for: request) else {
+                sendPlainResponse(
+                    status: .unauthorized,
+                    body: String(localized: "Unauthorized."),
+                    on: connection,
+                )
+                return
+            }
+            handleCompletion(
+                request,
+                receiverDeviceName: receiverDeviceName,
+                on: connection,
+            )
+
         default:
             if request.method == "GET",
                request.path.hasPrefix("/track/")
             {
-                guard let token = authorizedToken(for: request) else {
+                guard let receiverDeviceName = authorizedReceiverDeviceName(for: request) else {
                     sendPlainResponse(
                         status: .unauthorized,
                         body: String(localized: "Unauthorized."),
@@ -378,7 +278,7 @@ private nonisolated extension SyncServer {
                 }
                 handleTrack(
                     request,
-                    receiverDeviceName: tokenStore.receiverDeviceName(for: token),
+                    receiverDeviceName: receiverDeviceName,
                     on: connection,
                 )
             } else {
@@ -435,6 +335,40 @@ private nonisolated extension SyncServer {
                 on: connection,
             )
         }
+    }
+
+    nonisolated func handleCompletion(
+        _ request: HTTPRequest,
+        receiverDeviceName: String?,
+        on connection: NWConnection,
+    ) {
+        let completion: SyncTransferCompletion
+        do {
+            completion = try JSONDecoder().decode(SyncTransferCompletion.self, from: request.body)
+        } catch {
+            AppLog.error(self, "handleCompletion decode failed: \(error.localizedDescription)")
+            sendPlainResponse(
+                status: .badRequest,
+                body: Self.invalidRequestMessage,
+                on: connection,
+            )
+            return
+        }
+
+        let totalTrackCount = manifest.entries.count
+        let alreadyInLibraryTrackCount = min(max(completion.alreadyInLibraryTrackCount, 0), totalTrackCount)
+        let deliveredTrackCount = min(completedTrackIDs.count + alreadyInLibraryTrackCount, totalTrackCount)
+        AppLog.info(
+            self,
+            "handleCompletion served=\(completedTrackIDs.count) alreadyInLibrary=\(alreadyInLibraryTrackCount) total=\(totalTrackCount) receiver=\(sanitizedLogText(receiverDeviceName ?? "unknown"))",
+        )
+        reportProgress(
+            phase: .completed,
+            receiverDeviceName: receiverDeviceName,
+            currentTrackCount: deliveredTrackCount,
+            currentTrackTitle: nil,
+        )
+        sendPlainResponse(status: .ok, body: "", on: connection)
     }
 
     nonisolated func handleTrack(
@@ -495,7 +429,7 @@ private nonisolated extension SyncServer {
         }
     }
 
-    nonisolated func authorizedToken(for request: HTTPRequest) -> String? {
+    nonisolated func authorizedReceiverDeviceName(for request: HTTPRequest) -> String? {
         guard let authorization = request.headers["authorization"] else {
             return nil
         }
@@ -503,7 +437,7 @@ private nonisolated extension SyncServer {
             return nil
         }
         let token = String(authorization.dropFirst("Bearer ".count))
-        return tokenStore.contains(token) ? token : nil
+        return tokenStore.receiverDeviceName(for: token)
     }
 
     nonisolated func streamFile(
@@ -602,21 +536,13 @@ private nonisolated extension SyncServer {
         onProgress?(
             SyncSenderTransferProgress(
                 phase: phase,
-                receiverDeviceName: sanitizedOptionalText(receiverDeviceName),
+                receiverDeviceName: receiverDeviceName.nilIfEmpty,
                 playlistName: manifest.session?.playlistName,
                 currentTrackCount: currentTrackCount,
                 totalTrackCount: manifest.entries.count,
-                currentTrackTitle: sanitizedOptionalText(currentTrackTitle),
+                currentTrackTitle: currentTrackTitle.nilIfEmpty,
             ),
         )
-    }
-
-    nonisolated func sanitizedOptionalText(_ value: String?) -> String? {
-        guard let value else {
-            return nil
-        }
-        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? nil : trimmed
     }
 
     nonisolated func sendPlainResponse(

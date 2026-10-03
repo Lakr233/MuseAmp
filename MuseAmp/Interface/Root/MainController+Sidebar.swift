@@ -5,7 +5,6 @@
 //  Created by @Lakr233 on 2026/04/11.
 //
 
-import Combine
 import MuseAmpDatabaseKit
 import SnapKit
 import Then
@@ -18,6 +17,10 @@ nonisolated enum SidebarSection: Int, Hashable {
     case library
     case playlists
     case settings
+
+    var showsHeader: Bool {
+        self == .library || self == .playlists
+    }
 }
 
 nonisolated enum SidebarItem: Hashable {
@@ -134,7 +137,6 @@ final class SidebarViewController: UIViewController {
 
     private var collectionView: UICollectionView!
     private var dataSource: UICollectionViewDiffableDataSource<SidebarSection, SidebarItem>!
-    private var cancellables: Set<AnyCancellable> = []
     private nonisolated(unsafe) var playlistObserver: NSObjectProtocol?
     private nonisolated(unsafe) var playlistArtworkObserver: NSObjectProtocol?
     private nonisolated(unsafe) var serverConfigurationObserver: NSObjectProtocol?
@@ -167,6 +169,15 @@ final class SidebarViewController: UIViewController {
         selectItem(.destination(.albums))
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        #if targetEnvironment(macCatalyst)
+            // The sidebar has no title or bar items. On Mac its empty bar
+            // would only push the first row down below the traffic lights.
+            navigationController?.setNavigationBarHidden(true, animated: false)
+        #endif
+    }
+
     deinit {
         if let playlistObserver {
             NotificationCenter.default.removeObserver(playlistObserver)
@@ -182,24 +193,38 @@ final class SidebarViewController: UIViewController {
     // MARK: - Collection View Setup
 
     private func setupCollectionView() {
-        let layout = UICollectionViewCompositionalLayout { sectionIndex, layoutEnvironment in
+        let layout = UICollectionViewCompositionalLayout { [weak self] sectionIndex, layoutEnvironment in
             var configuration = UICollectionLayoutListConfiguration(appearance: .sidebar)
             configuration.showsSeparators = false
             configuration.backgroundColor = .clear
-            let section = SidebarSection(rawValue: sectionIndex)
-            configuration.headerMode = (section == .library || section == .playlists) ? .supplementary : .none
+            let sections = self?.dataSource?.snapshot().sectionIdentifiers ?? []
+            configuration.headerMode = Self.headerMode(forSectionAt: sectionIndex, in: sections)
             return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: layoutEnvironment)
         }
 
         collectionView = UICollectionView(frame: UIScreen.main.bounds, collectionViewLayout: layout).then {
             $0.backgroundColor = .clear
             $0.delegate = self
+            $0.applySoftEdgeEffects()
         }
 
         view.addSubview(collectionView)
         collectionView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
+    }
+
+    /// Sections are looked up by position in the current snapshot: the
+    /// Search section is left out when no server is configured, so a
+    /// section's position is not its raw value.
+    nonisolated static func headerMode(
+        forSectionAt sectionIndex: Int,
+        in sections: [SidebarSection],
+    ) -> UICollectionLayoutListConfiguration.HeaderMode {
+        guard sections.indices.contains(sectionIndex), sections[sectionIndex].showsHeader else {
+            return .none
+        }
+        return .supplementary
     }
 
     // MARK: - Data Source Configuration

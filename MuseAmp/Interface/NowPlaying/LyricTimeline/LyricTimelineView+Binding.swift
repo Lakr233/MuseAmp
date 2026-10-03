@@ -10,7 +10,13 @@ extension LyricTimelineView {
     }
 
     nonisolated enum LyricsPhase: Sendable, Equatable {
+        /// Just switched tracks; nothing is shown yet so a fast cache hit
+        /// does not flash a loading message.
         case pending
+        /// Still waiting for lyrics after `Layout.loadingIndicatorDelay`.
+        case loading
+        /// Every attempt failed; distinct from a track that has no lyrics.
+        case failed
         case loaded(ParsedLyrics)
     }
 
@@ -40,25 +46,21 @@ extension LyricTimelineView {
                 guard let trackID else {
                     return Just(LyricsPhase.loaded(.empty)).eraseToAnyPublisher()
                 }
-                let fetch = Deferred {
-                    Future<LyricsPhase, any Error> { promise in
-                        Task {
-                            do {
-                                let text = try await lyricsService.loadLyricsThrowing(for: trackID)
-                                let parsed = Self.parseLyrics(from: text)
-                                AppLog.info("LyricTimelineView", "lyrics fetched trackID=\(trackID) lines=\(parsed.lines.count) timeline=\(parsed.timeline != nil)")
-                                promise(.success(.loaded(parsed)))
-                            } catch {
-                                AppLog.error("LyricTimelineView", "lyrics fetch failed trackID=\(trackID) error=\(error)")
-                                promise(.failure(error))
-                            }
-                        }
+                var loadTask: Task<Void, Never>?
+                // A Future replays its result, so the loading indicator below
+                // sees it even when the load finishes before it subscribes.
+                let load = Future<LyricsPhase, Never> { promise in
+                    loadTask = Task {
+                        await promise(.success(Self.loadPhase(for: trackID, using: lyricsService)))
                     }
                 }
-                .retry(2)
-                .replaceError(with: LyricsPhase.loaded(.empty))
-                return Just(LyricsPhase.pending)
-                    .append(fetch)
+                let loadingIndicator = Just(LyricsPhase.loading)
+                    .delay(for: .seconds(Layout.loadingIndicatorDelay), scheduler: DispatchQueue.main)
+                    .prefix(untilOutputFrom: load)
+                return load
+                    .merge(with: loadingIndicator)
+                    .prepend(.pending)
+                    .handleEvents(receiveCancel: { loadTask?.cancel() })
                     .eraseToAnyPublisher()
             }
             .switchToLatest()
@@ -118,11 +120,20 @@ extension LyricTimelineView {
                     AppLog.verbose(self, "blur restore skipped, still suppressed")
                     return
                 }
+                // A finger resting on the list sends no scroll events; the
+                // end of the drag sends a fresh interaction instead.
+                guard !tableView.isTracking, !tableView.isDragging, !tableView.isDecelerating else {
+                    AppLog.verbose(self, "blur restore skipped, user still scrolling")
+                    return
+                }
                 AppLog.verbose(self, "blur restore animating alpha back to 1")
                 Interface.animate(duration: 1.0) {
                     self.topBlurView.alpha = 1
                     self.bottomBlurView.alpha = 1
                 }
+                // Nothing else re-anchors the list while the active line stays
+                // the same (last line, long gap, paused), so return to it now.
+                focusCurrentLine(isUserInitialed: false)
             }
             .store(in: &cancellables)
 
@@ -130,6 +141,17 @@ extension LyricTimelineView {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.focusCurrentLine(isUserInitialed: false)
+            }
+            .store(in: &cancellables)
+
+        // Rows report their real height only once laid out, so the active
+        // line is first anchored against estimated heights and then moves
+        // when the rows above it are measured. Anchor it again each time.
+        tableView.publisher(for: \.contentSize, options: [.new])
+            .map(\.height)
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                self?.focusSubject.send()
             }
             .store(in: &cancellables)
     }
@@ -149,16 +171,31 @@ extension LyricTimelineView {
 
         let timeline = LyricTimeline(lrc: converted)
 
-        if !timeline.lines.isEmpty {
+        if timeline.isSynced {
             return ParsedLyrics(lines: timeline.lines.map(\.text), timeline: timeline)
         }
 
-        let plainLines = converted
-            .components(separatedBy: .newlines)
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
+        if !timeline.lines.isEmpty {
+            let untimedLines = timeline.lines.map(\.text).filter { !$0.isEmpty }
+            return ParsedLyrics(lines: untimedLines, timeline: nil)
+        }
 
-        return ParsedLyrics(lines: plainLines, timeline: nil)
+        return ParsedLyrics(lines: LyricParser.plainLines(from: converted), timeline: nil)
+    }
+
+    static func loadPhase(for trackID: String, using lyricsService: LyricsService) async -> LyricsPhase {
+        do {
+            let text = try await lyricsService.loadLyricsRetrying(for: trackID)
+            let parsed = parseLyrics(from: text)
+            AppLog.info("LyricTimelineView", "lyrics fetched trackID=\(trackID) lines=\(parsed.lines.count) timeline=\(parsed.timeline != nil)")
+            return .loaded(parsed)
+        } catch is CancellationError {
+            AppLog.verbose("LyricTimelineView", "lyrics fetch cancelled trackID=\(trackID)")
+            return .pending
+        } catch {
+            AppLog.error("LyricTimelineView", "lyrics fetch failed trackID=\(trackID) error=\(error)")
+            return .failed
+        }
     }
 
     nonisolated struct Snapshot: Sendable, Equatable {
@@ -172,20 +209,20 @@ extension LyricTimelineView {
                 .spacer(Layout.topContentInset),
                 .spacer(Layout.bottomContentInset),
             ])
+        case .loading:
+            return messageSnapshot(String(localized: "Fetching lyrics…"))
+        case .failed:
+            return messageSnapshot(String(localized: "Unable to load lyrics"))
         case let .loaded(lyrics):
             guard !lyrics.lines.isEmpty else {
-                return Snapshot(items: [
-                    .spacer(Layout.topContentInset),
-                    .message(String(localized: "No lyrics available")),
-                    .spacer(Layout.bottomContentInset),
-                ])
+                return messageSnapshot(String(localized: "No lyrics available"))
             }
 
             var items: [Item] = [.spacer(Layout.topContentInset)]
             if let timeline = lyrics.timeline {
-                let activeIndex = timeline.progress(at: currentTime)?.index
+                let activeRange = timeline.activeLineRange(at: currentTime)
                 for (index, text) in lyrics.lines.enumerated() {
-                    items.append(.line(index, text, index == activeIndex))
+                    items.append(.line(index, text, activeRange?.contains(index) ?? false))
                 }
             } else {
                 for (index, text) in lyrics.lines.enumerated() {
@@ -195,5 +232,13 @@ extension LyricTimelineView {
             items.append(.spacer(Layout.bottomContentInset))
             return Snapshot(items: items)
         }
+    }
+
+    private nonisolated static func messageSnapshot(_ message: String) -> Snapshot {
+        Snapshot(items: [
+            .spacer(Layout.topContentInset),
+            .message(message),
+            .spacer(Layout.bottomContentInset),
+        ])
     }
 }

@@ -13,7 +13,11 @@ final class TVAppDelegate: UIResponder, UIApplicationDelegate {
         _: UIApplication,
         didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]? = nil,
     ) -> Bool {
-        true
+        TVAppContext.bootstrapLogging()
+        // No transfer can be running yet, so any scratch directory left by
+        // a crash or kill is stale.
+        SyncTransferSession.removeStaleTemporaryDirectories()
+        return true
     }
 
     func application(

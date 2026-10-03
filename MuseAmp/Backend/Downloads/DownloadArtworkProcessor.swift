@@ -16,7 +16,6 @@ enum DownloadArtworkProcessor {
         trackID: String,
         fileURL: URL,
         artworkURL: URL?,
-        apiClient: APIClient?,
         locations: LibraryPaths,
         session: URLSession = .shared,
     ) async {
@@ -28,7 +27,6 @@ enum DownloadArtworkProcessor {
             let artworkData = try await cachedArtworkData(
                 trackID: trackID,
                 artworkURL: artworkURL,
-                apiClient: apiClient,
                 locations: locations,
                 session: session,
             )
@@ -71,7 +69,6 @@ extension DownloadArtworkProcessor {
     static func cachedArtworkData(
         trackID: String,
         artworkURL: URL,
-        apiClient _: APIClient?,
         locations: LibraryPaths,
         session: URLSession,
     ) async throws -> Data {
@@ -92,17 +89,7 @@ extension DownloadArtworkProcessor {
     }
 
     private static func performHasEmbeddedArtwork(fileURL: URL) async throws -> Bool {
-        let asset = AVURLAsset(url: fileURL)
-        let metadataItems = try await collectMetadataItems(from: asset)
-        for item in metadataItems {
-            guard matchesArtwork(item) else { continue }
-            let hasData = await (try? item.load(.dataValue)) != nil
-            let hasValue = await (try? item.load(.value)) != nil
-            if hasData || hasValue {
-                return true
-            }
-        }
-        return false
+        try await containsArtwork(AVMetadataHelper.collectMetadataItems(from: AVURLAsset(url: fileURL)))
     }
 
     static func embedArtwork(
@@ -178,7 +165,8 @@ extension DownloadArtworkProcessor {
 
         let outputFileType = try resolveOutputFileType(for: fileURL, supportedTypes: exportSession.supportedFileTypes)
         let tempURL = temporaryOutputURL(for: fileURL)
-        let metadata = try await collectMetadataItems(from: asset).filter { !matchesArtwork($0) } + artworkMetadataItems(data: artworkData)
+        let metadata = try await AVMetadataHelper.collectMetadataItems(from: asset).filter { !matchesArtwork($0) }
+            + artworkMetadataItems(data: artworkData)
 
         if FileManager.default.fileExists(atPath: tempURL.path) {
             do {
@@ -208,14 +196,6 @@ extension DownloadArtworkProcessor {
         }
     }
 
-    static func collectMetadataItems(from asset: AVURLAsset) async throws -> [AVMetadataItem] {
-        try await AVMetadataHelper.collectMetadataItems(from: asset)
-    }
-
-    static func export(_ exportSession: AVAssetExportSession) async throws {
-        try await export(exportSession, timeout: 0)
-    }
-
     static func export(_ exportSession: AVAssetExportSession, timeout: TimeInterval) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
             _export(exportSession, timeout: timeout) { error in
@@ -228,7 +208,9 @@ extension DownloadArtworkProcessor {
         }
     }
 
-    private static func _export(
+    // nonisolated: the timeout work item runs on a global queue. Inheriting
+    // the default MainActor isolation makes Swift trap when it fires.
+    private nonisolated static func _export(
         _ exportSession: AVAssetExportSession,
         timeout: TimeInterval,
         completion: @escaping @Sendable ((any Error)?) -> Void,
@@ -239,8 +221,11 @@ extension DownloadArtworkProcessor {
         var timeoutWork: DispatchWorkItem?
         if timeout > 0 {
             let work = DispatchWorkItem { [weak sessionBox] in
-                sessionBox?.value.cancelExport()
+                // Claim the result before cancelling: cancelExport can run the
+                // completion handler first, which would report a plain
+                // cancellation instead of the timeout.
                 once.perform { completion(ProcessingError.exportTimedOut) }
+                sessionBox?.value.cancelExport()
             }
             timeoutWork = work
             DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + timeout, execute: work)
@@ -290,6 +275,18 @@ extension DownloadArtworkProcessor {
 
     static func matchesArtwork(_ item: AVMetadataItem) -> Bool {
         AVMetadataHelper.matches(item, tokens: ["artwork", "coverart", "covr"])
+    }
+
+    static func containsArtwork(_ items: [AVMetadataItem]) async -> Bool {
+        for item in items {
+            guard DownloadArtworkProcessor.matchesArtwork(item) else { continue }
+            let hasData = await (try? item.load(.dataValue)) != nil
+            let hasValue = await (try? item.load(.value)) != nil
+            if hasData || hasValue {
+                return true
+            }
+        }
+        return false
     }
 
     static func artworkMetadataItems(data: Data) -> [AVMetadataItem] {

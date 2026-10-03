@@ -9,7 +9,6 @@ import AVFoundation
 
 @MainActor
 protocol AudioPlaybackEngine: AnyObject {
-    var rate: Float { get }
     var currentAVItem: AVPlayerItem? { get }
     var mediaCenterPlayer: AVPlayer? { get }
 
@@ -28,10 +27,6 @@ protocol AudioPlaybackEngine: AnyObject {
     func removeTimeObserver(_ observer: Any)
 
     func preloadNextItem(_ item: AVPlayerItem?)
-
-    /// Returns `true` when `AVQueuePlayer` has auto-advanced to the preloaded item
-    /// (i.e. the preloaded item is now `currentItem`).
-    func hasAdvancedToPreloadedItem() -> Bool
 
     /// Tells the underlying queue player to advance to the preloaded next item
     /// without tearing down the queue. Returns `true` on success.

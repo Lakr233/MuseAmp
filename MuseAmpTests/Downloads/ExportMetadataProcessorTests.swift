@@ -3,6 +3,7 @@ import Dispatch
 import Foundation
 @testable import MuseAmp
 import MuseAmpDatabaseKit
+import os
 import Testing
 
 @Suite(.serialized)
@@ -50,7 +51,113 @@ struct ExportMetadataProcessorTests {
             || AVMetadataHelper.matches(item, tokens: ["lyrics"])
     }
 
+    private func readTrackRecord(at fileURL: URL) async throws -> AudioTrackRecord {
+        let attributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
+        return try await EmbeddedMetadataReader().makeTrackRecord(
+            fileURL: fileURL,
+            relativePath: "2002/\(fileURL.lastPathComponent)",
+            trackID: fileURL.deletingPathExtension().lastPathComponent,
+            albumID: "2002",
+            fileSize: (attributes[.size] as? NSNumber)?.int64Value ?? 0,
+            modifiedAt: attributes[.modificationDate] as? Date ?? .init(),
+        )
+    }
+
+    private func albumArtistInfo(_ albumArtistName: String?) -> ExportMetadataProcessor.ExportInfo {
+        var info = ExportMetadataProcessor.ExportInfo(
+            trackID: "1001",
+            albumID: "2002",
+            artworkURL: nil,
+            lyrics: nil,
+            title: "Example Two",
+            artistName: "Artist A, Artist B",
+            albumName: "Example Album",
+        )
+        info.albumArtistName = albumArtistName
+        return info
+    }
+
     // MARK: - Tests
+
+    @Test
+    func `album artist written on export is read back as the album artist`() async throws {
+        let dir = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let fileURL = dir.appendingPathComponent("1001.m4a")
+        try makeSilentM4A(at: fileURL)
+
+        try await ExportMetadataProcessor.embedExportMetadata(albumArtistInfo("Artist A"), into: fileURL)
+
+        let metadata = try await readMetadata(from: fileURL)
+        let albumArtistItems = metadata.filter { $0.identifier == .iTunesMetadataAlbumArtist }
+        #expect(albumArtistItems.count == 1)
+        let record = try await readTrackRecord(at: fileURL)
+        #expect(record.albumArtistName == "Artist A")
+        #expect(record.artistName == "Artist A, Artist B")
+    }
+
+    @Test
+    func `track and disc numbers written on export are read back`() async throws {
+        let dir = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let fileURL = dir.appendingPathComponent("1001.m4a")
+        try makeSilentM4A(at: fileURL)
+
+        var info = albumArtistInfo(nil)
+        info.trackNumber = 3
+        info.discNumber = 2
+        try await ExportMetadataProcessor.embedExportMetadata(info, into: fileURL)
+
+        let metadata = try await readMetadata(from: fileURL)
+        #expect(metadata.filter { $0.identifier == .iTunesMetadataTrackNumber }.count == 1)
+        #expect(metadata.filter { $0.identifier == .iTunesMetadataDiscNumber }.count == 1)
+        let record = try await readTrackRecord(at: fileURL)
+        #expect(record.trackNumber == 3)
+        #expect(record.discNumber == 2)
+    }
+
+    @Test
+    func `export keeps the file's track and disc numbers`() async throws {
+        let dir = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let fileURL = dir.appendingPathComponent("1001.m4a")
+        try makeSilentM4A(at: fileURL)
+
+        var first = albumArtistInfo(nil)
+        first.trackNumber = 3
+        first.discNumber = 1
+        try await ExportMetadataProcessor.embedExportMetadata(first, into: fileURL)
+        // A second embed, as a LAN transfer or share does, without numbers or
+        // with different ones, leaves the atoms the file already has.
+        try await ExportMetadataProcessor.embedExportMetadata(albumArtistInfo("Artist A"), into: fileURL)
+        var conflicting = albumArtistInfo(nil)
+        conflicting.trackNumber = 9
+        try await ExportMetadataProcessor.embedExportMetadata(conflicting, into: fileURL)
+
+        let metadata = try await readMetadata(from: fileURL)
+        #expect(metadata.filter { $0.identifier == .iTunesMetadataTrackNumber }.count == 1)
+        let record = try await readTrackRecord(at: fileURL)
+        #expect(record.trackNumber == 3)
+        #expect(record.discNumber == 1)
+        #expect(record.albumArtistName == "Artist A")
+    }
+
+    @Test
+    func `export keeps the file's album artist unless it writes a new one`() async throws {
+        let dir = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let fileURL = dir.appendingPathComponent("1001.m4a")
+        try makeSilentM4A(at: fileURL)
+
+        try await ExportMetadataProcessor.embedExportMetadata(albumArtistInfo("Original"), into: fileURL)
+        try await ExportMetadataProcessor.embedExportMetadata(albumArtistInfo(nil), into: fileURL)
+        #expect(try await readTrackRecord(at: fileURL).albumArtistName == "Original")
+
+        try await ExportMetadataProcessor.embedExportMetadata(albumArtistInfo("Replacement"), into: fileURL)
+        let metadata = try await readMetadata(from: fileURL)
+        #expect(metadata.filter { $0.identifier == .iTunesMetadataAlbumArtist }.count == 1)
+        #expect(try await readTrackRecord(at: fileURL).albumArtistName == "Replacement")
+    }
 
     @Test
     func `embeds title, artist, and album metadata`() async throws {
@@ -368,22 +475,73 @@ struct ExportMetadataProcessorTests {
 }
 
 struct DownloadArtworkProcessorTimeoutTests {
+    /// Asserts the timeout does not wait for the work, rather than a
+    /// wall-clock bound: on a loaded CI runner the utility-QoS timer itself
+    /// can start seconds late.
     @Test
     func `overall timeout returns promptly for non-cooperative work`() async {
-        let startedAt = Date()
+        let workFinished = OSAllocatedUnfairLock(initialState: false)
 
         do {
             try await DownloadArtworkProcessor.withOverallTimeout(seconds: 0.05) {
                 await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
                     DispatchQueue.global(qos: .utility).async {
-                        Thread.sleep(forTimeInterval: 1)
+                        Thread.sleep(forTimeInterval: 5)
+                        workFinished.withLock { $0 = true }
                         continuation.resume()
                     }
                 }
             }
             Issue.record("Expected timeout")
         } catch {
-            #expect(Date().timeIntervalSince(startedAt) < 0.5)
+            #expect(!workFinished.withLock { $0 })
+        }
+    }
+
+    @Test
+    func `export timeout firing off the main queue reports a timeout`() async throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ExportTimeoutTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let sourceURL = dir.appendingPathComponent("source.m4a")
+        let settings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatMPEG4AAC,
+            AVSampleRateKey: 44100.0,
+            AVNumberOfChannelsKey: 1,
+            AVEncoderBitRateKey: 64000,
+        ]
+        let format = try #require(AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 1))
+        let buffer = try #require(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 88200))
+        buffer.frameLength = 88200
+        // Scoped so the file is closed and finalized before the export reads
+        // it; an unfinished file makes the export fail before the timer fires.
+        do {
+            let audioFile = try AVAudioFile(
+                forWriting: sourceURL,
+                settings: settings,
+                commonFormat: .pcmFormatFloat32,
+                interleaved: false,
+            )
+            try audioFile.write(from: buffer)
+        }
+
+        let exportSession = try #require(AVAssetExportSession(
+            asset: AVURLAsset(url: sourceURL),
+            presetName: AVAssetExportPresetPassthrough,
+        ))
+        exportSession.outputURL = dir.appendingPathComponent("output.m4a")
+        exportSession.outputFileType = .m4a
+
+        // The timer fires on a global queue long before the export can finish.
+        do {
+            try await DownloadArtworkProcessor.export(exportSession, timeout: 0.000_001)
+            Issue.record("Expected the export to time out")
+        } catch DownloadArtworkProcessor.ProcessingError.exportTimedOut {
+            // Expected.
+        } catch {
+            Issue.record("Unexpected error: \(error)")
         }
     }
 }

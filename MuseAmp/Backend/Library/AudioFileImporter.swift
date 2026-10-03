@@ -72,14 +72,18 @@ final class AudioFileImporter: @unchecked Sendable {
         defer { scopedURLs.forEach { $0.stopAccessingSecurityScopedResource() } }
 
         let audioFiles = discoverAudioFiles(from: urls)
+        let missingURLs = urls.filter { !FileManager.default.fileExists(atPath: $0.path) }
         AppLog.info(
-            self, "importFiles starting with \(audioFiles.count) audio file(s) from \(urls.count) URL(s)",
+            self, "importFiles starting with \(audioFiles.count) audio file(s) from \(urls.count) URL(s) missing=\(missingURLs.count)",
         )
+        for url in missingURLs {
+            AppLog.warning(self, "importFiles source missing file='\(url.lastPathComponent)'")
+        }
 
         var succeeded = 0
         var duplicates = 0
         var noMetadata = 0
-        var errors = 0
+        var errors = missingURLs.count
         var importedTracks: [ImportedTrack] = []
 
         let existingTracks: [AudioTrackRecord]
@@ -87,7 +91,7 @@ final class AudioFileImporter: @unchecked Sendable {
             existingTracks = try database.allTracks()
         } catch {
             AppLog.error(self, "importFiles failed to load existing tracks: \(error)")
-            return AudioImportResult(succeeded: 0, duplicates: 0, noMetadata: 0, errors: audioFiles.count)
+            return AudioImportResult(succeeded: 0, duplicates: 0, noMetadata: 0, errors: audioFiles.count + missingURLs.count)
         }
 
         // Track metadata of successfully imported files within this batch so
@@ -304,10 +308,7 @@ private extension AudioFileImporter {
 
     func extractCatalogIDs(from items: [AVMetadataItem]) async -> EmbeddedCatalogIDs? {
         for item in items {
-            guard
-                item.identifier == .iTunesMetadataUserComment
-                || AVMetadataHelper.matches(item, tokens: ["comment", "cmt"])
-            else { continue }
+            guard AVMetadataHelper.isComment(item) else { continue }
             guard let value = try? await item.load(.stringValue),
                   let data = value.data(using: .utf8),
                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -415,7 +416,6 @@ private extension AudioFileImporter {
 
         AppLog.info(self, "importFiles enqueued background artwork fetches count=\(candidates.count)")
         let paths = paths
-        let apiClient = apiClient
         Task.detached(priority: .utility) {
             for candidate in candidates {
                 guard let artworkURL = candidate.artworkURL else {
@@ -426,7 +426,6 @@ private extension AudioFileImporter {
                     let artworkData = try await DownloadArtworkProcessor.cachedArtworkData(
                         trackID: candidate.trackID,
                         artworkURL: artworkURL,
-                        apiClient: apiClient,
                         locations: paths,
                         session: .shared,
                     )

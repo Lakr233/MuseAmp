@@ -8,29 +8,39 @@
 import Foundation
 
 extension DatabaseManager {
-    func requireInitialized() throws {
-        guard initialized else {
-            throw NSError(
-                domain: "DatabaseManager",
-                code: 0,
-                userInfo: [
-                    NSLocalizedDescriptionKey: String(
-                        localized: "DatabaseManager is not initialized",
-                        bundle: .module,
-                    ),
-                ],
-            )
+    func requireIndexStore() throws -> IndexStore {
+        guard let indexStore else {
+            throw notInitializedError()
         }
+        return indexStore
     }
 
-    func libraryScanner() -> LibraryScanner {
-        guard let indexStore else {
-            fatalError("IndexStore not initialized")
+    func requireStateStore() throws -> StateStore {
+        guard let stateStore else {
+            throw notInitializedError()
         }
-        return LibraryScanner(
+        return stateStore
+    }
+
+    private func notInitializedError() -> NSError {
+        NSError(
+            domain: "DatabaseManager",
+            code: 0,
+            userInfo: [
+                NSLocalizedDescriptionKey: String(
+                    localized: "DatabaseManager is not initialized",
+                    bundle: .module,
+                ),
+            ],
+        )
+    }
+
+    func libraryScanner() throws -> LibraryScanner {
+        try LibraryScanner(
             paths: paths,
-            indexStore: indexStore,
+            indexStore: requireIndexStore(),
             cacheCoordinator: cacheCoordinator,
+            fileManager: fileManager,
             dependencies: dependencies,
             logger: logger,
         )
