@@ -8,7 +8,7 @@
 - TV app entry should remain `MuseAmpTV/main.swift` -> `MuseAmpTV/Application/TVAppDelegate.swift` -> `MuseAmpTV/Application/TVSceneDelegate.swift`.
 - `Interface/Root/TabBarController.swift` owns the shared `AppEnvironment` reference for the compact tab shell.
 - Compact root navigation currently uses first-level UIKit tabs for `Albums`, `Songs`, `Playlist`, optional `Search`, and `Settings`.
-- Relaxed/Catalyst root navigation currently uses sidebar destinations for `Albums`, `Songs`, `Downloads`, `Playlist`, optional `Search`, and `Settings`.
+- Relaxed/Catalyst root navigation currently uses the sidebar in `Interface/Root/MainController+Sidebar.swift`: `Search` at the top, a `Library` section with `Albums`, `Songs`, `Downloads`, and `All Playlists`, a `Playlists` section listing `Liked Songs` first and then the most recently updated playlists (eight rows at most), and `Settings` last. `Search` and `Downloads` appear only when a Subsonic server is configured.
 - `Now Playing` is presented through `LNPopupController`, not as a first-level tab.
 
 ## Structure Rules
