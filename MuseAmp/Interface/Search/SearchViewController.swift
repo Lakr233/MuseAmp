@@ -143,6 +143,7 @@ class SearchViewController: UIViewController {
         tableView.estimatedRowHeight = 64
         tableView.separatorStyle = .none
         tableView.sectionHeaderTopPadding = 0
+        tableView.applySoftEdgeEffects()
         view.addSubview(tableView)
         tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
         tableView.dataSource = diffableDataSource
@@ -157,6 +158,7 @@ class SearchViewController: UIViewController {
         historyTableView.keyboardDismissMode = .onDrag
         historyTableView.register(SearchSectionHeaderView.self, forHeaderFooterViewReuseIdentifier: SearchSectionHeaderView.reuseID)
         historyTableView.clipsToBounds = true
+        historyTableView.applySoftEdgeEffects()
         view.addSubview(historyTableView)
         historyTableView.snp.makeConstraints { $0.edges.equalTo(view.safeAreaLayoutGuide) }
     }

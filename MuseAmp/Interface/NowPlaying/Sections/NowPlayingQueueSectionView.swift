@@ -105,6 +105,7 @@ class NowPlayingQueueSectionView: UIView, UITableViewDataSource, UITableViewDele
         tableView.insetsContentViewsToSafeArea = false
         tableView.rowHeight = Layout.queueRowHeight
         tableView.sectionFooterHeight = 0
+        tableView.applySoftEdgeEffects()
         tableView.register(
             AmSongCell.self,
             forCellReuseIdentifier: AmSongCell.reuseID,

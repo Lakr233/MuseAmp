@@ -146,6 +146,7 @@ private extension SyncContentPickerViewController {
         tableView.register(PlaylistCell.self, forCellReuseIdentifier: PlaylistCell.cellReuseID)
         tableView.tableFooterView = UIView()
         tableView.keyboardDismissMode = .onDrag
+        tableView.applySoftEdgeEffects()
 
         view.addSubview(tableView)
         tableView.snp.makeConstraints { make in

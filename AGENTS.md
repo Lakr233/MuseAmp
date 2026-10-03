@@ -72,6 +72,7 @@
 ### Extension Layer
 
 - `Extension/`: extensions on system/Apple framework types (UIColor, UIView, UITableView, Bundle, etc.), named `Extension+ClassName.swift`.
+- `MuseAmpTV/Extension/` mirrors the `Extension/` files the tvOS target also compiles via relative symlinks (e.g. `../../MuseAmp/Extension/Extension+UIScrollView.swift`). Do not put TV-only code there.
 
 ### General
 
@@ -129,6 +130,7 @@
 - Use `snapshot.reconfigureItems()` for in-place cell updates that preserve existing items.
 - Disable animations during cell reconfigure/reload to avoid nav-bar flicker or layout jumps.
 - Pre-alloc subviews and toggle `isHidden` instead of creating/destroying views during data updates.
+- Every scroll view the app creates or owns (table, collection, text and plain scroll views, including `StackScrollController.scrollView`) calls `applySoftEdgeEffects()` where it is configured, so its shown edge effects use the soft style on iOS/tvOS 26+. Code that hides an edge effect keeps it hidden; `applySoftEdgeEffects()` never un-hides or restyles a hidden one.
 
 ## Animation Rules
 

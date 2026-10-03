@@ -261,6 +261,7 @@ final class SongLibraryViewController: UIViewController {
         tableView.allowsMultipleSelectionDuringEditing = true
         tableView.register(AmMediaCell.self, forCellReuseIdentifier: AmMediaCell.reuseID)
         tableView.register(AmSongCell.self, forCellReuseIdentifier: AmSongCell.reuseID)
+        tableView.applySoftEdgeEffects()
         view.addSubview(tableView)
         tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
 

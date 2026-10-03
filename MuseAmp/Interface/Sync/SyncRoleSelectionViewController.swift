@@ -26,6 +26,7 @@ final class SyncRoleSelectionViewController: StackScrollController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
+        scrollView.applySoftEdgeEffects()
     }
 
     override func setupContentViews() {

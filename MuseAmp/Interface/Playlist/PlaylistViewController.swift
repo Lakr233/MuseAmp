@@ -304,6 +304,7 @@ class PlaylistViewController: UIViewController {
         tableView.estimatedRowHeight = 72
         tableView.separatorStyle = .none
         tableView.backgroundColor = .clear
+        tableView.applySoftEdgeEffects()
         tableView.allowsSelectionDuringEditing = true
         tableView.allowsMultipleSelectionDuringEditing = true
 

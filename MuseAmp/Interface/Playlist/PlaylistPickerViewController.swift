@@ -48,6 +48,7 @@ final class PlaylistPickerViewController: UIViewController {
         tableView.frame = view.bounds
         tableView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         tableView.backgroundColor = .clear
+        tableView.applySoftEdgeEffects()
 
         var snapshot = NSDiffableDataSourceSnapshot<Int, UUID>()
         snapshot.appendSections([0])

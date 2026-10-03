@@ -29,6 +29,7 @@ final class SyncReceiverViewController: StackScrollController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
+        scrollView.applySoftEdgeEffects()
 
         session.onDiscoveredDevicesChanged = { [weak self] _ in
             self?.refreshUI()

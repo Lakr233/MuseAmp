@@ -36,6 +36,7 @@ final class LyricTimelineView: UIView {
         tableView.canCancelContentTouches = true
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = LyricTimelineLineStyle.estimatedLineHeight + Layout.verticalSpacing
+        tableView.applySoftEdgeEffects()
         return tableView
     }()
 

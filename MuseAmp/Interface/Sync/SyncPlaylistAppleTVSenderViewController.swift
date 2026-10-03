@@ -82,6 +82,7 @@ final class SyncPlaylistAppleTVSenderViewController: StackScrollController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
+        scrollView.applySoftEdgeEffects()
         let doneButton = UIBarButtonItem(
             image: UIImage(systemName: "checkmark"),
             style: .done,

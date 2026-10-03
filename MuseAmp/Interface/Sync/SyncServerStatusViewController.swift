@@ -62,6 +62,7 @@ final class SyncServerStatusViewController: StackScrollController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
+        scrollView.applySoftEdgeEffects()
         session.onSenderProgressChanged = { [weak self] progress in
             self?.applySenderProgress(progress)
         }

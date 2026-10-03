@@ -41,6 +41,7 @@ class NowPlayingCenterSectionView: UIView {
         scrollView.showsVerticalScrollIndicator = false
         scrollView.showsHorizontalScrollIndicator = false
         scrollView.contentInsetAdjustmentBehavior = .never
+        scrollView.applySoftEdgeEffects()
         return scrollView
     }()
 

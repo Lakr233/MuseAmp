@@ -61,6 +61,7 @@ final class LyricSelectionSheetViewController: UIViewController {
     private func configureTableView() {
         tableView.delegate = self
         tableView.register(LyricSelectionCell.self, forCellReuseIdentifier: LyricSelectionCell.reuseIdentifier)
+        tableView.applySoftEdgeEffects()
 
         view.addSubview(tableView)
         tableView.frame = view.bounds

@@ -162,6 +162,7 @@ extension LogViewerController {
         tableView.rowHeight = UITableView.automaticDimension
         tableView.separatorStyle = .singleLine
         tableView.backgroundColor = .systemBackground
+        tableView.applySoftEdgeEffects()
         view.addSubview(tableView)
         tableView.snp.makeConstraints { make in
             make.edges.equalToSuperview()

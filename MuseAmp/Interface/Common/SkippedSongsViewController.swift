@@ -66,6 +66,7 @@ final class SkippedSongsViewController: UIViewController {
         tableView.frame = view.bounds
         tableView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         tableView.backgroundColor = .clear
+        tableView.applySoftEdgeEffects()
         tableView.allowsMultipleSelectionDuringEditing = true
         tableView.setEditing(canRemoveTracks, animated: false)
 

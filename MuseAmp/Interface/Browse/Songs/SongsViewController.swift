@@ -252,6 +252,7 @@ final class SongsViewController: UIViewController {
         tableView.separatorStyle = .none
         tableView.allowsMultipleSelectionDuringEditing = true
         tableView.register(AmSongCell.self, forCellReuseIdentifier: AmSongCell.reuseID)
+        tableView.applySoftEdgeEffects()
         view.addSubview(tableView)
         tableView.snp.makeConstraints { $0.edges.equalToSuperview() }
 

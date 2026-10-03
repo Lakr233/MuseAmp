@@ -46,6 +46,7 @@ final class TVLyricTimelineView: UIView {
         tableView.canCancelContentTouches = true
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = TVLyricLineStyle.estimatedLineHeight + Layout.verticalSpacing
+        tableView.applySoftEdgeEffects()
         return tableView
     }()
 

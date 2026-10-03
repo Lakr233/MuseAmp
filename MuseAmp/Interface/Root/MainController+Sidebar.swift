@@ -205,6 +205,7 @@ final class SidebarViewController: UIViewController {
         collectionView = UICollectionView(frame: UIScreen.main.bounds, collectionViewLayout: layout).then {
             $0.backgroundColor = .clear
             $0.delegate = self
+            $0.applySoftEdgeEffects()
         }
 
         view.addSubview(collectionView)
