@@ -38,6 +38,9 @@ final class NowPlayingPlaybackTimeRowView: UIView {
         super.init(frame: .zero)
         timeRow.addArrangedSubview(elapsedLabel)
         timeRow.addArrangedSubview(remainingLabel)
+        for label in [elapsedLabel, remainingLabel] {
+            label.setContentCompressionResistancePriority(NowPlayingArtworkLayout.contentPriority, for: .vertical)
+        }
         addSubview(timeRow)
         timeRow.snp.makeConstraints { make in
             make.edges.equalToSuperview()
