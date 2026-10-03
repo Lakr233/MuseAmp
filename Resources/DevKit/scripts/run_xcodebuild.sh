@@ -14,7 +14,14 @@
 #   3. Replay the normalized log through xcbeautify when available.
 #   4. Scan the log for error markers. If any are found, or the xcodebuild
 #      invocation itself exited non-zero, exit with a non-zero status so make
-#      halts the chain.
+#      halts the chain. macOS system-log lines that the test host prints for
+#      accessibility bundles missing from the OS are not build errors and are
+#      skipped by the scan (they stay in the printed log).
+#
+# Usage:
+#   run_xcodebuild.sh <xcodebuild arguments...>
+#   run_xcodebuild.sh --scan-log <log file>   Only run the error scan on an
+#                                             existing log; exit 1 on errors.
 #
 # Env:
 #   XCBUILD_LABEL  Optional label (e.g. "build-ios") used in failure messages.
@@ -22,6 +29,39 @@
 set -u -o pipefail
 
 LABEL="${XCBUILD_LABEL:-xcodebuild}"
+
+# Patterns that must never appear in a successful log.
+#   - "** BUILD FAILED **", "** TEST FAILED **", "** ARCHIVE FAILED **"
+#   - "error:" lines from clang/swiftc/ld (preceded by space after file:line:col:
+#     or at start of line)
+ERR_RE='(^|[[:space:]])error:|^\*\* (BUILD|TEST|ARCHIVE|CLEAN|ANALYZE) FAILED \*\*|^Testing failed:|^Failing tests:'
+
+# System-log lines that match ERR_RE but are not build or test failures.
+#   - "<date> <time> MuseAmp[pid:tid] [AXLoading] Failed to load item ...
+#     error: Error Domain=AXLoading ..." when an accessibility bundle such as
+#     RealityFoundation or ScreenTimeUI is missing from /System/iOSSupport.
+IGNORED_ERR_RE='[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9:.]+[+-][0-9]{4} [^[:space:]]+\[[0-9]+:[0-9]+\] \[AXLoading\] Failed to load item .* error: Error Domain=AXLoading '
+
+# Prints the "line:text" of every error line in the given log, or nothing.
+error_lines() {
+    grep -En "$ERR_RE" "$1" | grep -Ev "$IGNORED_ERR_RE" || true
+}
+
+if [ "${1:-}" = "--scan-log" ]; then
+    if [ $# -ne 2 ] || [ ! -f "$2" ]; then
+        echo "usage: $0 --scan-log <log file>" >&2
+        exit 2
+    fi
+    SCAN_ERRORS=$(error_lines "$2")
+    if [ -n "$SCAN_ERRORS" ]; then
+        echo "❌ [$LABEL] errors in $2:" >&2
+        printf '%s\n' "$SCAN_ERRORS" | head -40 >&2
+        exit 1
+    fi
+    echo "[$LABEL] no errors in $2"
+    exit 0
+fi
+
 RAW_LOG=$(mktemp -t "museamp-${LABEL//\//_}.raw.XXXXXX.log")
 LOG=$(mktemp -t "museamp-${LABEL//\//_}.XXXXXX.log")
 trap 'rm -f "$RAW_LOG" "$LOG"' EXIT
@@ -129,14 +169,9 @@ else
     cat "$LOG"
 fi
 
-# Patterns that must never appear in a successful log.
-#   - "** BUILD FAILED **", "** TEST FAILED **", "** ARCHIVE FAILED **"
-#   - "error:" lines from clang/swiftc/ld (preceded by space after file:line:col:
-#     or at start of line)
-ERR_RE='(^|[[:space:]])error:|^\*\* (BUILD|TEST|ARCHIVE|CLEAN|ANALYZE) FAILED \*\*|^Testing failed:|^Failing tests:'
-
+ERROR_LINES=$(error_lines "$LOG")
 FOUND_ERRORS=0
-if grep -En "$ERR_RE" "$LOG" >/dev/null 2>&1; then
+if [ -n "$ERROR_LINES" ]; then
     FOUND_ERRORS=1
 fi
 
@@ -145,7 +180,7 @@ if [ "$XC_STATUS" -ne 0 ] || [ "$FOUND_ERRORS" -ne 0 ]; then
     echo "❌ [$LABEL] xcodebuild failed (exit=$XC_STATUS, errors_in_log=$FOUND_ERRORS)" >&2
     if [ "$FOUND_ERRORS" -ne 0 ]; then
         echo "---- first 40 error lines from log ----" >&2
-        grep -En "$ERR_RE" "$LOG" | head -40 >&2 || true
+        printf '%s\n' "$ERROR_LINES" | head -40 >&2
         echo "---------------------------------------" >&2
     fi
     # Prefer propagating the original xcodebuild exit status when it's non-zero;
