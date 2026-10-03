@@ -28,8 +28,9 @@ final nonisolated class EmbeddedMetadataReader: @unchecked Sendable {
         return nil
     }
 
-    /// Reads only the album artist, track and disc number tags, without the
-    /// playability checks of a full inspection.
+    /// Reads only the album artist, track and disc number tags (and the
+    /// free-form totals the backfill checks stored numbers against), without
+    /// the playability checks of a full inspection.
     func trackTags(at fileURL: URL) async -> TrackTags {
         let asset = AVURLAsset(url: fileURL)
         let items: [AVMetadataItem]
@@ -43,6 +44,8 @@ final nonisolated class EmbeddedMetadataReader: @unchecked Sendable {
             albumArtistName: AVMetadataHelper.albumArtistName(in: items),
             trackNumber: AVMetadataHelper.trackNumber(in: items),
             discNumber: AVMetadataHelper.discNumber(in: items),
+            trackTotal: AVMetadataHelper.trackTotal(in: items),
+            discTotal: AVMetadataHelper.discTotal(in: items),
         )
     }
 

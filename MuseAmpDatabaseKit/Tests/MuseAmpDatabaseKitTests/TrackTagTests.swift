@@ -90,6 +90,56 @@ struct TrackTagBackfillTests {
         #expect(rerun == 0)
     }
 
+    @Test
+    func `numbers read from TRACKTOTAL and DISCTOTAL are repaired, others stay`() async throws {
+        let fixture = try DatabaseIntegrityFixture()
+        defer { try? fixture.cleanup() }
+        let manager = await fixture.makeManager()
+        try await manager.initialize()
+
+        // What older builds stored: the substring match read TRACKTOTAL and
+        // DISCTOTAL as the position for 9501 and 9504.
+        let stored: [(trackID: String, track: Int?, disc: Int?)] = [
+            ("9501", 13, 2), // PR #12 file: TRACKTOTAL 13, trkn 3; DISCTOTAL 2, disk 1
+            ("9502", 13, nil), // track 13 of 13: trkn 13, TRACKTOTAL 13
+            ("9503", 13, nil), // TRACKTOTAL 13 but no position in the file
+            ("9504", 5, nil), // stored 5 is not the total: kept even though trkn says 3
+        ]
+        for track in stored {
+            _ = try fixture.createLibraryAudioFile(relativePath: "950/\(track.trackID).m4a")
+            await fixture.setInspectionMetadata(ImportedTrackMetadata(
+                trackID: track.trackID,
+                albumID: "950",
+                title: "Title \(track.trackID)",
+                artistName: "Artist",
+                albumTitle: "Album",
+                albumArtistName: "Album Artist",
+                trackNumber: track.track,
+                discNumber: track.disc,
+                sourceKind: .imported,
+            ))
+        }
+        _ = try await manager.send(.rebuildIndex(pruneInvalidFiles: false))
+
+        let fileTags: [String: TrackTags] = [
+            "9501": TrackTags(trackNumber: 3, discNumber: 1, trackTotal: 13, discTotal: 2),
+            "9502": TrackTags(trackNumber: 13, trackTotal: 13),
+            "9503": TrackTags(trackTotal: 13),
+            "9504": TrackTags(trackNumber: 3, trackTotal: 13),
+        ]
+        let updated = try await manager.backfillTrackTagsIfNeeded { url in
+            fileTags[url.deletingPathExtension().lastPathComponent] ?? TrackTags()
+        }
+
+        #expect(updated == 1)
+        let after = try Dictionary(uniqueKeysWithValues: manager.tracks(inAlbumID: "950").map { ($0.trackID, $0) })
+        #expect(after["9501"]?.trackNumber == 3)
+        #expect(after["9501"]?.discNumber == 1)
+        #expect(after["9502"]?.trackNumber == 13)
+        #expect(after["9503"]?.trackNumber == 13)
+        #expect(after["9504"]?.trackNumber == 5)
+    }
+
     private func setIndexMeta(key: String, value: String, in databaseURL: URL) throws {
         var database: OpaquePointer?
         guard sqlite3_open(databaseURL.path, &database) == SQLITE_OK else {

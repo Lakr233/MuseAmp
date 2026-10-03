@@ -213,6 +213,19 @@ struct AVMetadataHelperTrackNumberTests {
     }
 
     @Test
+    func `reads free-form totals for the backfill repair`() async throws {
+        let items = try [
+            text(keySpace: iTunesFreeForm, key: "com.apple.iTunes.TRACKTOTAL", value: "13"),
+            text(keySpace: iTunesFreeForm, key: "com.apple.iTunes.DISCTOTAL", value: "2"),
+            atom("trkn", bytes: [0, 0, 0, 3, 0, 13, 0, 0]),
+        ]
+        #expect(await AVMetadataHelper.trackTotal(in: items) == 13)
+        #expect(await AVMetadataHelper.discTotal(in: items) == 2)
+        // The total inside a trkn atom is not a TRACKTOTAL tag.
+        #expect(await AVMetadataHelper.trackTotal(in: [items[2]]) == nil)
+    }
+
+    @Test
     func `prefers the trkn atom and skips empty positions`() async throws {
         let items = try [
             text(keySpace: iTunesFreeForm, key: "com.apple.iTunes.TRACKNUMBER", value: "9"),

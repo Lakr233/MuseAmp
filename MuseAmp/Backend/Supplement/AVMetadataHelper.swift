@@ -93,6 +93,12 @@ nonisolated enum AVMetadataHelper {
         keyNames: ["discnumber", "disc_number", "disc", "disknumber", "disk"],
     )
 
+    /// Free-form total counts. Older builds' substring match read these as
+    /// the track or disc number, so the backfill uses them to spot and
+    /// repair such values.
+    static let trackTotalTag = ExactTag(identifiers: [], keyNames: ["tracktotal", "totaltracks"])
+    static let discTotalTag = ExactTag(identifiers: [], keyNames: ["disctotal", "totaldiscs"])
+
     static func albumArtistName(in items: [AVMetadataItem]) async -> String? {
         for item in albumArtistTag.matchingItems(in: items) {
             let value = try? await item.load(.stringValue)
@@ -109,6 +115,14 @@ nonisolated enum AVMetadataHelper {
 
     static func discNumber(in items: [AVMetadataItem]) async -> Int? {
         await position(of: discNumberTag, in: items)
+    }
+
+    static func trackTotal(in items: [AVMetadataItem]) async -> Int? {
+        await position(of: trackTotalTag, in: items)
+    }
+
+    static func discTotal(in items: [AVMetadataItem]) async -> Int? {
+        await position(of: discTotalTag, in: items)
     }
 
     /// The first positive position among the tag's items. The total that

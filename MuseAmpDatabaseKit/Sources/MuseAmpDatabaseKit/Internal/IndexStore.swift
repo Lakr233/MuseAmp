@@ -194,8 +194,29 @@ struct IndexStore {
         logger.info("IndexStore", "fillMissingTags count=\(tagsByTrackID.count)")
     }
 
-    /// The tag backfill version this index has completed: 1 filled album
-    /// artists, 2 also track and disc numbers. Version 1 was stored under its
+    /// Replaces a track or disc number only while the row still holds the
+    /// stale value it was read with, so a row changed in the meantime is left
+    /// alone.
+    func repairNumbers(_ repairs: [String: TrackNumberRepair]) throws {
+        guard !repairs.isEmpty else {
+            return
+        }
+
+        try database.run(transaction: { _ in
+            for (trackID, repair) in repairs {
+                if let change = repair.track {
+                    try replaceColumn(TrackRow.Properties.trackNumber, change: change, trackID: trackID)
+                }
+                if let change = repair.disc {
+                    try replaceColumn(TrackRow.Properties.discNumber, change: change, trackID: trackID)
+                }
+            }
+        })
+        logger.info("IndexStore", "repairNumbers count=\(repairs.count)")
+    }
+
+    /// The tag backfill version this index has completed (see
+    /// `DatabaseManager.tagBackfillVersion`). Version 1 was stored under its
     /// own key.
     func tagBackfillVersion() throws -> Int {
         if let version = try metaInt(for: "tag_backfill_version") {
@@ -206,6 +227,16 @@ struct IndexStore {
 
     func setTagBackfillVersion(_ version: Int) throws {
         try setMetaValue(String(version), for: "tag_backfill_version")
+    }
+
+    private func replaceColumn(_ column: TrackRow.Properties, change: TrackNumberRepair.Change, trackID: String) throws {
+        let row: [ColumnEncodable?] = [change.position]
+        try database.update(
+            table: TrackRow.tableName,
+            on: column,
+            with: row,
+            where: TrackRow.Properties.trackID == trackID && column == change.stale,
+        )
     }
 
     private func fillColumn(_ column: TrackRow.Properties, with value: ColumnEncodable, trackID: String) throws {
