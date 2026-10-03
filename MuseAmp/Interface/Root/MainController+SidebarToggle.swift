@@ -75,10 +75,11 @@ import UIKit
             updateSidebarTogglePosition()
         }
 
-        /// Pins the button's trailing edge to the sidebar's trailing edge,
-        /// read from where the detail column's safe area starts. Once the
-        /// sidebar is gone, the traffic-light clearance wins. Called on every
-        /// layout, so the button follows window resizes.
+        /// Pins the button's trailing edge to the sidebar's trailing edge:
+        /// the sidebar column's edge or where the detail column's safe area
+        /// starts, whichever is nearer. Once the sidebar is gone, the
+        /// traffic-light clearance wins. Called on every layout, so the
+        /// button follows window resizes.
         func updateSidebarTogglePosition() {
             guard sidebarToggleButton.superview != nil,
                   contentContainerController.view.isDescendant(of: view)
@@ -86,7 +87,14 @@ import UIKit
             rootSplitViewController.view.layoutIfNeeded()
 
             let detailContent = contentContainerController.view.safeAreaLayoutGuide.layoutFrame
-            let sidebarTrailing = view.convert(detailContent, from: contentContainerController.view).minX
+            let detailLeading = view.convert(detailContent, from: contentContainerController.view).minX
+            // macOS 26 starts the detail column's safe area a few points past
+            // the sidebar, so the sidebar column's own edge wins when nearer.
+            let sidebarColumn: UIView = sidebarViewController.navigationController?.view ?? sidebarViewController.view
+            let sidebarColumnTrailing = sidebarColumn.window == nil
+                ? detailLeading
+                : view.convert(sidebarColumn.bounds, from: sidebarColumn).maxX
+            let sidebarTrailing = min(detailLeading, sidebarColumnTrailing)
             let leading = max(
                 SidebarToggleLayout.trafficLightClearance,
                 sidebarTrailing - SidebarToggleLayout.sidebarEdgeInset - SidebarToggleLayout.side,
