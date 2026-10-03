@@ -80,15 +80,7 @@ final class AlbumNavigationHelper {
         }
         guard !tracks.isEmpty else { return nil }
 
-        let sorted = tracks.sorted { lhs, rhs in
-            if lhs.discNumber != rhs.discNumber {
-                return (lhs.discNumber ?? .max) < (rhs.discNumber ?? .max)
-            }
-            if lhs.trackNumber != rhs.trackNumber {
-                return (lhs.trackNumber ?? .max) < (rhs.trackNumber ?? .max)
-            }
-            return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
-        }
+        let sorted = tracks.sortedInAlbumOrder()
 
         let paths = environment.paths
         let catalogSongs = sorted.map { track -> CatalogSong in

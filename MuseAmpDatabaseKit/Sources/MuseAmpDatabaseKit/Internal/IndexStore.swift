@@ -68,17 +68,14 @@ struct IndexStore {
         return row?.toModel()
     }
 
+    /// The album's tracks in album order. Sorted here rather than in SQL,
+    /// which would put tracks without a number first.
     func tracks(inAlbumID albumID: String) throws -> [AudioTrackRecord] {
         let rows: [TrackRow] = try database.getObjects(
             fromTable: TrackRow.tableName,
             where: TrackRow.Properties.albumID == albumID,
-            orderBy: [
-                TrackRow.Properties.discNumber.order(.ascending),
-                TrackRow.Properties.trackNumber.order(.ascending),
-                TrackRow.Properties.title.order(.ascending),
-            ],
         )
-        return rows.map { $0.toModel() }
+        return rows.map { $0.toModel() }.sortedInAlbumOrder()
     }
 
     func recentTracks(limit: Int) throws -> [AudioTrackRecord] {
@@ -173,35 +170,52 @@ struct IndexStore {
         logger.info("IndexStore", "upsertTracks count=\(records.count)")
     }
 
-    /// Sets the album artist only on rows that still have none, so a row
+    /// Writes each tag only into a column that is still empty, so a row
     /// deleted or re-indexed in the meantime is neither recreated nor
     /// overwritten.
-    func fillMissingAlbumArtistNames(_ namesByTrackID: [String: String]) throws {
-        guard !namesByTrackID.isEmpty else {
+    func fillMissingTags(_ tagsByTrackID: [String: TrackTags]) throws {
+        guard !tagsByTrackID.isEmpty else {
             return
         }
 
         try database.run(transaction: { _ in
-            for (trackID, name) in namesByTrackID {
-                let row: [ColumnEncodable?] = [name]
-                try database.update(
-                    table: TrackRow.tableName,
-                    on: TrackRow.Properties.albumArtistName,
-                    with: row,
-                    where: TrackRow.Properties.trackID == trackID
-                        && TrackRow.Properties.albumArtistName.isNull(),
-                )
+            for (trackID, tags) in tagsByTrackID {
+                if let albumArtistName = tags.albumArtistName {
+                    try fillColumn(TrackRow.Properties.albumArtistName, with: albumArtistName, trackID: trackID)
+                }
+                if let trackNumber = tags.trackNumber {
+                    try fillColumn(TrackRow.Properties.trackNumber, with: trackNumber, trackID: trackID)
+                }
+                if let discNumber = tags.discNumber {
+                    try fillColumn(TrackRow.Properties.discNumber, with: discNumber, trackID: trackID)
+                }
             }
         })
-        logger.info("IndexStore", "fillMissingAlbumArtistNames count=\(namesByTrackID.count)")
+        logger.info("IndexStore", "fillMissingTags count=\(tagsByTrackID.count)")
     }
 
-    func albumArtistBackfillCompleted() throws -> Bool {
-        try metaString(for: "album_artist_backfill_version") == "1"
+    /// The tag backfill version this index has completed: 1 filled album
+    /// artists, 2 also track and disc numbers. Version 1 was stored under its
+    /// own key.
+    func tagBackfillVersion() throws -> Int {
+        if let version = try metaInt(for: "tag_backfill_version") {
+            return version
+        }
+        return try metaString(for: "album_artist_backfill_version") == "1" ? 1 : 0
     }
 
-    func markAlbumArtistBackfillCompleted() throws {
-        try setMetaValue("1", for: "album_artist_backfill_version")
+    func setTagBackfillVersion(_ version: Int) throws {
+        try setMetaValue(String(version), for: "tag_backfill_version")
+    }
+
+    private func fillColumn(_ column: TrackRow.Properties, with value: ColumnEncodable, trackID: String) throws {
+        let row: [ColumnEncodable?] = [value]
+        try database.update(
+            table: TrackRow.tableName,
+            on: column,
+            with: row,
+            where: TrackRow.Properties.trackID == trackID && column.isNull(),
+        )
     }
 
     func deleteTracks(relativePaths: [String]) throws {

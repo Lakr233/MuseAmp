@@ -96,6 +96,52 @@ struct ExportMetadataProcessorTests {
     }
 
     @Test
+    func `track and disc numbers written on export are read back`() async throws {
+        let dir = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let fileURL = dir.appendingPathComponent("1001.m4a")
+        try makeSilentM4A(at: fileURL)
+
+        var info = albumArtistInfo(nil)
+        info.trackNumber = 3
+        info.discNumber = 2
+        try await ExportMetadataProcessor.embedExportMetadata(info, into: fileURL)
+
+        let metadata = try await readMetadata(from: fileURL)
+        #expect(metadata.filter { $0.identifier == .iTunesMetadataTrackNumber }.count == 1)
+        #expect(metadata.filter { $0.identifier == .iTunesMetadataDiscNumber }.count == 1)
+        let record = try await readTrackRecord(at: fileURL)
+        #expect(record.trackNumber == 3)
+        #expect(record.discNumber == 2)
+    }
+
+    @Test
+    func `export keeps the file's track and disc numbers`() async throws {
+        let dir = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let fileURL = dir.appendingPathComponent("1001.m4a")
+        try makeSilentM4A(at: fileURL)
+
+        var first = albumArtistInfo(nil)
+        first.trackNumber = 3
+        first.discNumber = 1
+        try await ExportMetadataProcessor.embedExportMetadata(first, into: fileURL)
+        // A second embed, as a LAN transfer or share does, without numbers or
+        // with different ones, leaves the atoms the file already has.
+        try await ExportMetadataProcessor.embedExportMetadata(albumArtistInfo("Artist A"), into: fileURL)
+        var conflicting = albumArtistInfo(nil)
+        conflicting.trackNumber = 9
+        try await ExportMetadataProcessor.embedExportMetadata(conflicting, into: fileURL)
+
+        let metadata = try await readMetadata(from: fileURL)
+        #expect(metadata.filter { $0.identifier == .iTunesMetadataTrackNumber }.count == 1)
+        let record = try await readTrackRecord(at: fileURL)
+        #expect(record.trackNumber == 3)
+        #expect(record.discNumber == 1)
+        #expect(record.albumArtistName == "Artist A")
+    }
+
+    @Test
     func `export keeps the file's album artist unless it writes a new one`() async throws {
         let dir = try makeTempDir()
         defer { try? FileManager.default.removeItem(at: dir) }

@@ -130,19 +130,20 @@ extension AppEnvironment {
         )
     }
 
-    /// Tracks indexed before Album Artist was read from file tags have none
-    /// stored, and a library refresh skips unchanged files. Fill it in once,
-    /// in the background, by re-reading only that tag.
-    func backfillAlbumArtistsIfNeeded() {
+    /// Tracks indexed before album artist, track and disc numbers were read
+    /// correctly from file tags have them missing, and a library refresh
+    /// skips unchanged files. Fill them in once, in the background, by
+    /// re-reading only those tags.
+    func backfillTrackTagsIfNeeded() {
         let databaseManager = databaseManager
         let metadataReader = metadataReader
         Task(priority: .utility) {
             do {
-                try await databaseManager.backfillAlbumArtistsIfNeeded { fileURL in
-                    await metadataReader.albumArtistName(at: fileURL)
+                try await databaseManager.backfillTrackTagsIfNeeded { fileURL in
+                    await metadataReader.trackTags(at: fileURL)
                 }
             } catch {
-                AppLog.error("AppEnvironment", "backfillAlbumArtistsIfNeeded failed error=\(error.localizedDescription)")
+                AppLog.error("AppEnvironment", "backfillTrackTagsIfNeeded failed error=\(error.localizedDescription)")
             }
         }
     }

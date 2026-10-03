@@ -23,6 +23,10 @@ enum ExportMetadataProcessor {
         /// `EmbeddedMetadataReader` reads it back. When nil, the file keeps
         /// whatever album artist it already has.
         var albumArtistName: String?
+        /// Written as the M4A `trkn` / `disk` atoms, only when the file has
+        /// no track or disc number of its own, so a total it carries is kept.
+        var trackNumber: Int?
+        var discNumber: Int?
 
         init(trackID: String, albumID: String?) {
             self.trackID = trackID
@@ -161,7 +165,7 @@ private extension ExportMetadataProcessor {
         var metadata = existingMetadata.filter {
             !AVMetadataHelper.isComment($0) && !AVMetadataHelper.isLyrics($0)
                 && !matchesTitle($0) && !matchesArtist($0) && !matchesAlbum($0)
-                && !(replacesAlbumArtist && AVMetadataHelper.albumArtistPriority(of: $0) != nil)
+                && !(replacesAlbumArtist && AVMetadataHelper.albumArtistTag.priority(of: $0) != nil)
         }
 
         metadata.append(commentMetadataItem(for: info))
@@ -169,6 +173,17 @@ private extension ExportMetadataProcessor {
             metadata.append(lyricsMetadataItem(lyrics))
         }
         metadata.append(contentsOf: standardMetadataItems(for: info))
+
+        if await AVMetadataHelper.trackNumber(in: existingMetadata) == nil,
+           let trackNumber = info.trackNumber, trackNumber > 0
+        {
+            metadata.append(positionMetadataItem(.iTunesMetadataTrackNumber, position: trackNumber, byteCount: 8))
+        }
+        if await AVMetadataHelper.discNumber(in: existingMetadata) == nil,
+           let discNumber = info.discNumber, discNumber > 0
+        {
+            metadata.append(positionMetadataItem(.iTunesMetadataDiscNumber, position: discNumber, byteCount: 6))
+        }
 
         if !hasExistingArtwork, let artworkData = info.artworkData {
             AppLog.info(logger, "embedding artwork trackID=\(info.trackID) size=\(artworkData.count)")
@@ -261,6 +276,25 @@ private extension ExportMetadataProcessor {
         let item = AVMutableMetadataItem()
         item.identifier = .iTunesMetadataLyrics
         item.value = lyrics as NSString
+        return item.copy() as! AVMetadataItem
+    }
+
+    /// `trkn` (8 bytes) and `disk` (6 bytes): two reserved bytes, the
+    /// position as a big-endian UInt16, then a total, left 0 because it is
+    /// unknown here.
+    static func positionMetadataItem(
+        _ identifier: AVMetadataIdentifier,
+        position: Int,
+        byteCount: Int,
+    ) -> AVMetadataItem {
+        var bytes = [UInt8](repeating: 0, count: byteCount)
+        let clamped = UInt16(clamping: position)
+        bytes[2] = UInt8(clamped >> 8)
+        bytes[3] = UInt8(clamped & 0xFF)
+        let item = AVMutableMetadataItem()
+        item.identifier = identifier
+        item.dataType = kCMMetadataBaseDataType_RawData as String
+        item.value = Data(bytes) as NSData
         return item.copy() as! AVMetadataItem
     }
 

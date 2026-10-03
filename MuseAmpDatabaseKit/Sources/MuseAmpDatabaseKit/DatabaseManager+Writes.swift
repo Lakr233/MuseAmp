@@ -92,11 +92,11 @@ extension DatabaseManager {
             title: metadata.title,
             artistName: metadata.artistName,
             albumTitle: metadata.albumTitle,
-            // Callers that know no album artist (a download without one from
-            // the server) still get the file's own tag.
+            // Values the caller does not know (a download the server sent
+            // without them) come from the file's own tags.
             albumArtistName: metadata.albumArtistName.nilIfEmpty ?? inspection.metadata.albumArtistName.nilIfEmpty,
-            trackNumber: metadata.trackNumber,
-            discNumber: metadata.discNumber,
+            trackNumber: metadata.trackNumber ?? inspection.metadata.trackNumber,
+            discNumber: metadata.discNumber ?? inspection.metadata.discNumber,
             genreName: metadata.genreName,
             composerName: metadata.composerName,
             releaseDate: metadata.releaseDate,

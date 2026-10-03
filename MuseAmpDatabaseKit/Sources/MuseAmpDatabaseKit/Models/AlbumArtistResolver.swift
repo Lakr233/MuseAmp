@@ -46,7 +46,7 @@ public enum AlbumArtistResolver {
     /// album's tracks in disc and track order, so the result does not depend
     /// on how the caller sorted them.
     public static func albumArtistName(for tracks: [AudioTrackRecord]) -> String? {
-        let ordered = albumOrdered(tracks)
+        let ordered = tracks.sortedInAlbumOrder()
         return albumArtistName(
             albumArtistNames: ordered.map(\.albumArtistName),
             artistNames: ordered.map(\.artistName),
@@ -55,26 +55,11 @@ public enum AlbumArtistResolver {
 
     /// Only the most common Album Artist tag, or nil when no track has one.
     public static func taggedAlbumArtistName(for tracks: [AudioTrackRecord]) -> String? {
-        mostCommonName(in: albumOrdered(tracks).compactMap(\.albumArtistName.nilIfEmpty))
+        mostCommonName(in: tracks.sortedInAlbumOrder().compactMap(\.albumArtistName.nilIfEmpty))
     }
 }
 
 private extension AlbumArtistResolver {
-    static func albumOrdered(_ tracks: [AudioTrackRecord]) -> [AudioTrackRecord] {
-        tracks.sorted { lhs, rhs in
-            if lhs.discNumber != rhs.discNumber {
-                return (lhs.discNumber ?? .max) < (rhs.discNumber ?? .max)
-            }
-            if lhs.trackNumber != rhs.trackNumber {
-                return (lhs.trackNumber ?? .max) < (rhs.trackNumber ?? .max)
-            }
-            if lhs.title != rhs.title {
-                return lhs.title < rhs.title
-            }
-            return lhs.trackID < rhs.trackID
-        }
-    }
-
     /// Ties go to the name that appears first.
     static func mostCommonName(in names: [String]) -> String? {
         var counts: [String: Int] = [:]

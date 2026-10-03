@@ -103,17 +103,17 @@ struct AlbumArtistResolverTests {
 
 @Suite(.serialized)
 struct AlbumArtistLibraryTests {
-    private actor AlbumArtistReader {
+    private actor TagReader {
         private(set) var readCount = 0
-        let namesByTrackID: [String: String]
+        let tagsByTrackID: [String: TrackTags]
 
-        init(namesByTrackID: [String: String]) {
-            self.namesByTrackID = namesByTrackID
+        init(tagsByTrackID: [String: TrackTags]) {
+            self.tagsByTrackID = tagsByTrackID
         }
 
-        func read(_ fileURL: URL) -> String? {
+        func read(_ fileURL: URL) -> TrackTags {
             readCount += 1
-            return namesByTrackID[fileURL.deletingPathExtension().lastPathComponent]
+            return tagsByTrackID[fileURL.deletingPathExtension().lastPathComponent] ?? TrackTags()
         }
     }
 
@@ -187,18 +187,19 @@ struct AlbumArtistLibraryTests {
     }
 
     @Test
-    func `backfill fills a missing Album Artist once and keeps album IDs`() async throws {
+    func `backfill fills missing tags once, keeps stored values and album IDs`() async throws {
         let fixture = try DatabaseIntegrityFixture()
         defer { try? fixture.cleanup() }
         let manager = await fixture.makeManager()
         try await manager.initialize()
 
-        // Indexed the way older builds did: the Album Artist tag was never read.
-        let tracks: [(trackID: String, artist: String, albumArtist: String?)] = [
-            ("9301", "Artist A", nil),
-            ("9302", "Artist A, Artist B", nil),
-            ("9303", "Artist C", nil),
-            ("9304", "Artist D", "Already Set"),
+        // Indexed the way older builds did: Album Artist, trkn and disk were
+        // never read, except for values that came from elsewhere.
+        let tracks: [(trackID: String, artist: String, albumArtist: String?, trackNumber: Int?)] = [
+            ("9301", "Artist A", nil, nil),
+            ("9302", "Artist A, Artist B", nil, nil),
+            ("9303", "Artist C", nil, nil),
+            ("9304", "Artist D", "Already Set", 7),
         ]
         for track in tracks {
             _ = try fixture.createLibraryAudioFile(relativePath: "930/\(track.trackID).m4a")
@@ -209,6 +210,7 @@ struct AlbumArtistLibraryTests {
                 artistName: track.artist,
                 albumTitle: "Example Album",
                 albumArtistName: track.albumArtist,
+                trackNumber: track.trackNumber,
                 sourceKind: .imported,
             ))
         }
@@ -216,29 +218,38 @@ struct AlbumArtistLibraryTests {
         let before = try manager.tracks(inAlbumID: "930")
         #expect(before.count == 4)
 
-        let reader = AlbumArtistReader(namesByTrackID: [
-            "9301": "Artist A",
-            "9302": "Artist A",
-            "9304": "Tag On Disk",
+        let reader = TagReader(tagsByTrackID: [
+            "9301": TrackTags(albumArtistName: "Artist A", trackNumber: 1, discNumber: 1),
+            "9302": TrackTags(albumArtistName: "Artist A", trackNumber: 2),
+            "9304": TrackTags(albumArtistName: "Tag On Disk", trackNumber: 4, discNumber: 1),
         ])
         let events = EventRecorder(manager: manager)
-        let updated = try await manager.backfillAlbumArtistsIfNeeded { await reader.read($0) }
+        let updated = try await manager.backfillTrackTagsIfNeeded { await reader.read($0) }
 
-        #expect(updated == 2)
-        #expect(await reader.readCount == 3)
+        #expect(updated == 3)
+        #expect(await reader.readCount == 4)
         let after = try Dictionary(uniqueKeysWithValues: manager.tracks(inAlbumID: "930").map { ($0.trackID, $0) })
         #expect(after["9301"]?.albumArtistName == "Artist A")
+        #expect(after["9301"]?.trackNumber == 1)
+        #expect(after["9301"]?.discNumber == 1)
         #expect(after["9302"]?.albumArtistName == "Artist A")
+        #expect(after["9302"]?.trackNumber == 2)
+        #expect(after["9302"]?.discNumber == nil)
         #expect(after["9303"]?.albumArtistName == nil)
+        #expect(after["9303"]?.trackNumber == nil)
+        // Stored values win over what the file says; only the empty disc fills.
         #expect(after["9304"]?.albumArtistName == "Already Set")
+        #expect(after["9304"]?.trackNumber == 7)
+        #expect(after["9304"]?.discNumber == 1)
         #expect(Set(after.values.map(\.albumID)) == ["930"])
         #expect(Set(after.values.map(\.relativePath)) == Set(before.map(\.relativePath)))
         #expect(try manager.listAlbums().first?.artistName == "Artist A")
-        #expect(events.updatedTrackIDs == ["9301", "9302"])
+        #expect(events.updatedTrackIDs == ["9301", "9302", "9304"])
+        #expect(try manager.tracks(inAlbumID: "930").map(\.trackID) == ["9301", "9304", "9302", "9303"])
 
-        let secondRun = try await manager.backfillAlbumArtistsIfNeeded { await reader.read($0) }
+        let secondRun = try await manager.backfillTrackTagsIfNeeded { await reader.read($0) }
         #expect(secondRun == 0)
-        #expect(await reader.readCount == 3)
+        #expect(await reader.readCount == 4)
     }
 }
 

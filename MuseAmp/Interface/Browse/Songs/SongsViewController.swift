@@ -383,12 +383,11 @@ final class SongsViewController: UIViewController {
                 if albumOrder != .orderedSame {
                     return albumOrder == .orderedAscending
                 }
-                let num0 = $0.trackNumber ?? Int.max
-                let num1 = $1.trackNumber ?? Int.max
-                if num0 != num1 {
-                    return num0 < num1
+                // Albums that share a title stay apart.
+                if $0.albumID != $1.albumID {
+                    return $0.albumID < $1.albumID
                 }
-                return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
+                return AudioTrackRecord.isInAlbumOrder($0, $1)
             }
         case .recentlyModified:
             allTracks.sort { $0.fileModifiedAt > $1.fileModifiedAt }

@@ -13,14 +13,23 @@ import MuseAmpDatabaseKit
 
 extension DownloadManager {
     /// The album artist the server reports for the album (the Subsonic album
-    /// `artist`), so the downloaded file and the library agree with the
-    /// server. Nil when the lookup fails; ingest then keeps the file's own tag.
-    nonisolated static func serverAlbumArtistName(albumID: String, apiClient: APIClient) async -> String? {
+    /// `artist`) and the track and disc numbers it reports for the track, so
+    /// the downloaded file and the library agree with the server. Values the
+    /// server does not provide stay nil; ingest then keeps the file's own tags.
+    nonisolated static func serverTrackTags(albumID: String, trackID: String, apiClient: APIClient) async -> TrackTags {
         do {
-            return try await apiClient.album(id: albumID)?.attributes.artistName.nilIfEmpty
+            guard let album = try await apiClient.album(id: albumID) else {
+                return TrackTags()
+            }
+            let song = album.relationships?.tracks?.data.first { $0.id == trackID }
+            return TrackTags(
+                albumArtistName: album.attributes.artistName,
+                trackNumber: song?.attributes.trackNumber,
+                discNumber: song?.attributes.discNumber,
+            )
         } catch {
-            AppLog.warning("DownloadManager", "album artist lookup failed albumID=\(albumID): \(error.localizedDescription)")
-            return nil
+            AppLog.warning("DownloadManager", "album tag lookup failed albumID=\(albumID): \(error.localizedDescription)")
+            return TrackTags()
         }
     }
 
@@ -256,9 +265,9 @@ extension DownloadManager {
                 apiClient: apiClient,
                 lyricsStore: lyricsCacheStore,
             )
-            async let serverAlbumArtist = Self.serverAlbumArtistName(albumID: albumID, apiClient: apiClient)
+            async let serverTags = Self.serverTrackTags(albumID: albumID, trackID: trackID, apiClient: apiClient)
             _ = await (artworkDone, lyricsDone)
-            let albumArtistName = await serverAlbumArtist
+            let tags = await serverTags
 
             let lyrics = lyricsCacheStore.lyrics(for: trackID)
             var exportInfo = ExportMetadataProcessor.ExportInfo(trackID: trackID, albumID: albumID)
@@ -267,7 +276,9 @@ extension DownloadManager {
             exportInfo.title = title
             exportInfo.artistName = artistName
             exportInfo.albumName = albumName
-            exportInfo.albumArtistName = albumArtistName
+            exportInfo.albumArtistName = tags.albumArtistName
+            exportInfo.trackNumber = tags.trackNumber
+            exportInfo.discNumber = tags.discNumber
             do {
                 try await ExportMetadataProcessor.embedExportMetadata(exportInfo, into: ingestURL)
                 AppLog.info("DownloadManager", "Metadata embedded trackID=\(trackID)")
@@ -284,10 +295,10 @@ extension DownloadManager {
                 title: title,
                 artistName: artistName,
                 albumTitle: albumName ?? String(localized: "Unknown Album"),
-                albumArtistName: albumArtistName,
+                albumArtistName: tags.albumArtistName,
                 durationSeconds: nil,
-                trackNumber: nil,
-                discNumber: nil,
+                trackNumber: tags.trackNumber,
+                discNumber: tags.discNumber,
                 genreName: nil,
                 composerName: nil,
                 releaseDate: nil,
