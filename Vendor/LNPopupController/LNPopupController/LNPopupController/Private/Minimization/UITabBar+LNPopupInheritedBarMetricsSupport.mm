@@ -15,23 +15,6 @@
 #import <objc/runtime.h>
 #import "_LNPopupAddressInfo.h"
 
-static BOOL __LNEnableOS27MinimizationHack(void)
-{
-	if(@available(iOS 27.0, *))
-	{
-		static BOOL disableHack = NO;
-		static dispatch_once_t onceToken;
-		dispatch_once(&onceToken, ^{
-			disableHack = [[NSBundle.mainBundle objectForInfoDictionaryKey:@"LNPopupDisableMinimizationHack"] boolValue];
-		});
-		
-		return disableHack == NO;
-	}
-	
-	return YES;
-}
-
-
 static BOOL __LNPopupTabBarSupportsMinimizationAPI = NO;
 static NSString* __LNFrameForHostedAccessoryViewKey;
 static NSString* __LNMinimizedStateDidChangeHandlerKey;
@@ -59,30 +42,19 @@ static BOOL __ln_hackApplied = NO;
 		BOOL m2 = [self instancesRespondToSelector:NSSelectorFromString(__LNMinimizedStateDidChangeHandlerKey)];
 		BOOL m3 = [self instancesRespondToSelector:NSSelectorFromString(__LNIsMinimizedKey)];
 		
-		__LNPopupTabBarSupportsMinimizationAPI = __LNEnableOS27MinimizationHack() && glass && m1 && m2 && m3;
+		__LNPopupTabBarSupportsMinimizationAPI = glass && m1 && m2 && m3;
 		
-		if(glass && __LNEnableOS27MinimizationHack())
+		if(glass)
 		{
 			if(@available(iOS 27, *))
 			{
-				SEL sel = @selector(bundleIdentifier);
-				Method m = LNSwizzleClassGetInstanceMethod(NSBundle.class, sel);
-				NSString* (*orig)(id, SEL) = reinterpret_cast<decltype(orig)>(method_getImplementation(m));
-				method_setImplementation(m, imp_implementationWithBlock(^NSString*(NSBundle* self) {
-					if(__ln_hackApplied == NO)
-					{
-						auto callStackReturnAddresses = NSThread.callStackReturnAddresses;
-						NSUInteger addr = [callStackReturnAddresses[1] unsignedIntegerValue];
-						_LNPopupAddressInfo* addrInfo = [[_LNPopupAddressInfo alloc] initWithAddress:addr];
-						
-						if([addrInfo.image hasPrefix:@"UIKit"])
-						{
-							__ln_hackApplied = YES;
-							return LNPopupHiddenString("com.apple.mobileslideshow");
-						}
-					}
-					
-					return orig(self, sel);
+				Class cls = UITabBar.class;
+				SEL sel = NSSelectorFromString(__LNIsMinimizedKey);
+				Method m = LNSwizzleClassGetInstanceMethod(cls, sel);
+				method_setImplementation(m, imp_implementationWithBlock(^BOOL(NSObject* self) {
+					static NSString* key = LNPopupHiddenString("visualProvider.currentMorphTarget");
+					NSInteger currentMorphTarget = [[self valueForKeyPath:key] integerValue];
+					return currentMorphTarget == 2;
 				}));
 			}
 			else
@@ -108,6 +80,13 @@ static BOOL __ln_hackApplied = NO;
 
 - (CGRect)_ln_proposedFrameForPopupBar
 {
+	if(@available(iOS 27, *))
+	{
+		static NSString* key = LNPopupHiddenString("_hostedElementLayoutResolver");
+		CGRect (^hostedElementLayoutResolver)(NSInteger element) = [self valueForKey:key];
+		return hostedElementLayoutResolver(2);
+	}
+	
 	return [[self valueForKey:__LNFrameForHostedAccessoryViewKey] CGRectValue];
 }
 
@@ -128,9 +107,10 @@ static const void* __LNPopupTabBarMinimizationDelegateKey = &__LNPopupTabBarMini
 	_LNWeakRef* ref = [_LNWeakRef refWithObject:minimizationDelegate];
 	objc_setAssociatedObject(self, __LNPopupTabBarMinimizationDelegateKey, ref, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 	
-	__weak __typeof(self) weakTabBar = self;
+	__weak auto weakTabBar = self;
 	void (^handler)(BOOL) = minimizationDelegate == nil ? (id)nil : (id)^(BOOL wasMinimized) {
-		[weakTabBar._ln_minimizationDelegate tabBar:weakTabBar didMinimize:wasMinimized];
+		__strong auto tabBar = weakTabBar;
+		[tabBar._ln_minimizationDelegate tabBar:tabBar didMinimize:wasMinimized];
 	};
 	
 	if(__LNPopupTabBarSupportsMinimizationAPI)
@@ -161,7 +141,7 @@ static const void* __LNPopupTabBarMinimizationDelegateKey = &__LNPopupTabBarMini
 			
 			NSUInteger sidebarLayout = [[parentForPopupBar valueForKey:sidebarLayoutKey] unsignedIntegerValue];
 			
-			if(sidebarLayout == 0)
+			if(sidebarLayout == 0 || LNPopupBar.isCatalystApp)
 			{
 				CGFloat extra = 0.0;
 				if(ln_unavailable(iOS 27.0, *)) {
@@ -174,7 +154,8 @@ static const void* __LNPopupTabBarMinimizationDelegateKey = &__LNPopupTabBarMini
 	
 	if(__LNPopupTabBarSupportsMinimizationAPI && popupBar.inheritsBottomBarMetrics && [self _ln_isFloatingTabBar] == NO)
 	{
-		CGRect proposedMinimizedFrame = self.tabBar._ln_proposedFrameForPopupBar;
+		CGRect proposedInTabBarCoordinates = self.tabBar._ln_proposedFrameForPopupBar;
+		CGRect proposedMinimizedFrame = [popupBar convertRect:proposedInTabBarCoordinates fromView:self.tabBar];
 		if(proposedMinimizedFrame.size.height == 0)
 		{
 			return NSDirectionalEdgeInsetsZero;
@@ -183,7 +164,7 @@ static const void* __LNPopupTabBarMinimizationDelegateKey = &__LNPopupTabBarMini
 		NSDirectionalEdgeInsets floatingLayoutMargins = self.popupBar.floatingLayoutMargins;
 				
 		CGFloat ltrLeading = proposedMinimizedFrame.origin.x;
-		CGFloat ltrTrailing = self.tabBar.bounds.size.width - proposedMinimizedFrame.size.width - proposedMinimizedFrame.origin.x;
+		CGFloat ltrTrailing = self.tabBar.superview.bounds.size.width - proposedMinimizedFrame.size.width - proposedMinimizedFrame.origin.x;
 		
 		UIUserInterfaceLayoutDirection layoutDirection = [UIView userInterfaceLayoutDirectionForSemanticContentAttribute:popupBar.semanticContentAttribute];
 		if(layoutDirection == UIUserInterfaceLayoutDirectionLeftToRight)

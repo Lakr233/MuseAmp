@@ -52,10 +52,6 @@ extension MainController {
         rootSplitViewController.minimumPrimaryColumnWidth = 180
         rootSplitViewController.maximumPrimaryColumnWidth = 320
         rootSplitViewController.presentsWithGesture = true
-        // PopupBarSplitViewController already places the bar beside the
-        // sidebar; letting LNPopupController avoid the column too would
-        // inset the bar by the sidebar width a second time.
-        rootSplitViewController.popupBarAvoidsPrimaryColumn = false
         rootSplitViewController.delegate = self
 
         rootSplitViewController.setViewController(sidebarViewController, for: .primary)

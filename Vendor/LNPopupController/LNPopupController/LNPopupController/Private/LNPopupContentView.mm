@@ -40,16 +40,39 @@
 		CGRect superFrameInWindow = [contentView.window convertRect:contentView.superview.bounds fromView:contentView.superview];
 		
 		LNPopupViewCorners corners = {};
-		CGSize corner = CGSizeMake(contentView.window.screen._ln_cornerRadius, contentView.window.screen._ln_cornerRadius);
+		CGFloat topLeft;
+		CGFloat topRight;
+		CGFloat bottomLeft;
+		CGFloat bottomRight;
+		if(@available(iOS 27, *))
+		{
+			topLeft = [contentView.window _ln_whatsMyConcentricRadiusForCorner:UIRectCornerTopLeft];
+			topRight = [contentView.window _ln_whatsMyConcentricRadiusForCorner:UIRectCornerTopRight];
+			bottomLeft = [contentView.window _ln_whatsMyConcentricRadiusForCorner:UIRectCornerBottomLeft];
+			bottomRight = [contentView.window _ln_whatsMyConcentricRadiusForCorner:UIRectCornerBottomRight];
+		}
+		else
+		{
+			CGFloat radius = contentView.window.screen._ln_cornerRadius;
+			topLeft = radius;
+			topRight = radius;
+			bottomLeft = radius;
+			bottomRight = radius;
+		}
+		CGSize topLeftCorner = CGSizeMake(topLeft, topLeft);
+		CGSize topRightCorner = CGSizeMake(topRight, topRight);
+		CGSize bottomLeftCorner = CGSizeMake(bottomLeft, bottomLeft);
+		CGSize bottomRightCorner = CGSizeMake(bottomRight, bottomRight);
+		
 		if(frameInWindow.origin.x == 0)
 		{
 			if(superFrameInWindow.origin.y == 0)
 			{
-				corners.leftTop = corner;
+				corners.leftTop = topLeftCorner;
 			}
 			if(superFrameInWindow.origin.y + superFrameInWindow.size.height == contentView.window.bounds.size.height)
 			{
-				corners.leftBottom = corner;
+				corners.leftBottom = bottomLeftCorner;
 			}
 		}
 		
@@ -57,11 +80,11 @@
 		{
 			if(superFrameInWindow.origin.y == 0)
 			{
-				corners.rightTop = corner;
+				corners.rightTop = topRightCorner;
 			}
 			if(superFrameInWindow.origin.y + superFrameInWindow.size.height == contentView.window.bounds.size.height)
 			{
-				corners.rightBottom = corner;
+				corners.rightBottom = bottomRightCorner;
 			}
 		}
 		

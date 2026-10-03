@@ -1,8 +1,8 @@
 // swift-tools-version:6.2
-// LNPopupController:4.5.5
+// LNPopupController:4.5.13
 
 import PackageDescription
-import Foundation.NSFileManager
+import Foundation
 
 let packageBase = URL(filePath: Context.packageDirectory, directoryHint: .isDirectory)
 
