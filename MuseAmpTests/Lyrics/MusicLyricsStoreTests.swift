@@ -75,7 +75,7 @@ struct MusicLyricsStoreTests {
     }
 }
 
-private final class LyricsStoreLogRecorder: @unchecked Sendable {
+private final nonisolated class LyricsStoreLogRecorder: @unchecked Sendable {
     private let lock = NSLock()
     private var entries: [(level: DatabaseLogLevel, message: String)] = []
 
