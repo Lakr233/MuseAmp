@@ -67,6 +67,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             Task { @MainActor [environment] in
                 _ = await environment.playbackController.restorePersistedPlaybackIfNeeded()
                 environment.downloadManager.reconcileOnLaunch()
+                environment.backfillAlbumArtistsIfNeeded()
             }
             drainPendingImports()
             drainPendingReceiverInfo()

@@ -12,6 +12,18 @@ import MuseAmpDatabaseKit
 // MARK: - Digger Integration
 
 extension DownloadManager {
+    /// The album artist the server reports for the album (the Subsonic album
+    /// `artist`), so the downloaded file and the library agree with the
+    /// server. Nil when the lookup fails; ingest then keeps the file's own tag.
+    nonisolated static func serverAlbumArtistName(albumID: String, apiClient: APIClient) async -> String? {
+        do {
+            return try await apiClient.album(id: albumID)?.attributes.artistName.nilIfEmpty
+        } catch {
+            AppLog.warning("DownloadManager", "album artist lookup failed albumID=\(albumID): \(error.localizedDescription)")
+            return nil
+        }
+    }
+
     func syncDiggerHTTPHeadersIfNeeded() {
         let headers: [String: String] = [:]
         guard DiggerManager.shared.additionalHTTPHeaders != headers else {
@@ -244,7 +256,9 @@ extension DownloadManager {
                 apiClient: apiClient,
                 lyricsStore: lyricsCacheStore,
             )
+            async let serverAlbumArtist = Self.serverAlbumArtistName(albumID: albumID, apiClient: apiClient)
             _ = await (artworkDone, lyricsDone)
+            let albumArtistName = await serverAlbumArtist
 
             let lyrics = lyricsCacheStore.lyrics(for: trackID)
             var exportInfo = ExportMetadataProcessor.ExportInfo(trackID: trackID, albumID: albumID)
@@ -253,6 +267,7 @@ extension DownloadManager {
             exportInfo.title = title
             exportInfo.artistName = artistName
             exportInfo.albumName = albumName
+            exportInfo.albumArtistName = albumArtistName
             do {
                 try await ExportMetadataProcessor.embedExportMetadata(exportInfo, into: ingestURL)
                 AppLog.info("DownloadManager", "Metadata embedded trackID=\(trackID)")
@@ -269,7 +284,7 @@ extension DownloadManager {
                 title: title,
                 artistName: artistName,
                 albumTitle: albumName ?? String(localized: "Unknown Album"),
-                albumArtistName: nil,
+                albumArtistName: albumArtistName,
                 durationSeconds: nil,
                 trackNumber: nil,
                 discNumber: nil,

@@ -229,6 +229,7 @@ final class SongLibraryViewController: UIViewController {
     }
 
     func reloadAlbums(animatingDifferences: Bool? = nil) {
+        let previousAlbumsByID = albumsByID
         do {
             albums = try environment.libraryDatabase.allAlbums()
         } catch {
@@ -237,11 +238,17 @@ final class SongLibraryViewController: UIViewController {
         }
         applySort()
         albumsByID = Dictionary(uniqueKeysWithValues: albums.map { ($0.id, $0) })
+        // Album IDs stay the same when an album's details change (a new
+        // album artist, title or track count), so those rows are reconfigured.
+        let changedAlbumIDs = albums.compactMap { album -> String? in
+            guard let previous = previousAlbumsByID[album.id], previous != album else { return nil }
+            return album.id
+        }
 
         if isSearchActive {
             performSearch(query: currentQuery, animatingDifferences: animatingDifferences)
         } else {
-            applyAlbumsSnapshot(animatingDifferences: animatingDifferences)
+            applyAlbumsSnapshot(animatingDifferences: animatingDifferences, reconfiguring: changedAlbumIDs)
         }
     }
 
@@ -324,10 +331,13 @@ final class SongLibraryViewController: UIViewController {
         updateNavigationItems()
     }
 
-    func applyAlbumsSnapshot(animatingDifferences: Bool? = nil) {
+    func applyAlbumsSnapshot(animatingDifferences: Bool? = nil, reconfiguring changedAlbumIDs: [String] = []) {
         var snapshot = NSDiffableDataSourceSnapshot<LibrarySection, LibraryItem>()
         snapshot.appendSections([LibrarySection.albums])
         snapshot.appendItems(albums.map { LibraryItem.album($0.id) }, toSection: LibrarySection.albums)
+        if !changedAlbumIDs.isEmpty {
+            snapshot.reconfigureItems(changedAlbumIDs.map { LibraryItem.album($0) })
+        }
         let animate = animatingDifferences ?? (hasAppliedInitialSnapshot && view.window != nil)
         dataSource.apply(snapshot, animatingDifferences: animate)
         hasAppliedInitialSnapshot = true

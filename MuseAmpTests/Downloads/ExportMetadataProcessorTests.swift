@@ -50,7 +50,67 @@ struct ExportMetadataProcessorTests {
             || AVMetadataHelper.matches(item, tokens: ["lyrics"])
     }
 
+    private func readTrackRecord(at fileURL: URL) async throws -> AudioTrackRecord {
+        let attributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
+        return try await EmbeddedMetadataReader().makeTrackRecord(
+            fileURL: fileURL,
+            relativePath: "2002/\(fileURL.lastPathComponent)",
+            trackID: fileURL.deletingPathExtension().lastPathComponent,
+            albumID: "2002",
+            fileSize: (attributes[.size] as? NSNumber)?.int64Value ?? 0,
+            modifiedAt: attributes[.modificationDate] as? Date ?? .init(),
+        )
+    }
+
+    private func albumArtistInfo(_ albumArtistName: String?) -> ExportMetadataProcessor.ExportInfo {
+        var info = ExportMetadataProcessor.ExportInfo(
+            trackID: "1001",
+            albumID: "2002",
+            artworkURL: nil,
+            lyrics: nil,
+            title: "Example Two",
+            artistName: "Artist A, Artist B",
+            albumName: "Example Album",
+        )
+        info.albumArtistName = albumArtistName
+        return info
+    }
+
     // MARK: - Tests
+
+    @Test
+    func `album artist written on export is read back as the album artist`() async throws {
+        let dir = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let fileURL = dir.appendingPathComponent("1001.m4a")
+        try makeSilentM4A(at: fileURL)
+
+        try await ExportMetadataProcessor.embedExportMetadata(albumArtistInfo("Artist A"), into: fileURL)
+
+        let metadata = try await readMetadata(from: fileURL)
+        let albumArtistItems = metadata.filter { $0.identifier == .iTunesMetadataAlbumArtist }
+        #expect(albumArtistItems.count == 1)
+        let record = try await readTrackRecord(at: fileURL)
+        #expect(record.albumArtistName == "Artist A")
+        #expect(record.artistName == "Artist A, Artist B")
+    }
+
+    @Test
+    func `export keeps the file's album artist unless it writes a new one`() async throws {
+        let dir = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let fileURL = dir.appendingPathComponent("1001.m4a")
+        try makeSilentM4A(at: fileURL)
+
+        try await ExportMetadataProcessor.embedExportMetadata(albumArtistInfo("Original"), into: fileURL)
+        try await ExportMetadataProcessor.embedExportMetadata(albumArtistInfo(nil), into: fileURL)
+        #expect(try await readTrackRecord(at: fileURL).albumArtistName == "Original")
+
+        try await ExportMetadataProcessor.embedExportMetadata(albumArtistInfo("Replacement"), into: fileURL)
+        let metadata = try await readMetadata(from: fileURL)
+        #expect(metadata.filter { $0.identifier == .iTunesMetadataAlbumArtist }.count == 1)
+        #expect(try await readTrackRecord(at: fileURL).albumArtistName == "Replacement")
+    }
 
     @Test
     func `embeds title, artist, and album metadata`() async throws {

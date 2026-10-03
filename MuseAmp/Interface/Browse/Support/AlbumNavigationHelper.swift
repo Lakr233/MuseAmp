@@ -100,15 +100,7 @@ final class AlbumNavigationHelper {
             return track.catalogSong(artwork: artwork)
         }
 
-        var seenArtists = Set<String>()
-        var uniqueArtists: [String] = []
-        for track in sorted {
-            let name = track.albumArtistName.nilIfEmpty ?? track.artistName
-            if seenArtists.insert(name).inserted {
-                uniqueArtists.append(name)
-            }
-        }
-        let resolvedArtistName = uniqueArtists.isEmpty ? artistName : uniqueArtists.joined(separator: ", ")
+        let resolvedArtistName = AlbumArtistResolver.albumArtistName(for: sorted) ?? artistName
 
         let firstTrack = sorted[0]
         let resolvedAlbumName = albumName.nilIfEmpty ?? firstTrack.albumTitle.nilIfEmpty ?? firstTrack.title

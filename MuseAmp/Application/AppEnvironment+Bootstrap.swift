@@ -130,6 +130,23 @@ extension AppEnvironment {
         )
     }
 
+    /// Tracks indexed before Album Artist was read from file tags have none
+    /// stored, and a library refresh skips unchanged files. Fill it in once,
+    /// in the background, by re-reading only that tag.
+    func backfillAlbumArtistsIfNeeded() {
+        let databaseManager = databaseManager
+        let metadataReader = metadataReader
+        Task(priority: .utility) {
+            do {
+                try await databaseManager.backfillAlbumArtistsIfNeeded { fileURL in
+                    await metadataReader.albumArtistName(at: fileURL)
+                }
+            } catch {
+                AppLog.error("AppEnvironment", "backfillAlbumArtistsIfNeeded failed error=\(error.localizedDescription)")
+            }
+        }
+    }
+
     static func configureImagePipeline() {
         let cache = ImageCache.default
         cache.memoryStorage.config.totalCostLimit = 100 * 1024 * 1024

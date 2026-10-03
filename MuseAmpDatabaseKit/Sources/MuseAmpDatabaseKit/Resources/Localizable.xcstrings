@@ -192,6 +192,22 @@
           }
         }
       }
+    },
+    "Various Artists" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Various Artists"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "群星"
+          }
+        }
+      }
     }
   },
   "version" : "1.2"

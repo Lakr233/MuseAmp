@@ -28,6 +28,20 @@ final nonisolated class EmbeddedMetadataReader: @unchecked Sendable {
         return nil
     }
 
+    /// Reads only the Album Artist tag, without the playability checks of a
+    /// full inspection.
+    func albumArtistName(at fileURL: URL) async -> String? {
+        let asset = AVURLAsset(url: fileURL)
+        let items: [AVMetadataItem]
+        do {
+            items = try await AVMetadataHelper.collectMetadataItems(from: asset)
+        } catch {
+            AppLog.warning(self, "albumArtistName unable to load metadata for '\(fileURL.lastPathComponent)': \(error.localizedDescription)")
+            return nil
+        }
+        return await AVMetadataHelper.albumArtistName(in: items)
+    }
+
     func extractLyrics(from metadataItems: [AVMetadataItem]) async -> String? {
         nonisolated(unsafe) let items = metadataItems
         return await lyricsStringValue(in: items)
@@ -50,7 +64,7 @@ final nonisolated class EmbeddedMetadataReader: @unchecked Sendable {
         let artist = await stringValue(in: metadataItems, matching: ["artist"]) ?? String(localized: "Unknown Artist")
         let album = await stringValue(in: metadataItems, matching: ["albumName", "album"]) ?? String(localized: "Unknown Album")
 
-        let albumArtist = await stringValue(in: metadataItems, matching: ["albumArtist"])
+        let albumArtist = await AVMetadataHelper.albumArtistName(in: metadataItems)
         let trackNumber = await intValue(in: metadataItems, matching: ["trackNumber", "track"])
         let discNumber = await intValue(in: metadataItems, matching: ["discNumber", "disc"])
         let genre = await stringValue(in: metadataItems, matching: ["genre"])

@@ -122,8 +122,8 @@ struct IndexStore {
             return AlbumGroup(
                 albumID: first.albumID,
                 albumTitle: first.albumTitle,
-                artistName: first.albumArtistName ?? first.artistName,
-                albumArtistName: first.albumArtistName,
+                artistName: AlbumArtistResolver.albumArtistName(for: tracks) ?? first.artistName,
+                albumArtistName: AlbumArtistResolver.taggedAlbumArtistName(for: tracks),
                 trackCount: tracks.count,
                 artworkTrackID: artworkTrackID,
                 totalDurationSeconds: tracks.reduce(0) { $0 + $1.durationSeconds },
@@ -171,6 +171,37 @@ struct IndexStore {
             }
         })
         logger.info("IndexStore", "upsertTracks count=\(records.count)")
+    }
+
+    /// Sets the album artist only on rows that still have none, so a row
+    /// deleted or re-indexed in the meantime is neither recreated nor
+    /// overwritten.
+    func fillMissingAlbumArtistNames(_ namesByTrackID: [String: String]) throws {
+        guard !namesByTrackID.isEmpty else {
+            return
+        }
+
+        try database.run(transaction: { _ in
+            for (trackID, name) in namesByTrackID {
+                let row: [ColumnEncodable?] = [name]
+                try database.update(
+                    table: TrackRow.tableName,
+                    on: TrackRow.Properties.albumArtistName,
+                    with: row,
+                    where: TrackRow.Properties.trackID == trackID
+                        && TrackRow.Properties.albumArtistName.isNull(),
+                )
+            }
+        })
+        logger.info("IndexStore", "fillMissingAlbumArtistNames count=\(namesByTrackID.count)")
+    }
+
+    func albumArtistBackfillCompleted() throws -> Bool {
+        try metaString(for: "album_artist_backfill_version") == "1"
+    }
+
+    func markAlbumArtistBackfillCompleted() throws {
+        try setMetaValue("1", for: "album_artist_backfill_version")
     }
 
     func deleteTracks(relativePaths: [String]) throws {

@@ -7,6 +7,7 @@
 
 @preconcurrency import AVFoundation
 import Foundation
+import MuseAmpDatabaseKit
 
 enum ExportMetadataProcessor {
     nonisolated struct ExportInfo {
@@ -18,6 +19,10 @@ enum ExportMetadataProcessor {
         var title: String?
         var artistName: String?
         var albumName: String?
+        /// Written as the M4A `aART` atom, which is where
+        /// `EmbeddedMetadataReader` reads it back. When nil, the file keeps
+        /// whatever album artist it already has.
+        var albumArtistName: String?
 
         init(trackID: String, albumID: String?) {
             self.trackID = trackID
@@ -152,9 +157,11 @@ private extension ExportMetadataProcessor {
 
         let hasExistingArtwork = await DownloadArtworkProcessor.containsArtwork(existingMetadata)
 
+        let replacesAlbumArtist = info.albumArtistName.nilIfEmpty != nil
         var metadata = existingMetadata.filter {
             !AVMetadataHelper.isComment($0) && !AVMetadataHelper.isLyrics($0)
                 && !matchesTitle($0) && !matchesArtist($0) && !matchesAlbum($0)
+                && !(replacesAlbumArtist && AVMetadataHelper.albumArtistPriority(of: $0) != nil)
         }
 
         metadata.append(commentMetadataItem(for: info))
@@ -305,6 +312,13 @@ private extension ExportMetadataProcessor {
             let iTunes = AVMutableMetadataItem()
             iTunes.identifier = .iTunesMetadataAlbum
             iTunes.value = album as NSString
+            items.append(iTunes.copy() as! AVMetadataItem)
+        }
+
+        if let albumArtist = info.albumArtistName.nilIfEmpty {
+            let iTunes = AVMutableMetadataItem()
+            iTunes.identifier = .iTunesMetadataAlbumArtist
+            iTunes.value = albumArtist as NSString
             items.append(iTunes.copy() as! AVMetadataItem)
         }
 

@@ -236,7 +236,7 @@ extension PlaylistDetailViewController {
             }
 
         let attributes = CatalogAlbumAttributes(
-            artistName: selectedTrack.albumArtistName.nilIfEmpty ?? selectedTrack.artistName,
+            artistName: AlbumArtistResolver.albumArtistName(for: albumTracks) ?? selectedTrack.artistName,
             name: selectedTrack.albumTitle.nilIfEmpty ?? selectedTrack.title,
             trackCount: albumTracks.count,
             releaseDate: selectedTrack.releaseDate,
