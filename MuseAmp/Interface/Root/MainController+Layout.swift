@@ -121,13 +121,6 @@ extension MainController {
             }
         }
 
-        private func animateDetailColumnTitlebarInset(sidebarVisible: Bool) {
-            let queued = rootSplitViewController.transitionCoordinator?.animate(alongsideTransition: { [weak self] _ in
-                self?.updateDetailColumnTitlebarInset(sidebarVisible: sidebarVisible)
-            }) ?? false
-            guard !queued else { return }
-            updateDetailColumnTitlebarInset(sidebarVisible: sidebarVisible)
-        }
     #endif
 
     func teardownRelaxedLayout() {
@@ -190,7 +183,7 @@ extension MainController: UISplitViewControllerDelegate {
         guard column == .primary else { return }
         rootSplitViewController.animatePopupBarToCurrentLayout(sidebarWillBeVisible: true)
         #if targetEnvironment(macCatalyst)
-            animateDetailColumnTitlebarInset(sidebarVisible: true)
+            animateDetailColumnWithSidebar(sidebarVisible: true)
         #endif
     }
 
@@ -201,7 +194,7 @@ extension MainController: UISplitViewControllerDelegate {
         guard column == .primary else { return }
         rootSplitViewController.animatePopupBarToCurrentLayout(sidebarWillBeVisible: false)
         #if targetEnvironment(macCatalyst)
-            animateDetailColumnTitlebarInset(sidebarVisible: false)
+            animateDetailColumnWithSidebar(sidebarVisible: false)
         #endif
     }
 }
