@@ -61,6 +61,7 @@ class NowPlayingRelaxedController: UIViewController, NowPlayingQueueShellControl
         lyricsPanelView: lyricTimelineView,
         queuePanelView: queuePanelView,
     )
+    lazy var closeButton = makeCloseButton()
 
     // MARK: - Right Panel
 
@@ -95,6 +96,7 @@ class NowPlayingRelaxedController: UIViewController, NowPlayingQueueShellControl
         installContentLayout()
         installLeftPanel()
         installRightPanel()
+        installCloseButton()
         hideTitlebarScrollEdgeEffects()
         bindQueueSectionActions()
         bindContentSelector()
@@ -142,7 +144,7 @@ class NowPlayingRelaxedController: UIViewController, NowPlayingQueueShellControl
     }
 
     @objc private func escapeKeyPressed() {
-        popupPresentationContainer?.closePopup(animated: true)
+        closeBySlidingDown()
     }
 
     override func viewForPopupTransition(

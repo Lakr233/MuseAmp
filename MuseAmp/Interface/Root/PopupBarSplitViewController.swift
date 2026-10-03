@@ -21,6 +21,33 @@ final class PopupBarSplitViewController: UISplitViewController {
         displayMode == .oneBesideSecondary || displayMode == .oneOverSecondary
     }
 
+    /// LNPopupController closes an open popup on Escape with its own
+    /// animation, from a press handler that runs before any key command.
+    /// The relaxed Now Playing closes with its slide instead.
+    private var escapeClosableNowPlaying: NowPlayingRelaxedController? {
+        guard popupPresentationState == .open else { return nil }
+        return popupContent as? NowPlayingRelaxedController
+    }
+
+    private static func containsEscape(_ presses: Set<UIPress>) -> Bool {
+        presses.contains { $0.key?.keyCode == .keyboardEscape }
+    }
+
+    override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+        guard Self.containsEscape(presses), escapeClosableNowPlaying != nil else {
+            super.pressesBegan(presses, with: event)
+            return
+        }
+    }
+
+    override func pressesEnded(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+        guard Self.containsEscape(presses), let nowPlaying = escapeClosableNowPlaying else {
+            super.pressesEnded(presses, with: event)
+            return
+        }
+        nowPlaying.closeBySlidingDown()
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         _ = Self.isPopupBarMarginsHookAvailable

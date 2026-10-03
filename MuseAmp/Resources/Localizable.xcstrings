@@ -1393,6 +1393,22 @@
         }
       }
     },
+    "Close Now Playing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close Now Playing"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭正在播放"
+          }
+        }
+      }
+    },
     "Close Window" : {
       "localizations" : {
         "en" : {
