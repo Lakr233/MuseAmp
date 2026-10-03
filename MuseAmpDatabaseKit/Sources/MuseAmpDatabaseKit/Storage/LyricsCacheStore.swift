@@ -19,6 +19,8 @@ public struct LyricsCacheStore: Sendable {
     public func lyrics(for trackID: String) -> String? {
         do {
             return try String(contentsOf: paths.lyricsCacheURL(for: trackID), encoding: .utf8)
+        } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
+            return nil
         } catch {
             logger.warning("LyricsCacheStore", "lyrics read failed trackID=\(trackID) error=\(error.localizedDescription)")
             return nil
