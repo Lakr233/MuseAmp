@@ -2753,6 +2753,22 @@
         }
       }
     },
+    "Hide Sidebar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide Sidebar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏边栏"
+          }
+        }
+      }
+    },
     "How Muse Amp handles server settings, local music files, transfers, and on-device data." : {
       "localizations" : {
         "en" : {
@@ -6623,6 +6639,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "显示播放队列"
+          }
+        }
+      }
+    },
+    "Show Sidebar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Sidebar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示边栏"
           }
         }
       }

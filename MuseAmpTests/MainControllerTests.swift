@@ -102,6 +102,53 @@ struct MainControllerTests {
             #expect(abs(gapBelowBar()) < 0.5)
         }
     }
+
+    @Suite(.serialized)
+    @MainActor
+    struct MainControllerSidebarToggleTests {
+        @Test
+        func `The title bar toggle hides the sidebar and brings it back`() throws {
+            let sandbox = TestLibrarySandbox()
+            let mainController = MainController(environment: sandbox.makeEnvironment())
+            let scene = try #require(
+                UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first,
+            )
+            let window = UIWindow(windowScene: scene)
+            window.frame = CGRect(x: 0, y: 0, width: 1200, height: 800)
+            window.rootViewController = mainController
+            window.isHidden = false
+            defer {
+                window.isHidden = true
+                window.rootViewController = nil
+            }
+            window.layoutIfNeeded()
+
+            let splitViewController = mainController.rootSplitViewController
+            let toggle = mainController.sidebarToggleButton
+            func toggleFrame() -> CGRect {
+                toggle.convert(toggle.bounds, to: window)
+            }
+            #expect(splitViewController.isSidebarVisible)
+            #expect(toggle.window === window)
+            let sidebarWidth = splitViewController.primaryColumnWidth
+            let shownFrame = toggleFrame()
+            #expect(shownFrame.maxX <= sidebarWidth)
+            #expect(shownFrame.maxX >= sidebarWidth - 24)
+
+            toggle.sendActions(for: .touchUpInside)
+            window.layoutIfNeeded()
+            #expect(!splitViewController.isSidebarVisible)
+            #expect(toggle.window === window)
+            #expect(!toggle.isHidden)
+            #expect(window.bounds.contains(toggleFrame()))
+            #expect(toggleFrame().minX < shownFrame.minX)
+
+            toggle.sendActions(for: .touchUpInside)
+            window.layoutIfNeeded()
+            #expect(splitViewController.isSidebarVisible)
+            #expect(toggleFrame() == shownFrame)
+        }
+    }
 #endif
 
 struct SidebarHeaderModeTests {

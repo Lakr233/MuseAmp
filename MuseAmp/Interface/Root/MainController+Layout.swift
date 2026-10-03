@@ -184,6 +184,7 @@ extension MainController: UISplitViewControllerDelegate {
         rootSplitViewController.animatePopupBarToCurrentLayout(sidebarWillBeVisible: true)
         #if targetEnvironment(macCatalyst)
             animateDetailColumnWithSidebar(sidebarVisible: true)
+            sidebarToggleWillChange(sidebarVisible: true)
         #endif
     }
 
@@ -195,6 +196,7 @@ extension MainController: UISplitViewControllerDelegate {
         rootSplitViewController.animatePopupBarToCurrentLayout(sidebarWillBeVisible: false)
         #if targetEnvironment(macCatalyst)
             animateDetailColumnWithSidebar(sidebarVisible: false)
+            sidebarToggleWillChange(sidebarVisible: false)
         #endif
     }
 }

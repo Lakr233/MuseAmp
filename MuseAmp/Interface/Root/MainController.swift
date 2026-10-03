@@ -98,6 +98,10 @@ class MainController: UIViewController {
         rootSplitViewController
     }
 
+    #if targetEnvironment(macCatalyst)
+        private(set) lazy var sidebarToggleButton = makeSidebarToggleButton()
+    #endif
+
     // MARK: - Popup State (relaxed/catalyst)
 
     var cancellables: Set<AnyCancellable> = []
@@ -195,13 +199,18 @@ class MainController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         let mode = computeLayoutMode()
-        guard mode != currentLayoutMode else { return }
-        transitionToMode(mode)
+        if mode != currentLayoutMode {
+            transitionToMode(mode)
+        }
+        #if targetEnvironment(macCatalyst)
+            updateSidebarTogglePosition()
+        #endif
     }
 
     #if targetEnvironment(macCatalyst)
         override func viewSafeAreaInsetsDidChange() {
             super.viewSafeAreaInsetsDidChange()
+            updateFullScreenTitlebarRow()
             updateDetailColumnTitlebarInset()
         }
     #endif
@@ -257,6 +266,9 @@ class MainController: UIViewController {
         case .catalyst:
             teardownCompactLayout()
             installCatalystLayout()
+            #if targetEnvironment(macCatalyst)
+                installSidebarToggleButton()
+            #endif
         }
 
         if mode != .compact, previousMode == nil || previousMode == .compact {
