@@ -145,22 +145,6 @@
         }
       }
     },
-    "Awaiting Upload" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Awaiting Upload"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "等待上传"
-          }
-        }
-      }
-    },
     "Boot Failed" : {
       "localizations" : {
         "en" : {
@@ -221,22 +205,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "取消传输？"
-          }
-        }
-      }
-    },
-    "Connecting to Sender" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connecting to Sender"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在连接发送方"
           }
         }
       }
@@ -561,22 +529,6 @@
         }
       }
     },
-    "No nearby devices" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No nearby devices"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "没有附近的设备"
-          }
-        }
-      }
-    },
     "No reachable address was available for the selected device." : {
       "localizations" : {
         "en" : {
@@ -589,22 +541,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "所选设备没有可用的连接地址。"
-          }
-        }
-      }
-    },
-    "No reachable sender was available." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No reachable sender was available."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "没有可用的发送方。"
           }
         }
       }
@@ -785,22 +721,6 @@
         }
       }
     },
-    "Receiving was interrupted because the app left the foreground." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Receiving was interrupted because the app left the foreground."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "接收中断，因为 App 离开了前台。"
-          }
-        }
-      }
-    },
     "Request too large." : {
       "localizations" : {
         "en" : {
@@ -893,38 +813,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在搜索附近的设备…"
-          }
-        }
-      }
-    },
-    "Selected Sender" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Selected Sender"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已选择的发送方"
-          }
-        }
-      }
-    },
-    "Sending was interrupted because the app left the foreground." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sending was interrupted because the app left the foreground."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "发送中断，因为 App 离开了前台。"
           }
         }
       }
@@ -1037,22 +925,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已传输的播放列表无法保存在 Apple TV 上。请从 iPhone 重新发送。"
-          }
-        }
-      }
-    },
-    "The transferred playlist could not be saved." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The transferred playlist could not be saved."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已传输的播放列表无法保存。"
           }
         }
       }

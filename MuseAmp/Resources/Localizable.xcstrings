@@ -5347,22 +5347,6 @@
         }
       }
     },
-    "Receiving was interrupted because the app left the foreground." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Receiving was interrupted because the app left the foreground."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "应用离开前台，接收已中断。"
-          }
-        }
-      }
-    },
     "Recent" : {
       "localizations" : {
         "en" : {
@@ -6431,22 +6415,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "向 Apple TV 发送音乐需要本地网络访问权限。请在设置中为 Muse Amp 开启此权限。"
-          }
-        }
-      }
-    },
-    "Sending was interrupted because the app left the foreground." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sending was interrupted because the app left the foreground."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "应用离开前台，发送已中断。"
           }
         }
       }
