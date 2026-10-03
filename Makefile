@@ -17,6 +17,7 @@ DERIVED_DATA   ?= /private/tmp/museamp-deriveddata
 BUILD_HOME      = $(DERIVED_DATA)/home
 XDG_CACHE_HOME  = $(DERIVED_DATA)/xdg-cache
 MODULE_CACHE    = $(DERIVED_DATA)/ModuleCache.noindex
+TEST_HOME       = $(DERIVED_DATA)/test-home
 
 HOST_ARCH := $(shell uname -m)
 
@@ -26,7 +27,16 @@ CATALYST_DESTINATION       := generic/platform=macOS,variant=Mac Catalyst
 CATALYST_TEST_DESTINATION  := platform=macOS,variant=Mac Catalyst,arch=$(HOST_ARCH)
 TVOS_DESTINATION           := generic/platform=tvOS
 
+# Formatters are pinned so `make format` and the CI lint agree: a newer release
+# adds or changes rules and would fail the lint on code nobody touched. The
+# pinned swiftformat is downloaded once into the derived data folder.
+SWIFTFORMAT_VERSION := 0.63.1
+SWIFTFORMAT_SHA256  := 385ef1a263ba28685157b98c5536b9c9105e124518f28b7ef8a2bee4b167eaeb
+SWIFTFORMAT_DIR      = $(DERIVED_DATA)/tools/swiftformat-$(SWIFTFORMAT_VERSION)
+SWIFTFORMAT          = $(SWIFTFORMAT_DIR)/swiftformat
 SWIFTFORMAT_EXCLUDES := Vendor,build,.build,DerivedData
+SWIFTFORMAT_FLAGS   := --swift-version 6.2 --exclude $(SWIFTFORMAT_EXCLUDES)
+PRETTIER            := npx --yes prettier@3.9.9
 
 # Pass dirty=1 to allow package-resolve / scan-license on a dirty git tree.
 # Intended for release flows where the working tree may carry version bumps.
@@ -102,8 +112,8 @@ help:
 	@echo "  scan-license       Alias for package-resolve"
 	@echo ""
 	@echo "Formatting:"
-	@echo "  format             Run swiftformat + prettier (write)"
-	@echo "  format-lint        Run swiftformat + prettier in check mode"
+	@echo "  format             Run the pinned swiftformat + prettier (write)"
+	@echo "  format-lint        Run the pinned swiftformat + prettier in check mode"
 	@echo ""
 	@echo "Localization:"
 	@echo "  strip-xcstrings    Drop stale keys and mirror keys into en values"
@@ -224,9 +234,14 @@ launch-catalyst:
 
 test: build test-unit
 
+# The test host is the full app, launched outside xcodebuild's environment, so
+# it would boot its library from the real ~/Documents and restore the real
+# saved state. TEST_RUNNER_CFFIXED_USER_HOME hands it a home that starts empty
+# on every run, so one run never sees what an earlier run left behind.
 test-unit:
-	mkdir -p "$(BUILD_HOME)" "$(XDG_CACHE_HOME)" "$(MODULE_CACHE)"
-	HOME="$(BUILD_HOME)" XDG_CACHE_HOME="$(XDG_CACHE_HOME)" CLANG_MODULE_CACHE_PATH="$(MODULE_CACHE)" SWIFTPM_MODULECACHE_OVERRIDE="$(MODULE_CACHE)" XCBUILD_LABEL=test-unit $(XCODEBUILD) \
+	rm -rf "$(TEST_HOME)"
+	mkdir -p "$(BUILD_HOME)" "$(XDG_CACHE_HOME)" "$(MODULE_CACHE)" "$(TEST_HOME)"
+	HOME="$(BUILD_HOME)" XDG_CACHE_HOME="$(XDG_CACHE_HOME)" CLANG_MODULE_CACHE_PATH="$(MODULE_CACHE)" SWIFTPM_MODULECACHE_OVERRIDE="$(MODULE_CACHE)" TEST_RUNNER_CFFIXED_USER_HOME="$(TEST_HOME)" XCBUILD_LABEL=test-unit $(XCODEBUILD) \
 	    -scheme $(IOS_SCHEME) \
 	    -destination "$(CATALYST_TEST_DESTINATION)" \
 	    SUPPORTS_MACCATALYST=YES \
@@ -245,20 +260,21 @@ scan-license:
 # Formatting
 # =============================================================================
 
-format:
-	swiftformat . \
-	    --swift-version 6.2 \
-	    --disable redundantSendable \
-	    --exclude $(SWIFTFORMAT_EXCLUDES)
-	npx --yes prettier --write .
+$(SWIFTFORMAT):
+	mkdir -p "$(SWIFTFORMAT_DIR)"
+	curl -fsSL -o "$(SWIFTFORMAT_DIR)/swiftformat.zip" \
+	    "https://github.com/nicklockwood/SwiftFormat/releases/download/$(SWIFTFORMAT_VERSION)/swiftformat.zip"
+	echo "$(SWIFTFORMAT_SHA256)  $(SWIFTFORMAT_DIR)/swiftformat.zip" | shasum -a 256 -c -
+	unzip -o -q "$(SWIFTFORMAT_DIR)/swiftformat.zip" swiftformat -d "$(SWIFTFORMAT_DIR)"
+	rm -f "$(SWIFTFORMAT_DIR)/swiftformat.zip"
 
-format-lint:
-	swiftformat . \
-	    --swift-version 6.2 \
-	    --disable redundantSendable \
-	    --exclude $(SWIFTFORMAT_EXCLUDES) \
-	    --lint
-	npx --yes prettier --check .
+format: $(SWIFTFORMAT)
+	"$(SWIFTFORMAT)" . $(SWIFTFORMAT_FLAGS)
+	$(PRETTIER) --write .
+
+format-lint: $(SWIFTFORMAT)
+	"$(SWIFTFORMAT)" . $(SWIFTFORMAT_FLAGS) --lint
+	$(PRETTIER) --check .
 
 # =============================================================================
 # Localization (xcstrings)

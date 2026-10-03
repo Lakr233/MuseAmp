@@ -13,29 +13,35 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v7
 
-    - name: Set up Xcode
-      run: sudo xcode-select -s /Applications/Xcode.app
+      - name: Set up Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
 
-    - name: Install dependencies
-      run: |
-        brew install make
+      - name: Build for all platforms
+        run: make build
 
-    - name: Build for all platforms
-      run: |
-        make build
-        make build-ios
-        make build-catalyst
-        make build-tvos
+      - name: Run Tests
+        run: make test-unit
 
-    - name: Run Tests
-      run: |
-        make test
-        make test-unit
+      - name: Format and Lint Check
+        run: make format-lint
 
-    - name: Format and Lint Check
-      run: |
-        make format
-        make format-lint
+      # xcbeautify keeps the live log short, so a failed or crashed test is
+      # only fully described in the result bundle and the crash report.
+      - name: Collect test results
+        if: failure()
+        run: |
+          mkdir -p test-results
+          cp -R /private/tmp/museamp-deriveddata/Logs/Test/*.xcresult test-results/ || true
+          cp ~/Library/Logs/DiagnosticReports/MuseAmp* test-results/ || true
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results
+          path: test-results
+          if-no-files-found: ignore
+          retention-days: 14
