@@ -53,8 +53,16 @@ extension NowPlayingPlaybackShellController where Self: UIViewController {
     func animateTrackTransitionIfNeeded(shouldAnimate _: Bool) {}
 
     func applyInitialPlaybackPresentation() {
-        let snapshot = environment.playbackController.snapshot
-        currentPlaybackSnapshot = snapshot
+        currentPlaybackSnapshot = environment.playbackController.snapshot
+        applyCurrentPlaybackPresentation()
+    }
+
+    /// Redraws the track, control island, progress and artwork background
+    /// from `currentPlaybackSnapshot` without animation. Snapshots that
+    /// arrive while the interface is suspended are only recorded, so this
+    /// also runs when the interface resumes.
+    func applyCurrentPlaybackPresentation() {
+        let snapshot = currentPlaybackSnapshot
         lastPresentedTrackID = snapshot.currentTrack?.id
         lastPresentedArtworkURL = snapshot.currentTrack?.artworkURL
 

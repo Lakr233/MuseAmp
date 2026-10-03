@@ -20,7 +20,7 @@ final class NowPlayingArtworkBackgroundCoordinator {
     private let idleColors: [UIColor]
 
     private var paletteTask: Task<Void, Never>?
-    private var lastBackgroundSource: BackgroundSource = .idle
+    private(set) var lastBackgroundSource: BackgroundSource = .idle
     private let artworkPaletteCache = LRUCache<String, [UIColor]>(countLimit: 32)
 
     init(
