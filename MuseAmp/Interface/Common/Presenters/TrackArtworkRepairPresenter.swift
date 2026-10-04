@@ -54,12 +54,10 @@ enum TrackArtworkRepairPresenter {
         trackTitle: String,
     ) {
         let alert = AlertViewController(
-            title: String(localized: "Artwork Repair Complete"),
-            message: String(
-                localized: "Refreshed album artwork for \"\(trackTitle)\" and updated the local audio file.",
-            ),
+            title: "Artwork Repair Complete",
+            message: "Refreshed album artwork for \"\(trackTitle)\" and updated the local audio file.",
         ) { context in
-            context.addAction(title: String(localized: "OK"), attribute: .accent) {
+            context.addAction(title: "OK", attribute: .accent) {
                 context.dispose()
             }
         }
@@ -73,12 +71,10 @@ enum TrackArtworkRepairPresenter {
         error: Error,
     ) {
         let alert = AlertViewController(
-            title: String(localized: "Artwork Repair Failed"),
-            message: String(
-                localized: "Couldn't repair artwork for \"\(trackTitle)\".\n\n\(error.localizedDescription)",
-            ),
+            title: "Artwork Repair Failed",
+            message: "Couldn't repair artwork for \"\(trackTitle)\".\n\n\(error.localizedDescription)",
         ) { context in
-            context.addAction(title: String(localized: "OK"), attribute: .accent) {
+            context.addAction(title: "OK", attribute: .accent) {
                 context.dispose()
             }
         }

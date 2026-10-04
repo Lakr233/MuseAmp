@@ -203,8 +203,8 @@ private extension AppleMusicImportViewController {
     }
 
     func presentErrorAlert(title: String, message: String) {
-        let alert = AlertViewController(title: title, message: message) { context in
-            context.addAction(title: String(localized: "OK"), attribute: .accent) {
+        let alert = AlertViewController(title: .init(title), message: .init(message)) { context in
+            context.addAction(title: "OK", attribute: .accent) {
                 context.dispose()
             }
         }
@@ -241,8 +241,8 @@ private extension AppleMusicImportViewController {
 
     func performImport(of playlist: AppleMusicPlaylistSummary) {
         let progressAlert = AlertProgressIndicatorViewController(
-            title: String(localized: "Importing Playlist"),
-            message: String(localized: "Fetching songs from Apple Music..."),
+            title: "Importing Playlist",
+            message: "Fetching songs from Apple Music...",
         )
         present(progressAlert, animated: true)
 

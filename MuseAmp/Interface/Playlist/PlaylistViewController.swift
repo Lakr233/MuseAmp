@@ -239,9 +239,9 @@ class PlaylistViewController: UIViewController {
 
     private func createCustomPlaylist() {
         let alert = AlertInputViewController(
-            title: String(localized: "New Playlist"),
-            message: String(localized: "Enter a name for your playlist."),
-            placeholder: String(localized: "Playlist Name"),
+            title: "New Playlist",
+            message: "Enter a name for your playlist.",
+            placeholder: "Playlist Name",
             text: "",
         ) { [weak self] name in
             guard let self else { return }

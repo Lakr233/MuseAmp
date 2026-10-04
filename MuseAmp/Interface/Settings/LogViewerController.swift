@@ -457,10 +457,10 @@ extension LogViewerController {
         } catch {
             AppLog.error(self, "clearLog - failed: \(error.localizedDescription)")
             let alert = AlertViewController(
-                title: String(localized: "Clear Failed"),
-                message: error.localizedDescription,
+                title: "Clear Failed",
+                message: .init(error.localizedDescription),
             ) { context in
-                context.addAction(title: String(localized: "OK"), attribute: .accent) {
+                context.addAction(title: "OK", attribute: .accent) {
                     context.dispose()
                 }
             }

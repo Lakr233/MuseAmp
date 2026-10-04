@@ -18,13 +18,13 @@ enum ConfirmationAlertPresenter {
         onCancel: @escaping () -> Void = {},
         onConfirm: @escaping () -> Void,
     ) {
-        let alert = AlertViewController(title: title, message: message) { context in
-            context.addAction(title: String(localized: "Cancel")) {
+        let alert = AlertViewController(title: .init(title), message: .init(message)) { context in
+            context.addAction(title: "Cancel") {
                 context.dispose {
                     onCancel()
                 }
             }
-            context.addAction(title: confirmTitle, attribute: confirmAttribute) {
+            context.addAction(title: .init(confirmTitle), attribute: confirmAttribute) {
                 context.dispose {
                     onConfirm()
                 }

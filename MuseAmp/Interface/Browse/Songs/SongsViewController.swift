@@ -488,8 +488,8 @@ extension SongsViewController: UIDocumentPickerDelegate {
 
     func performImport(urls: [URL]) {
         let alert = AlertProgressIndicatorViewController(
-            title: String(localized: "Importing"),
-            message: String(localized: "Reading audio files..."),
+            title: "Importing",
+            message: "Reading audio files...",
         )
         present(alert, animated: true)
 
@@ -524,10 +524,10 @@ extension SongsViewController: UIDocumentPickerDelegate {
         }
 
         let alert = AlertViewController(
-            title: String(localized: "Import Complete"),
-            message: lines.joined(separator: "\n"),
+            title: "Import Complete",
+            message: .init(lines.joined(separator: "\n")),
         ) { context in
-            context.addAction(title: String(localized: "OK"), attribute: .accent) {
+            context.addAction(title: "OK", attribute: .accent) {
                 context.dispose()
             }
         }

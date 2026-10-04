@@ -1,13 +1,13 @@
 {
-  "originHash" : "279327253aa147ccfa8756d647b1080ae4a07e596f93bc8b986dc7b23acfb3e3",
+  "originHash" : "b1d4221133fd037ab2e9bbb603035c37cb6598e5e906ef283d9e37206457e3af",
   "pins" : [
     {
       "identity" : "alertcontroller",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Lakr233/AlertController.git",
       "state" : {
-        "revision" : "c42a45ca3c81689f2e94490c78c9f48c024ef7cc",
-        "version" : "2.2.2"
+        "revision" : "02806b7fb8424a609ddad9b5a60bb235c63e92cd",
+        "version" : "3.0.0"
       }
     },
     {

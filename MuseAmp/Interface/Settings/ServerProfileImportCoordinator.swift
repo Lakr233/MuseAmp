@@ -239,8 +239,8 @@ private extension ServerProfileImportCoordinator {
             return
         }
 
-        let alert = AlertViewController(title: title, message: message) { context in
-            context.addAction(title: String(localized: "OK"), attribute: .accent) {
+        let alert = AlertViewController(title: .init(title), message: .init(message)) { context in
+            context.addAction(title: "OK", attribute: .accent) {
                 context.dispose()
             }
         }

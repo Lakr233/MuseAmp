@@ -902,7 +902,7 @@
 			repositoryURL = "https://github.com/Lakr233/AlertController.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 2.2.2;
+				minimumVersion = 3.0.0;
 			};
 		};
 		50FF00032F88000100FF0003 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {

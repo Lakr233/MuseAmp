@@ -31,8 +31,8 @@ extension SongLibraryViewController {
 
     func performImport(urls: [URL]) {
         let alert = AlertProgressIndicatorViewController(
-            title: String(localized: "Importing"),
-            message: String(localized: "Reading audio files..."),
+            title: "Importing",
+            message: "Reading audio files...",
         )
         present(alert, animated: true)
 
@@ -67,10 +67,10 @@ extension SongLibraryViewController {
         }
 
         let alert = AlertViewController(
-            title: String(localized: "Import Complete"),
-            message: lines.joined(separator: "\n"),
+            title: "Import Complete",
+            message: .init(lines.joined(separator: "\n")),
         ) { context in
-            context.addAction(title: String(localized: "OK"), attribute: .accent) {
+            context.addAction(title: "OK", attribute: .accent) {
                 context.dispose()
             }
         }
@@ -223,9 +223,9 @@ extension SongLibraryViewController {
         guard !entries.isEmpty else { return }
 
         let alert = AlertInputViewController(
-            title: String(localized: "New Playlist"),
-            message: String(localized: "Enter a name for your playlist."),
-            placeholder: String(localized: "Playlist Name"),
+            title: "New Playlist",
+            message: "Enter a name for your playlist.",
+            placeholder: "Playlist Name",
             text: selectedAlbums().first?.albumTitle ?? "",
         ) { [weak self] name in
             guard let self else { return }

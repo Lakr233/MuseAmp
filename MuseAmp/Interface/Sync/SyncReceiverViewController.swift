@@ -144,9 +144,9 @@ private extension SyncReceiverViewController {
 
     func promptPassword(for device: DiscoveredDevice) {
         let alert = AlertInputViewController(
-            title: String(localized: "Enter Password"),
-            message: device.deviceName,
-            placeholder: String(localized: "6-digit password"),
+            title: "Enter Password",
+            message: .init(device.deviceName),
+            placeholder: "6-digit password",
             text: "",
         ) { [weak self] password in
             let trimmed = password.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -163,8 +163,8 @@ private extension SyncReceiverViewController {
 
     func promptManualAddress() {
         let alert = AlertInputViewController(
-            title: String(localized: "Enter Address"),
-            message: String(localized: "Use hostname:port, IPv4:port, or [IPv6]:port."),
+            title: "Enter Address",
+            message: "Use hostname:port, IPv4:port, or [IPv6]:port.",
             placeholder: "host-or-name:port",
             text: "",
         ) { [weak self] value in
@@ -174,9 +174,9 @@ private extension SyncReceiverViewController {
             do {
                 let endpoint = try SyncEndpoint.parse(value)
                 let passwordAlert = AlertInputViewController(
-                    title: String(localized: "Enter Password"),
-                    message: endpoint.displayString,
-                    placeholder: String(localized: "6-digit password"),
+                    title: "Enter Password",
+                    message: .init(endpoint.displayString),
+                    placeholder: "6-digit password",
                     text: "",
                 ) { [weak self] password in
                     let trimmed = password.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -207,8 +207,8 @@ private extension SyncReceiverViewController {
         }
 
         let progress = AlertProgressIndicatorViewController(
-            title: String(localized: "Connecting"),
-            message: endpoint.displayString,
+            title: "Connecting",
+            message: .init(endpoint.displayString),
         )
         present(progress, animated: true)
 
@@ -315,8 +315,8 @@ private extension SyncReceiverViewController {
         }
 
         let progress = AlertProgressIndicatorViewController(
-            title: String(localized: "Connecting"),
-            message: connectionInfo.deviceName,
+            title: "Connecting",
+            message: .init(connectionInfo.deviceName),
         )
         present(progress, animated: true)
 
@@ -351,8 +351,8 @@ private extension SyncReceiverViewController {
     }
 
     func presentErrorAlert(title: String, message: String) {
-        let alert = AlertViewController(title: title, message: message) { context in
-            context.addAction(title: String(localized: "OK"), attribute: .accent) {
+        let alert = AlertViewController(title: .init(title), message: .init(message)) { context in
+            context.addAction(title: "OK", attribute: .accent) {
                 context.dispose()
             }
         }

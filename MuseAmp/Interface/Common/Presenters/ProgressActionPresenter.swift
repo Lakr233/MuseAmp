@@ -17,7 +17,7 @@ enum ProgressActionPresenter {
         onSuccess: @MainActor @escaping (T) -> Void,
         onFailure: @MainActor @escaping (Error) -> Void,
     ) {
-        let alert = AlertProgressIndicatorViewController(title: title, message: message)
+        let alert = AlertProgressIndicatorViewController(title: .init(title), message: .init(message))
         viewController.present(alert, animated: true)
 
         Task { [weak viewController, weak alert] in
@@ -49,7 +49,7 @@ enum ProgressActionPresenter {
         action: @escaping () async throws -> Void,
         completion: @MainActor @escaping () -> Void,
     ) {
-        let alert = AlertProgressIndicatorViewController(title: title, message: message)
+        let alert = AlertProgressIndicatorViewController(title: .init(title), message: .init(message))
         viewController.present(alert, animated: true)
 
         Task { [weak viewController, weak alert] in

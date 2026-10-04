@@ -91,8 +91,8 @@ private extension SettingsViewController {
 
     func presentPasteJSONPrompt() {
         let input = AlertInputViewController(
-            title: String(localized: "Paste JSON"),
-            message: String(localized: "Paste a JSON object containing serverURL, username, and password."),
+            title: "Paste JSON",
+            message: "Paste a JSON object containing serverURL, username, and password.",
             placeholder: "{\"serverURL\":\"https://example.com/rest\",\"username\":\"demo\",\"password\":\"secret\"}",
             text: "",
         ) { [weak self] text in

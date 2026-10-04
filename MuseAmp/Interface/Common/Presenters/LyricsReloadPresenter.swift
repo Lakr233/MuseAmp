@@ -38,10 +38,10 @@ final class LyricsReloadPresenter {
     private func presentFailure(_ error: any Error) {
         guard let viewController else { return }
         let alert = AlertViewController(
-            title: String(localized: "Failed to Reload Lyrics"),
-            message: error.localizedDescription,
+            title: "Failed to Reload Lyrics",
+            message: .init(error.localizedDescription),
         ) { context in
-            context.addAction(title: String(localized: "OK"), attribute: .accent) {
+            context.addAction(title: "OK", attribute: .accent) {
                 context.dispose()
             }
         }

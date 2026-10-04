@@ -149,8 +149,8 @@ extension SettingsViewController {
 
     func rebuildDatabase() {
         let progressAlert = AlertProgressIndicatorViewController(
-            title: String(localized: "Rebuilding Database"),
-            message: String(localized: "Scanning local files..."),
+            title: "Rebuilding Database",
+            message: "Scanning local files...",
         )
         present(progressAlert, animated: true)
 
@@ -185,10 +185,10 @@ extension SettingsViewController {
                 progressAlert?.dismiss(animated: true) {
                     guard let self else { return }
                     let alert = AlertViewController(
-                        title: String(localized: "Rebuild Failed"),
-                        message: error.localizedDescription,
+                        title: "Rebuild Failed",
+                        message: .init(error.localizedDescription),
                     ) { context in
-                        context.addAction(title: String(localized: "OK"), attribute: .accent) { context.dispose() }
+                        context.addAction(title: "OK", attribute: .accent) { context.dispose() }
                     }
                     self.present(alert, animated: true)
                 }
@@ -208,17 +208,17 @@ extension SettingsViewController {
             )
         }
         let alert = AlertViewController(
-            title: String(localized: "Rebuild Complete"),
-            message: message,
+            title: "Rebuild Complete",
+            message: .init(message),
         ) { [weak self] context in
             if !result.removedInvalidFiles.isEmpty {
-                context.addAction(title: String(localized: "View Deleted Files")) {
+                context.addAction(title: "View Deleted Files") {
                     context.dispose {
                         self?.presentRemovedInvalidFiles(result.removedInvalidFiles)
                     }
                 }
             }
-            context.addAction(title: String(localized: "OK"), attribute: .accent) { context.dispose() }
+            context.addAction(title: "OK", attribute: .accent) { context.dispose() }
         }
         present(alert, animated: true)
     }
@@ -244,8 +244,8 @@ extension SettingsViewController {
 
     func rebuildAllLyricsIndex() {
         let progressAlert = AlertProgressIndicatorViewController(
-            title: String(localized: "Rebuilding Lyrics Index"),
-            message: String(localized: "Listing songs..."),
+            title: "Rebuilding Lyrics Index",
+            message: "Listing songs...",
         )
         present(progressAlert, animated: true)
 
@@ -266,13 +266,13 @@ extension SettingsViewController {
                 progressAlert.dismiss(animated: true) {
                     guard let self else { return }
                     let alert = AlertViewController(
-                        title: String(localized: "Lyrics Rebuild Complete"),
-                        message: String(
+                        title: "Lyrics Rebuild Complete",
+                        message: .init(String(
                             format: String(localized: "Processed %d, refreshed %d, failed %d"),
                             result.tracksProcessed, result.tracksSucceeded, result.tracksFailed,
-                        ),
+                        )),
                     ) { context in
-                        context.addAction(title: String(localized: "OK"), attribute: .accent) { context.dispose() }
+                        context.addAction(title: "OK", attribute: .accent) { context.dispose() }
                     }
                     self.present(alert, animated: true)
                 }
@@ -281,10 +281,10 @@ extension SettingsViewController {
                 progressAlert.dismiss(animated: true) {
                     guard let self else { return }
                     let alert = AlertViewController(
-                        title: String(localized: "Lyrics Rebuild Failed"),
-                        message: error.localizedDescription,
+                        title: "Lyrics Rebuild Failed",
+                        message: .init(error.localizedDescription),
                     ) { context in
-                        context.addAction(title: String(localized: "OK"), attribute: .accent) { context.dispose() }
+                        context.addAction(title: "OK", attribute: .accent) { context.dispose() }
                     }
                     self.present(alert, animated: true)
                 }

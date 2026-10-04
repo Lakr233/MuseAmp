@@ -175,9 +175,9 @@ final class PlaylistContextMenuProvider {
         }
 
         let alert = AlertInputViewController(
-            title: String(localized: "Rename Playlist"),
-            message: String(localized: "Enter a new name for this playlist."),
-            placeholder: String(localized: "Playlist Name"),
+            title: "Rename Playlist",
+            message: "Enter a new name for this playlist.",
+            placeholder: "Playlist Name",
             text: playlist.name,
         ) { [weak self] name in
             let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)

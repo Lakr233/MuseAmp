@@ -306,10 +306,10 @@ private extension SyncContentPickerViewController {
         guard denied else { return }
 
         let alert = AlertViewController(
-            title: String(localized: "Local Network Access Required"),
-            message: String(localized: "Sending music to Apple TV requires local network access. Enable it in Settings for Muse Amp."),
+            title: "Local Network Access Required",
+            message: "Sending music to Apple TV requires local network access. Enable it in Settings for Muse Amp.",
         ) { [weak self] context in
-            context.addAction(title: String(localized: "Open Settings"), attribute: .accent) {
+            context.addAction(title: "Open Settings", attribute: .accent) {
                 context.dispose {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         UIApplication.shared.open(url)
@@ -341,10 +341,10 @@ private extension SyncContentPickerViewController {
         let selectedTracks = resolveSelectedTracks()
         guard !selectedTracks.isEmpty else {
             let alert = AlertViewController(
-                title: String(localized: "No Selection"),
-                message: emptySelectionMessage,
+                title: "No Selection",
+                message: .init(emptySelectionMessage),
             ) { context in
-                context.addAction(title: String(localized: "OK"), attribute: .accent) {
+                context.addAction(title: "OK", attribute: .accent) {
                     context.dispose()
                 }
             }

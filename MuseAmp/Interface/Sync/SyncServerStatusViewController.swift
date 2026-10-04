@@ -235,21 +235,21 @@ private extension SyncServerStatusViewController {
             return
         }
         let alert = AlertViewController(
-            title: String(localized: "Some Songs Skipped"),
-            message: String(
+            title: "Some Songs Skipped",
+            message: .init(String(
                 format: skippedItems.areAllSourcesUnreadable
                     ? String(localized: "%1$lld of %2$lld songs could not be read and were excluded from this transfer.")
                     : String(localized: "%1$lld of %2$lld songs could not be prepared and were excluded from this transfer."),
                 skippedItems.count,
                 skippedItems.count + session.preparedSongCount,
-            ),
+            )),
         ) { [weak self] context in
-            context.addAction(title: String(localized: "View Skipped Songs")) {
+            context.addAction(title: "View Skipped Songs") {
                 context.dispose {
                     self?.presentSkippedSongsList()
                 }
             }
-            context.addAction(title: String(localized: "OK"), attribute: .accent) {
+            context.addAction(title: "OK", attribute: .accent) {
                 context.dispose()
             }
         }
@@ -499,10 +499,10 @@ private extension SyncServerStatusViewController {
 
     func presentFailureAndPop(message: String) {
         let alert = AlertViewController(
-            title: String(localized: "Transfer Failed"),
-            message: message,
+            title: "Transfer Failed",
+            message: .init(message),
         ) { [weak self] context in
-            context.addAction(title: String(localized: "OK"), attribute: .accent) {
+            context.addAction(title: "OK", attribute: .accent) {
                 context.dispose {
                     self?.navigationController?.popViewController(animated: true)
                 }

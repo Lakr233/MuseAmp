@@ -46,8 +46,8 @@ final class SongExportPresenter {
         }
 
         let progressAlert = AlertProgressIndicatorViewController(
-            title: String(localized: "Preparing"),
-            message: String(localized: "Preparing files..."),
+            title: "Preparing",
+            message: "Preparing files...",
         )
         viewController.present(progressAlert, animated: true) { [weak viewController] in
             Task { @MainActor in
@@ -121,8 +121,8 @@ final class SongExportPresenter {
         guard !items.isEmpty else { return }
 
         let progressAlert = AlertProgressIndicatorViewController(
-            title: String(localized: "Preparing"),
-            message: String(localized: "Extracting lyrics..."),
+            title: "Preparing",
+            message: "Extracting lyrics...",
         )
         viewController.present(progressAlert, animated: true) { [weak viewController] in
             Task { @MainActor in
@@ -259,16 +259,16 @@ private extension SongExportPresenter {
         onContinue: @escaping () -> Void,
     ) {
         let alert = AlertViewController(
-            title: String(localized: "Some Songs Skipped"),
-            message: String(
+            title: "Some Songs Skipped",
+            message: .init(String(
                 format: skippedItems.areAllSourcesUnreadable
                     ? String(localized: "%1$lld of %2$lld songs could not be read and won't be included.")
                     : String(localized: "%1$lld of %2$lld songs could not be prepared and won't be included."),
                 skippedItems.count,
                 totalCount,
-            ),
+            )),
         ) { [weak viewController, trackRemovalService] context in
-            context.addAction(title: String(localized: "View Skipped Songs")) {
+            context.addAction(title: "View Skipped Songs") {
                 context.dispose {
                     guard let viewController else {
                         return
@@ -283,7 +283,7 @@ private extension SongExportPresenter {
                     viewController.present(navigationController, animated: true)
                 }
             }
-            context.addAction(title: String(localized: "Continue"), attribute: .accent) {
+            context.addAction(title: "Continue", attribute: .accent) {
                 context.dispose {
                     onContinue()
                 }
@@ -294,10 +294,10 @@ private extension SongExportPresenter {
 
     func presentExportError(from viewController: UIViewController, message: String) {
         let alert = AlertViewController(
-            title: String(localized: "Export Failed"),
-            message: message,
+            title: "Export Failed",
+            message: .init(message),
         ) { context in
-            context.addAction(title: String(localized: "OK"), attribute: .accent) { context.dispose() }
+            context.addAction(title: "OK", attribute: .accent) { context.dispose() }
         }
         viewController.present(alert, animated: true)
     }

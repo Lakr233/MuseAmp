@@ -149,18 +149,18 @@ private extension PlaylistTransferCoordinator {
         }
 
         let alert = AlertViewController(
-            title: String(localized: "Import Playlist"),
-            message: String(localized: "Import \"\(playlistName)\" with \(entries.count) songs as a new playlist, or merge the songs into an existing playlist."),
+            title: "Import Playlist",
+            message: "Import \"\(playlistName)\" with \(entries.count) songs as a new playlist, or merge the songs into an existing playlist.",
         ) { [weak self] context in
-            context.addAction(title: String(localized: "Cancel")) {
+            context.addAction(title: "Cancel") {
                 context.dispose()
             }
-            context.addAction(title: String(localized: "Merge into Existing…")) {
+            context.addAction(title: "Merge into Existing…") {
                 context.dispose {
                     self?.presentMergeTargetPicker(entries: entries, missingSongs: missingSongs)
                 }
             }
-            context.addAction(title: String(localized: "Import as New"), attribute: .accent) {
+            context.addAction(title: "Import as New", attribute: .accent) {
                 context.dispose {
                     self?.importAsNewPlaylist(
                         playlistName: playlistName,
@@ -322,8 +322,8 @@ private extension PlaylistTransferCoordinator {
             return
         }
 
-        let alert = AlertViewController(title: title, message: message) { context in
-            context.addAction(title: String(localized: "OK"), attribute: .accent) { context.dispose() }
+        let alert = AlertViewController(title: .init(title), message: .init(message)) { context in
+            context.addAction(title: "OK", attribute: .accent) { context.dispose() }
         }
         viewController.present(alert, animated: true)
     }

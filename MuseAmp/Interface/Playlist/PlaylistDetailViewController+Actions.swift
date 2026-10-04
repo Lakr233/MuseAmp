@@ -13,9 +13,9 @@ import UIKit
 extension PlaylistDetailViewController {
     func showRenameAlert() {
         let alert = AlertInputViewController(
-            title: String(localized: "Rename Playlist"),
-            message: String(localized: "Enter a new name for this playlist."),
-            placeholder: String(localized: "Playlist Name"),
+            title: "Rename Playlist",
+            message: "Enter a new name for this playlist.",
+            placeholder: "Playlist Name",
             text: playlist?.name ?? "",
         ) { [weak self] name in
             guard let self else { return }
@@ -42,8 +42,8 @@ extension PlaylistDetailViewController {
         guard let playlist, !playlist.songs.isEmpty else { return }
 
         let progress = AlertProgressIndicatorViewController(
-            title: String(localized: "Refreshing"),
-            message: String(localized: "Fetching latest song data..."),
+            title: "Refreshing",
+            message: "Fetching latest song data...",
         )
         present(progress, animated: true)
 
