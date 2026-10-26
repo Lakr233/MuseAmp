@@ -93,7 +93,7 @@ final class SyncTransferSession {
             password: password,
             deviceName: advertisedDeviceName,
             fallbackEndpoints: runningServer.preferredEndpoints,
-            protocolVersion: SyncConstants.protocolVersion,
+            protocolVersion: preparedBatch?.manifest.protocolVersion ?? SyncConstants.protocolVersion,
         )
     }
 
@@ -181,6 +181,7 @@ final class SyncTransferSession {
             deviceName: advertisedDeviceName,
             port: runningServer.port,
             role: .sender,
+            protocolVersion: preparedBatch.manifest.protocolVersion ?? SyncConstants.protocolVersion,
         )
 
         self.server = server

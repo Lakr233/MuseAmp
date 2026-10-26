@@ -161,18 +161,18 @@
         }
       }
     },
-    "%lld already downloaded" : {
+    "%lld tracks skipped" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld already downloaded"
+            "value" : "%lld tracks skipped"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "已下载 %lld 首"
+            "value" : "已跳过 %lld 首歌曲"
           }
         }
       }

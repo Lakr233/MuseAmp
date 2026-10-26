@@ -15,6 +15,7 @@ final class SyncBonjourAdvertiser: NSObject {
         deviceName: String,
         port: Int,
         role: SyncPeerRole = .sender,
+        protocolVersion: String = SyncConstants.protocolVersion,
     ) {
         stop()
 
@@ -28,7 +29,7 @@ final class SyncBonjourAdvertiser: NSObject {
         service.setTXTRecord(
             NetService.data(fromTXTRecord: [
                 "deviceName": Data(deviceName.utf8),
-                "protocolVersion": Data(SyncConstants.protocolVersion.utf8),
+                "protocolVersion": Data(protocolVersion.utf8),
                 "role": Data(role.rawValue.utf8),
             ]),
         )

@@ -15,7 +15,7 @@ enum DownloadSubmissionFeedbackPresenter {
             parts.append(String(localized: "\(result.queued) tracks queued"))
         }
         if result.skipped > 0 {
-            parts.append(String(localized: "\(result.skipped) already downloaded"))
+            parts.append(String(localized: "\(result.skipped) tracks skipped"))
         }
 
         let message = parts.isEmpty

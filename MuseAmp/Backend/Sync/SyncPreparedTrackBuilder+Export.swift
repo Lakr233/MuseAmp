@@ -131,7 +131,10 @@ nonisolated extension SyncPreparedTrackBuilder {
                 self,
                 "prepareItemWithMetadata embedding metadata+lyrics trackID=\(item.trackID) albumID=\(item.albumID ?? "nil") hasArtworkURL=\(item.artworkURL != nil) title='\(sanitizedLogText(item.title, maxLength: 40))' artist='\(sanitizedLogText(item.artistName, maxLength: 40))'",
             )
-            let lyrics = await fetchOrCachedLyrics(for: item.trackID)
+            var lyrics = await fetchOrCachedLyrics(for: item.trackID)
+            if lyrics == nil, EmbeddedTrackIdentity.isLocalTrackID(item.trackID) {
+                lyrics = await sourceEmbeddedLyrics(at: item.sourceURL)
+            }
             do {
                 try await embedMetadata(for: item, lyrics: lyrics, into: destinationURL)
             } catch {

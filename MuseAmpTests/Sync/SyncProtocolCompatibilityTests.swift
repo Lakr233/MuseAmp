@@ -4,6 +4,31 @@ import Testing
 
 struct SyncProtocolCompatibilityTests {
     @Test
+    func `catalog transfers keep protocol four while local transfers require five`() throws {
+        let catalog = entry(trackID: "123", albumID: "456")
+        let localTrack = entry(trackID: "local-track-" + String(repeating: "a", count: 64), albumID: "456")
+        let localAlbum = entry(trackID: "123", albumID: "local-album-" + String(repeating: "b", count: 64))
+        #expect(SyncManifest(deviceName: "Sender", entries: [catalog]).protocolVersion == "4")
+        for entries in [[localTrack], [catalog, localTrack], [localAlbum]] {
+            let manifest = SyncManifest(deviceName: "Sender", entries: entries)
+            #expect(manifest.protocolVersion == "5")
+            #expect(SyncConstants.isCompatible(protocolVersion: manifest.protocolVersion, entries: entries))
+            #expect(!SyncConstants.isCompatible(protocolVersion: "4", entries: entries))
+            // Protocol-four receivers compare the version for exact equality.
+            #expect(manifest.protocolVersion != "4")
+            let decoded = try JSONDecoder().decode(SyncManifest.self, from: JSONEncoder().encode(manifest))
+            #expect(decoded.protocolVersion == "5")
+        }
+        #expect(SyncConstants.isCompatible(protocolVersion: "4", entries: [catalog]))
+        #expect(SyncConstants.isCompatible(protocolVersion: "5", entries: [catalog]))
+        #expect(!SyncConstants.isCompatible(protocolVersion: "6", entries: [catalog]))
+    }
+
+    private func entry(trackID: String, albumID: String) -> SyncManifestEntry {
+        SyncManifestEntry(trackID: trackID, albumID: albumID, title: "Song", artistName: "Artist", albumTitle: "Album", durationSeconds: 2, fileExtension: "m4a")
+    }
+
+    @Test
     func `bonjour identity produces unique advertised names and local display names`() {
         let token = "A1B2C3"
         let serviceName = SyncBonjourIdentity.makeAdvertisedServiceName(

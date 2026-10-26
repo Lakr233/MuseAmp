@@ -66,7 +66,7 @@ extension APIClient {
                 throw SyncTransferError.httpFailure(httpResponse.statusCode, String(data: data, encoding: .utf8))
             }
             let manifest = try JSONDecoder().decode(SyncManifest.self, from: data)
-            guard SyncConstants.isCompatible(protocolVersion: manifest.protocolVersion) else {
+            guard SyncConstants.isCompatible(protocolVersion: manifest.protocolVersion, entries: manifest.entries) else {
                 AppLog.error(
                     self,
                     "fetchTransferManifest incompatible protocol endpoint=\(endpoint.displayString) version=\(manifest.protocolVersion ?? "nil") expected=\(SyncConstants.protocolVersion)",
