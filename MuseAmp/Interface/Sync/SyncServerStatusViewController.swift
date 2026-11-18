@@ -11,7 +11,7 @@ import MuseAmpDatabaseKit
 import SnapKit
 import UIKit
 
-final class SyncServerStatusViewController: StackScrollController {
+final class SyncServerStatusViewController: SafeAreaStackScrollController {
     enum State {
         case preparing(current: Int, total: Int)
         case ready(
