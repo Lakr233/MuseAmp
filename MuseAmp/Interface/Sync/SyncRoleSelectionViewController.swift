@@ -9,7 +9,7 @@ import ConfigurableKit
 import Then
 import UIKit
 
-final class SyncRoleSelectionViewController: StackScrollController {
+final class SyncRoleSelectionViewController: SafeAreaStackScrollController {
     let environment: AppEnvironment
 
     init(environment: AppEnvironment) {

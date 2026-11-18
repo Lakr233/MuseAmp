@@ -37,7 +37,9 @@ class TextViewerController: UIViewController {
 
         textView.snp.makeConstraints { make in
             make.top.equalToSuperview()
-            make.leading.trailing.equalToSuperview()
+            // A text view scrolls vertically only, so it never insets its
+            // text for a side safe area such as the iPhone Duo's vertical bars.
+            make.leading.trailing.equalTo(view.safeAreaLayoutGuide)
             make.bottom.equalTo(view.keyboardLayoutGuide.snp.top)
         }
 

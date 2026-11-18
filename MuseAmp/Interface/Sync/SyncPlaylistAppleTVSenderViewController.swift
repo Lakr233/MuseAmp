@@ -12,7 +12,7 @@ import MuseAmpDatabaseKit
 import SnapKit
 import UIKit
 
-final class SyncPlaylistAppleTVSenderViewController: StackScrollController {
+final class SyncPlaylistAppleTVSenderViewController: SafeAreaStackScrollController {
     private enum State {
         case preparing(current: Int, total: Int)
         case ready(

@@ -9,7 +9,7 @@ import AlertController
 import ConfigurableKit
 import UIKit
 
-final class SyncTransferProgressViewController: StackScrollController {
+final class SyncTransferProgressViewController: SafeAreaStackScrollController {
     enum Phase {
         case fetchingManifest
         case comparing(totalSongs: Int, missingSongs: Int)
