@@ -10,7 +10,7 @@ import AVFoundation
 import ConfigurableKit
 import UIKit
 
-final class SyncReceiverViewController: StackScrollController {
+final class SyncReceiverViewController: SafeAreaStackScrollController {
     let environment: AppEnvironment
     let session: SyncTransferSession
 

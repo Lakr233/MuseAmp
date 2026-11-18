@@ -10,7 +10,7 @@ import SnapKit
 import Then
 import UIKit
 
-final class SettingsViewController: StackScrollController {
+final class SettingsViewController: SafeAreaStackScrollController {
     let environment: AppEnvironment
     private var downloadsObject: ConfigurableObject?
     var serverProfileView: ConfigurableInfoView?
