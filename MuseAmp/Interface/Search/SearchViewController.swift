@@ -129,7 +129,7 @@ class SearchViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        guard Date() >= automaticFocusSuppressedUntil else {
+        guard automaticFocusSuppressedUntil.timeIntervalSinceNow <= 0 else {
             AppLog.info(self, "viewDidAppear skipping automatic search field focus after a layout swap")
             return
         }

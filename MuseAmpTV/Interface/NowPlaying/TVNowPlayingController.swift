@@ -133,7 +133,7 @@ final class TVNowPlayingController: UIViewController {
             .sink { [weak self] currentTime, duration in
                 guard let self else { return }
                 contentView.lyricsView.updateCurrentTime(currentTime)
-                if Date() >= scrubCommitCooldownDeadline {
+                if scrubCommitCooldownDeadline.timeIntervalSinceNow <= 0 {
                     contentView.nowPlayingContentView.progressView.update(currentTime: currentTime, duration: duration)
                 }
             }
