@@ -81,7 +81,7 @@ extension NowPlayingQueueSectionView {
 
             pendingProgrammaticScrollRetry = nil
 
-            guard isProgramaticScrollBlocked <= Date() else {
+            guard isProgramaticScrollBlocked.timeIntervalSinceNow <= 0 else {
                 return
             }
 
@@ -97,7 +97,7 @@ extension NowPlayingQueueSectionView {
     }
 
     func hasActiveProgrammaticScrollBlock() -> Bool {
-        if isProgramaticScrollBlocked <= Date() {
+        if isProgramaticScrollBlocked.timeIntervalSinceNow <= 0 {
             isProgramaticScrollBlocked = .distantPast
             return false
         }
