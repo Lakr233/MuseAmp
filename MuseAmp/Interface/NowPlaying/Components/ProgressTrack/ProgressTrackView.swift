@@ -80,7 +80,9 @@ final class ProgressTrackView: UIView {
             isScrubbing = false
         }
 
-        if Date() >= scrubCommitCooldownDeadline || trackDidChange {
+        // Date's >= and <= are back-deployed in the iOS 27.2 SDK and resolve to a
+        // missing symbol on iOS 27.2 betas; compare the interval instead.
+        if scrubCommitCooldownDeadline.timeIntervalSinceNow <= 0 || trackDidChange {
             appliedProgress = progressValue
             progress = progressValue
         }
