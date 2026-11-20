@@ -180,3 +180,48 @@ struct SidebarHeaderModeTests {
         #expect(SidebarViewController.headerMode(forSectionAt: 4, in: [.library]) == .none)
     }
 }
+
+struct SidebarFallbackDestinationTests {
+    @Test
+    func `Emptied Downloads falls back to Songs`() {
+        let fallback = SidebarViewController.fallbackDestination(
+            for: .downloads,
+            isPlaylistSelected: false,
+            isSearchAvailable: true,
+            isDownloadsAvailable: false,
+        )
+        #expect(fallback == .songs)
+    }
+
+    @Test
+    func `Unavailable Search falls back to Albums`() {
+        let fallback = SidebarViewController.fallbackDestination(
+            for: .search,
+            isPlaylistSelected: false,
+            isSearchAvailable: false,
+            isDownloadsAvailable: true,
+        )
+        #expect(fallback == .albums)
+    }
+
+    @Test
+    func `Available or unaffected selections stay put`() {
+        #expect(SidebarViewController.fallbackDestination(
+            for: .downloads, isPlaylistSelected: false, isSearchAvailable: true, isDownloadsAvailable: true,
+        ) == nil)
+        #expect(SidebarViewController.fallbackDestination(
+            for: .albums, isPlaylistSelected: false, isSearchAvailable: false, isDownloadsAvailable: false,
+        ) == nil)
+    }
+
+    @Test
+    func `A selected playlist is kept when Downloads empties`() {
+        let fallback = SidebarViewController.fallbackDestination(
+            for: .downloads,
+            isPlaylistSelected: true,
+            isSearchAvailable: true,
+            isDownloadsAvailable: false,
+        )
+        #expect(fallback == nil)
+    }
+}

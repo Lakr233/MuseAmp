@@ -5,6 +5,7 @@
 //  Created by @Lakr233 on 2026/04/11.
 //
 
+import Combine
 import ConfigurableKit
 import SnapKit
 import Then
@@ -13,6 +14,8 @@ import UIKit
 final class SettingsViewController: SafeAreaStackScrollController {
     let environment: AppEnvironment
     private var downloadsObject: ConfigurableObject?
+    private var downloadsRowViews: [UIView] = []
+    private var downloadTasksCancellable: AnyCancellable?
     var serverProfileView: ConfigurableInfoView?
     lazy var serverProfileImportCoordinator = ServerProfileImportCoordinator(
         viewController: self,
@@ -37,6 +40,7 @@ final class SettingsViewController: SafeAreaStackScrollController {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         scrollView.applySoftEdgeEffects()
+        observeDownloadTasks()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -67,8 +71,11 @@ final class SettingsViewController: SafeAreaStackScrollController {
         }
         let downloads = makeDownloadsObject()
         downloadsObject = downloads
-        stackView.addArrangedSubviewWithMargin(downloads.createView())
-        stackView.addArrangedSubview(SeparatorView())
+        downloadsRowViews = [
+            stackView.addArrangedSubviewWithMargin(downloads.createView()),
+            SeparatorView().then { stackView.addArrangedSubview($0) },
+        ]
+        updateDownloadsRowVisibility()
 
         stackView.addArrangedSubviewWithMargin(
             ConfigurableSectionHeaderView().with(header: String(localized: "Tweaks")),
@@ -112,6 +119,25 @@ private extension SettingsViewController {
             countStyle: .file,
         )
         downloadsObject?.explain = "Download queue, progress, and local storage.\nStored Locally: \(storedSize)"
+    }
+
+    /// The Downloads row shows only while the download queue has tasks,
+    /// matching the sidebar's Downloads item.
+    func observeDownloadTasks() {
+        downloadTasksCancellable = environment.downloadManager.tasksPublisher
+            .map { !$0.isEmpty }
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateDownloadsRowVisibility()
+            }
+    }
+
+    func updateDownloadsRowVisibility() {
+        let isHidden = environment.downloadManager.tasksPublisher.value.isEmpty
+        for view in downloadsRowViews where view.isHidden != isHidden {
+            view.isHidden = isHidden
+        }
     }
 }
 
