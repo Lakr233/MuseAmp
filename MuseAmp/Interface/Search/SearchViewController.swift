@@ -153,6 +153,10 @@ class SearchViewController: UIViewController {
         searchController.searchBar.accessibilityIdentifier = "search.bar"
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
+        if #available(iOS 26.0, *) {
+            navigationItem.searchBarPlacementAllowsToolbarIntegration = false
+        }
+        navigationItem.preferredSearchBarPlacement = .stacked
         definesPresentationContext = true
     }
 
@@ -185,7 +189,7 @@ class SearchViewController: UIViewController {
         historyTableView.clipsToBounds = true
         historyTableView.applySoftEdgeEffects()
         view.addSubview(historyTableView)
-        historyTableView.snp.makeConstraints { $0.edges.equalTo(view.safeAreaLayoutGuide) }
+        historyTableView.snp.makeConstraints { $0.edges.equalToSuperview() }
     }
 
     private func cell(for tableView: UITableView, at indexPath: IndexPath, item: SearchItem) -> UITableViewCell {
