@@ -12,7 +12,16 @@ import Then
 import UIKit
 
 final class SettingsViewController: SafeAreaStackScrollController {
+    /// The main Settings page, or a subpage pushed from one of its rows.
+    /// Subpages reuse this controller so their rows keep presenting and
+    /// pushing from the page that is on screen.
+    enum Page {
+        case main
+        case diagnostics
+    }
+
     let environment: AppEnvironment
+    let page: Page
     private var downloadsObject: ConfigurableObject?
     private var downloadsRowViews: [UIView] = []
     private var downloadTasksCancellable: AnyCancellable?
@@ -25,10 +34,16 @@ final class SettingsViewController: SafeAreaStackScrollController {
         },
     )
 
-    init(environment: AppEnvironment) {
+    init(environment: AppEnvironment, page: Page = .main) {
         self.environment = environment
+        self.page = page
         super.init(nibName: nil, bundle: nil)
-        title = String(localized: "Settings")
+        switch page {
+        case .main:
+            title = String(localized: "Settings")
+        case .diagnostics:
+            title = String(localized: "Diagnostics")
+        }
     }
 
     @available(*, unavailable)
@@ -51,6 +66,11 @@ final class SettingsViewController: SafeAreaStackScrollController {
 
     override func setupContentViews() {
         super.setupContentViews()
+
+        if page == .diagnostics {
+            setupDiagnosticsContentViews()
+            return
+        }
 
         stackView.addArrangedSubviewWithMargin(
             ConfigurableSectionHeaderView().with(header: String(localized: "Server")),
@@ -88,15 +108,7 @@ final class SettingsViewController: SafeAreaStackScrollController {
         stackView.addArrangedSubviewWithMargin(makeClearPlayHistoryObject().createView())
         stackView.addArrangedSubview(SeparatorView())
 
-        stackView.addArrangedSubviewWithMargin(
-            ConfigurableSectionHeaderView().with(header: String(localized: "Diagnostics")),
-        ) { $0.bottom /= 2 }
-        stackView.addArrangedSubview(SeparatorView())
-        stackView.addArrangedSubviewWithMargin(makeLogsObject().createView())
-        stackView.addArrangedSubview(SeparatorView())
-        stackView.addArrangedSubviewWithMargin(makeRebuildDatabaseObject().createView())
-        stackView.addArrangedSubview(SeparatorView())
-        stackView.addArrangedSubviewWithMargin(makeRebuildAllLyricsIndexObject().createView())
+        stackView.addArrangedSubviewWithMargin(makeDiagnosticsPageObject().createView())
         stackView.addArrangedSubview(SeparatorView())
 
         stackView.addArrangedSubviewWithMargin(
@@ -109,6 +121,16 @@ final class SettingsViewController: SafeAreaStackScrollController {
         stackView.addArrangedSubview(SeparatorView())
 
         buildFooter()
+    }
+
+    private func setupDiagnosticsContentViews() {
+        stackView.addArrangedSubview(SeparatorView())
+        stackView.addArrangedSubviewWithMargin(makeLogsObject().createView())
+        stackView.addArrangedSubview(SeparatorView())
+        stackView.addArrangedSubviewWithMargin(makeRebuildDatabaseObject().createView())
+        stackView.addArrangedSubview(SeparatorView())
+        stackView.addArrangedSubviewWithMargin(makeRebuildAllLyricsIndexObject().createView())
+        stackView.addArrangedSubview(SeparatorView())
     }
 }
 
@@ -154,6 +176,16 @@ extension SettingsViewController {
             ephemeralAnnotation: .action { [weak self] _ in
                 guard let self else { return }
                 openDownloads()
+            },
+        )
+    }
+
+    func makeDiagnosticsPageObject() -> ConfigurableObject {
+        ConfigurableObject(
+            icon: "stethoscope",
+            title: "Diagnostics",
+            ephemeralAnnotation: .page { [environment] in
+                SettingsViewController(environment: environment, page: .diagnostics)
             },
         )
     }
