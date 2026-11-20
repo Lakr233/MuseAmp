@@ -11,6 +11,7 @@ import MuseAmpPlayerKit
 
 extension PlaybackController: MusicPlayerDelegate {
     func musicPlayer(_: MuseAmpPlayerKit.MusicPlayer, didChangeState state: PlaybackState) {
+        updatePlayHistoryPlayback(isPlaying: state == .playing)
         AppLog.info(
             self,
             "didChangeState previous=\(string(for: latestSnapshot.state)) new=\(string(for: state)) trackID=\(latestSnapshot.currentTrack?.id ?? "nil")",
@@ -25,6 +26,7 @@ extension PlaybackController: MusicPlayerDelegate {
             self,
             "didTransitionTo from=\(fromID) to=\(toID) reason=\(string(for: reason))",
         )
+        beginPlayHistoryPlay(for: item)
 
         if shouldResetCurrentTimeForTrackRepeatTransition(
             player: player,
@@ -48,6 +50,7 @@ extension PlaybackController: MusicPlayerDelegate {
     }
 
     func musicPlayer(_: MuseAmpPlayerKit.MusicPlayer, didUpdateTime currentTime: TimeInterval, duration: TimeInterval) {
+        updatePlayHistoryTime(duration: duration)
         guard !isUIPublishingSuspended else { return }
         latestSnapshot = latestSnapshot.withTime(currentTime, duration: duration)
         playbackTimeSubject.send((currentTime, duration))

@@ -78,6 +78,8 @@ final class SettingsViewController: SafeAreaStackScrollController {
         stackView.addArrangedSubview(SeparatorView())
         stackView.addArrangedSubviewWithMargin(makeCleanSongTitleObject().createView())
         stackView.addArrangedSubview(SeparatorView())
+        stackView.addArrangedSubviewWithMargin(makeClearPlayHistoryObject().createView())
+        stackView.addArrangedSubview(SeparatorView())
 
         stackView.addArrangedSubviewWithMargin(
             ConfigurableSectionHeaderView().with(header: String(localized: "Diagnostics")),

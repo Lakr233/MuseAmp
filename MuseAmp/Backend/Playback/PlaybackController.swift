@@ -56,10 +56,12 @@ final class PlaybackController: ObservableObject {
     let playlistStore: PlaylistStore
     let player: MuseAmpPlayerKit.MusicPlayer
     let sessionStore: PlaybackSessionStore
+    let playHistoryStore: PlayHistoryStore?
 
     var queueState = QueueState()
     var restoreState = RestoreState()
     var seekState = SeekState()
+    var playHistoryTracker = PlayHistoryTracker()
     nonisolated(unsafe) var playlistsDidChangeObserver: NSObjectProtocol?
     nonisolated(unsafe) var playbackStatusLogTimer: Timer?
     nonisolated(unsafe) var routeChangeObserver: NSObjectProtocol?
@@ -74,6 +76,7 @@ final class PlaybackController: ObservableObject {
         playlistStore: PlaylistStore,
         player: MuseAmpPlayerKit.MusicPlayer,
         sessionStore: PlaybackSessionStore? = nil,
+        playHistoryStore: PlayHistoryStore? = nil,
     ) {
         self.database = database
         self.downloadStore = downloadStore
@@ -82,6 +85,7 @@ final class PlaybackController: ObservableObject {
         self.playlistStore = playlistStore
         self.player = player
         self.sessionStore = sessionStore ?? PlaybackSessionStore(fileURL: paths.playbackStateURL)
+        self.playHistoryStore = playHistoryStore
         player.delegate = self
         player.configureLikeCommand(
             title: String(localized: "Like"),
@@ -123,6 +127,7 @@ final class PlaybackController: ObservableObject {
         paths: LibraryPaths,
         playlistStore: PlaylistStore,
         sessionStore: PlaybackSessionStore? = nil,
+        playHistoryStore: PlayHistoryStore? = nil,
     ) {
         self.init(
             apiClient: apiClient,
@@ -133,6 +138,7 @@ final class PlaybackController: ObservableObject {
             playlistStore: playlistStore,
             player: MuseAmpPlayerKit.MusicPlayer(logger: Self.playerLogger),
             sessionStore: sessionStore,
+            playHistoryStore: playHistoryStore,
         )
     }
 
@@ -262,6 +268,7 @@ final class PlaybackController: ObservableObject {
         AppLog.info(self, "previous requested trackID=\(latestSnapshot.currentTrack?.id ?? "nil") currentTime=\(formattedPlaybackTime(player.currentTime)) willRestart=\(willRestart)")
         player.previous()
         if willRestart {
+            beginPlayHistoryPlay(for: player.currentItem)
             seekState.pendingSeekSnapshotTime = 0
             refreshSnapshot(currentTime: 0, duration: player.duration, persistState: true)
         }
@@ -276,6 +283,7 @@ final class PlaybackController: ObservableObject {
             guard let self else { return }
             seekState.pendingSeekSnapshotTime = 0
             _ = await player.seek(to: 0)
+            beginPlayHistoryPlay(for: player.currentItem)
             player.play()
             refreshSnapshot(currentTime: 0, duration: player.duration, persistState: true)
         }

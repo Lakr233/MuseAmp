@@ -65,6 +65,14 @@ enum PlaybackFeedbackPresenter {
         )
     }
 
+    static func presentPlayHistoryCleared() {
+        SPIndicator.present(
+            title: String(localized: "Play History Cleared"),
+            message: "",
+            preset: .done,
+        )
+    }
+
     static func presentFailure(title: String) {
         SPIndicator.present(
             title: title,

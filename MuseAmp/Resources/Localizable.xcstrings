@@ -1393,6 +1393,38 @@
         }
       }
     },
+    "Clear Play History" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Play History"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除播放历史"
+          }
+        }
+      }
+    },
+    "Clear Play History?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Play History?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要清除播放历史吗？"
+          }
+        }
+      }
+    },
     "Close Now Playing" : {
       "localizations" : {
         "en" : {
@@ -4611,6 +4643,22 @@
         }
       }
     },
+    "Play History Cleared" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play History Cleared"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放历史已清除"
+          }
+        }
+      }
+    },
     "Play Next" : {
       "localizations" : {
         "en" : {
@@ -7059,6 +7107,22 @@
         }
       }
     },
+    "Sort by Recently Played" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sort by Recently Played"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按最近播放排序"
+          }
+        }
+      }
+    },
     "Sort by Title" : {
       "localizations" : {
         "en" : {
@@ -7971,6 +8035,22 @@
         }
       }
     },
+    "This removes your play history from this device, and Recently Played sorting goes back to the original order. This cannot be undone." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This removes your play history from this device, and Recently Played sorting goes back to the original order. This cannot be undone."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这会从这台设备移除播放历史，“最近播放”排序会回到原来的顺序。此操作不可撤销。"
+          }
+        }
+      }
+    },
     "This sender is using an incompatible transfer protocol version." : {
       "localizations" : {
         "en" : {
@@ -8463,6 +8543,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "如果自动发现不可用，可以改用这些地址之一。"
+          }
+        }
+      }
+    },
+    "Used to sort by Recently Played. Stored only on this device." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Used to sort by Recently Played. Stored only on this device."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用于按最近播放排序，只保存在这台设备上。"
           }
         }
       }

@@ -25,6 +25,7 @@ final class AppEnvironment {
     let downloadStore: DownloadStore
     let downloadManager: DownloadManager
     let playbackController: PlaybackController
+    let playHistoryStore: PlayHistoryStore
     let lyricsService: LyricsService
     let lyricsReloadService: LyricsReloadService
     let audioFileImporter: AudioFileImporter
@@ -83,6 +84,8 @@ final class AppEnvironment {
                 screenAwakeCoordinator.setActive(shouldKeepAwake, for: .downloadsActive)
             },
         )
+        let playHistoryStore = PlayHistoryStore(fileURL: paths.playHistoryURL)
+        self.playHistoryStore = playHistoryStore
         playbackController = PlaybackController(
             apiClient: apiClient,
             database: libraryDatabase,
@@ -90,6 +93,7 @@ final class AppEnvironment {
             metadataReader: metadataReader,
             paths: paths,
             playlistStore: playlistStore,
+            playHistoryStore: playHistoryStore,
         )
         lyricsService = LyricsService(
             apiClient: apiClient,
