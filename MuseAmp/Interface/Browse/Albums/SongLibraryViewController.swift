@@ -29,6 +29,7 @@ final class SongLibraryViewController: UIViewController {
         case album
         case artist
         case recentlyModified
+        case recentlyPlayed
         case trackCount
         case duration
 
@@ -40,6 +41,8 @@ final class SongLibraryViewController: UIViewController {
                 String(localized: "Sort by Artist")
             case .recentlyModified:
                 String(localized: "Sort by Recently Modified")
+            case .recentlyPlayed:
+                String(localized: "Sort by Recently Played")
             case .trackCount:
                 String(localized: "Sort by Track Count")
             case .duration:
@@ -55,6 +58,8 @@ final class SongLibraryViewController: UIViewController {
                 "person"
             case .recentlyModified:
                 "clock"
+            case .recentlyPlayed:
+                "clock.arrow.circlepath"
             case .trackCount:
                 "number"
             case .duration:
@@ -149,6 +154,7 @@ final class SongLibraryViewController: UIViewController {
     deinit {
         NotificationCenter.default.removeObserver(self, name: .libraryDidSync, object: nil)
         NotificationCenter.default.removeObserver(self, name: .artworkDidUpdate, object: nil)
+        NotificationCenter.default.removeObserver(self, name: .playHistoryDidChange, object: nil)
     }
 
     override func viewDidLoad() {
@@ -169,6 +175,12 @@ final class SongLibraryViewController: UIViewController {
             self,
             selector: #selector(handleArtworkDidUpdate(_:)),
             name: .artworkDidUpdate,
+            object: nil,
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handlePlayHistoryDidChange),
+            name: .playHistoryDidChange,
             object: nil,
         )
 
@@ -192,6 +204,13 @@ final class SongLibraryViewController: UIViewController {
     }
 
     @objc private func handleLibraryDidSync() {
+        reloadAlbums()
+    }
+
+    @objc private func handlePlayHistoryDidChange() {
+        guard sortOption == .recentlyPlayed else {
+            return
+        }
         reloadAlbums()
     }
 
@@ -393,13 +412,7 @@ final class SongLibraryViewController: UIViewController {
     func applySort() {
         switch sortOption {
         case .album:
-            albums.sort {
-                let titleOrder = $0.albumTitle.localizedCaseInsensitiveCompare($1.albumTitle)
-                if titleOrder != .orderedSame {
-                    return titleOrder == .orderedAscending
-                }
-                return $0.artistName.localizedCaseInsensitiveCompare($1.artistName) == .orderedAscending
-            }
+            sortAlbumsByTitle()
         case .artist:
             albums.sort {
                 let artistOrder = $0.artistName.localizedCaseInsensitiveCompare($1.artistName)
@@ -417,6 +430,14 @@ final class SongLibraryViewController: UIViewController {
                 }
                 return $0.albumTitle.localizedCaseInsensitiveCompare($1.albumTitle) == .orderedAscending
             }
+        case .recentlyPlayed:
+            // An album's recency is the latest play of any of its songs; albums
+            // never played keep the default (album title) order after the played ones.
+            sortAlbumsByTitle()
+            let lastPlayedByAlbumID = environment.playHistoryStore.albumLastPlayedDates()
+            albums = PlayHistoryStore.sortedByRecentlyPlayed(albums) {
+                lastPlayedByAlbumID[$0.albumID]
+            }
         case .trackCount:
             albums.sort {
                 if $0.trackCount != $1.trackCount {
@@ -431,6 +452,16 @@ final class SongLibraryViewController: UIViewController {
                 }
                 return $0.albumTitle.localizedCaseInsensitiveCompare($1.albumTitle) == .orderedAscending
             }
+        }
+    }
+
+    private func sortAlbumsByTitle() {
+        albums.sort {
+            let titleOrder = $0.albumTitle.localizedCaseInsensitiveCompare($1.albumTitle)
+            if titleOrder != .orderedSame {
+                return titleOrder == .orderedAscending
+            }
+            return $0.artistName.localizedCaseInsensitiveCompare($1.artistName) == .orderedAscending
         }
     }
 }

@@ -5,6 +5,7 @@
 //  Created by @Lakr233 on 2026/04/11.
 //
 
+import Combine
 import MuseAmpDatabaseKit
 import SnapKit
 import Then
@@ -140,6 +141,7 @@ final class SidebarViewController: UIViewController {
     private nonisolated(unsafe) var playlistObserver: NSObjectProtocol?
     private nonisolated(unsafe) var playlistArtworkObserver: NSObjectProtocol?
     private nonisolated(unsafe) var serverConfigurationObserver: NSObjectProtocol?
+    private var downloadTasksCancellable: AnyCancellable?
     private lazy var playlistMenuProvider = PlaylistContextMenuProvider(
         playlistStore: environment.playlistStore,
         viewController: self,
@@ -165,6 +167,7 @@ final class SidebarViewController: UIViewController {
         observePlaylistChanges()
         observePlaylistArtworkChanges()
         observeServerConfigurationChanges()
+        observeDownloadTasks()
 
         selectItem(.destination(.albums))
     }
@@ -418,15 +421,32 @@ final class SidebarViewController: UIViewController {
         handleDestinationAvailabilityDidChange()
     }
 
+    /// Downloads shows only while the download queue has tasks, so the item
+    /// comes and goes as the queue fills and empties.
+    private func observeDownloadTasks() {
+        downloadTasksCancellable = environment.downloadManager.tasksPublisher
+            .map { !$0.isEmpty }
+            .removeDuplicates()
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.handleDestinationAvailabilityDidChange()
+            }
+    }
+
     private func handleDestinationAvailabilityDidChange() {
-        let fallbackToAlbums = (selectedDestination == .search && !isSearchAvailable)
-            || (selectedDestination == .downloads && !isDownloadsAvailable)
+        let fallbackDestination = Self.fallbackDestination(
+            for: selectedDestination,
+            isPlaylistSelected: selectedPlaylistID != nil,
+            isSearchAvailable: isSearchAvailable,
+            isDownloadsAvailable: isDownloadsAvailable,
+        )
         dataSource.apply(buildSnapshot(), animatingDifferences: true) { [weak self] in
             guard let self else { return }
 
-            if fallbackToAlbums {
-                selectItem(.destination(.albums))
-                onDestinationSelected(.albums)
+            if let fallbackDestination {
+                selectItem(.destination(fallbackDestination))
+                onDestinationSelected(fallbackDestination)
                 return
             }
 
@@ -477,7 +497,26 @@ final class SidebarViewController: UIViewController {
     }
 
     private var isDownloadsAvailable: Bool {
-        isSearchAvailable
+        !environment.downloadManager.tasksPublisher.value.isEmpty
+    }
+
+    /// The page to show when the selected sidebar item goes away: Search
+    /// falls back to Albums, an emptied Downloads queue to Songs.
+    nonisolated static func fallbackDestination(
+        for selectedDestination: RootDestination,
+        isPlaylistSelected: Bool,
+        isSearchAvailable: Bool,
+        isDownloadsAvailable: Bool,
+    ) -> RootDestination? {
+        guard !isPlaylistSelected else { return nil }
+        switch selectedDestination {
+        case .search where !isSearchAvailable:
+            return .albums
+        case .downloads where !isDownloadsAvailable:
+            return .songs
+        default:
+            return nil
+        }
     }
 
     // MARK: - Selection
@@ -531,6 +570,9 @@ extension SidebarViewController: UICollectionViewDelegate {
 
         switch item {
         case let .destination(destination):
+            // Track the tapped page so availability changes can fall back
+            // from it. A Settings sheet reselects the previous item.
+            selectedDestination = destination
             selectedPlaylistID = nil
             onDestinationSelected(destination)
         case let .playlist(id):

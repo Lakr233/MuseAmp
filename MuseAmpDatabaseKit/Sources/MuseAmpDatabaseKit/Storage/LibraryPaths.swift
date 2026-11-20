@@ -55,6 +55,10 @@ public struct LibraryPaths: Sendable {
         baseDirectory.appendingPathComponent("playback-state.json", isDirectory: false)
     }
 
+    public var playHistoryURL: URL {
+        baseDirectory.appendingPathComponent("play-history.json", isDirectory: false)
+    }
+
     public init(baseDirectory: URL? = nil, logSink: LogSink? = nil) {
         logger = DatabaseLogger(sink: logSink)
         if let baseDirectory {

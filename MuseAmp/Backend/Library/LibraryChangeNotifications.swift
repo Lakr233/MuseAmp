@@ -13,6 +13,7 @@ extension Notification.Name {
     nonisolated static let playlistArtworkDidUpdate = Notification.Name("amusic.playlistArtworkDidUpdate")
     nonisolated static let lyricsDidUpdate = Notification.Name("amusic.lyricsDidUpdate")
     nonisolated static let serverConfigurationDidChange = Notification.Name("amusic.serverConfigurationDidChange")
+    nonisolated static let playHistoryDidChange = Notification.Name("amusic.playHistoryDidChange")
 }
 
 enum AppNotificationUserInfoKey {
