@@ -101,6 +101,30 @@ extension SettingsViewController {
         navigationController?.pushViewController(controller, animated: true)
     }
 
+    func makeClearPlayHistoryObject() -> ConfigurableObject {
+        ConfigurableObject(
+            icon: "clock.arrow.circlepath",
+            title: "Clear Play History",
+            explain: "Used to sort by Recently Played. Stored only on this device.",
+            ephemeralAnnotation: .action { [weak self] _ in
+                guard let self else { return }
+                confirmClearPlayHistory()
+            },
+        )
+    }
+
+    func confirmClearPlayHistory() {
+        ConfirmationAlertPresenter.present(
+            on: self,
+            title: String(localized: "Clear Play History?"),
+            message: String(localized: "This removes your play history from this device, and Recently Played sorting goes back to the original order. This cannot be undone."),
+            confirmTitle: String(localized: "Clear"),
+        ) { [weak self] in
+            self?.environment.playHistoryStore.clear()
+            PlaybackFeedbackPresenter.presentPlayHistoryCleared()
+        }
+    }
+
     func makeRebuildDatabaseObject() -> ConfigurableObject {
         ConfigurableObject(
             icon: "arrow.triangle.2.circlepath",
