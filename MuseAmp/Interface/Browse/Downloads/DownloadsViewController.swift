@@ -489,29 +489,25 @@ extension DownloadsViewController: UITableViewDelegate {
 
 private extension AMDownloadProgressContent {
     init(task: ActiveDownloadTask) {
-        var subtitle = task.artistName
-        switch task.state {
+        let status: String? = switch task.state {
         case .waiting:
-            subtitle += " · \(String(localized: "Waiting…"))"
+            String(localized: "Waiting…")
         case .waitingForNetwork:
-            subtitle += " · \(String(localized: "Waiting for Network…"))"
+            String(localized: "Waiting for Network…")
         case .resolving:
-            subtitle += " · \(String(localized: "Preparing…"))"
+            String(localized: "Preparing…")
         case .finalizing:
-            subtitle += " · \(String(localized: "Finalizing…"))"
+            String(localized: "Finalizing…")
         case .paused:
-            subtitle += " · \(String(localized: "Paused"))"
+            String(localized: "Paused")
         case .failed:
-            if let error = task.lastError, !error.isEmpty {
-                subtitle += " · \(error)"
-            } else {
-                subtitle += " · \(String(localized: "Failed"))"
-            }
+            task.lastError?.nilIfEmpty ?? String(localized: "Failed")
         case .downloading:
-            if task.speed > 0 {
-                subtitle += " · \(ByteCountFormatter.string(fromByteCount: task.speed, countStyle: .file))/s"
-            }
+            task.speed > 0
+                ? "\(ByteCountFormatter.string(fromByteCount: task.speed, countStyle: .file))/s"
+                : nil
         }
+        let subtitle = [task.artistName, status].compactMap(\.self).joinedForDisplay
 
         let progressText: String = switch task.state {
         case .waiting, .waitingForNetwork:

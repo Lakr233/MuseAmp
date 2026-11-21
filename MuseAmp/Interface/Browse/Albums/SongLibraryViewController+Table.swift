@@ -215,6 +215,6 @@ extension SongLibraryViewController {
         if durationMinutes > 0 {
             subtitleParts.append(String(localized: "\(durationMinutes) min"))
         }
-        return subtitleParts.joined(separator: " · ")
+        return subtitleParts.joinedForDisplay
     }
 }

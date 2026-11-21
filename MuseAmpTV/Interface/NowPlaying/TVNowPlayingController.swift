@@ -155,7 +155,7 @@ final class TVNowPlayingController: UIViewController {
             let artist = track.artistName
             let album = track.albumName ?? ""
             if !artist.isEmpty, !album.isEmpty {
-                return "\(artist) · \(album)"
+                return String(localized: "\(artist) - \(album)")
             }
             return artist.isEmpty ? album : artist
         }()

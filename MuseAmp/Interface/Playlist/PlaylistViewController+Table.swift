@@ -188,7 +188,7 @@ extension PlaylistViewController {
             parts.append(durationSummary)
         }
 
-        return parts.joined(separator: " · ")
+        return parts.joinedForDisplay
     }
 
     func uniqueArtistNames(for playlist: Playlist) -> [String] {
