@@ -330,7 +330,6 @@ struct CellContextMenuPreviewHelperTests {
 
 // MARK: - Array+JoinedForDisplay Tests
 
-@Suite
 struct JoinedForDisplayTests {
     @Test
     func `joins pieces with a comma`() {
