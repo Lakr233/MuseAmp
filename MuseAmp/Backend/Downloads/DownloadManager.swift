@@ -180,6 +180,14 @@ final class DownloadManager {
         var result = SubmitResult()
 
         for request in requests {
+            if EmbeddedTrackIdentity.isLocalTrackID(request.trackID)
+                || EmbeddedTrackIdentity.isLocalAlbumID(request.albumID)
+            {
+                AppLog.info(self, "submitRequests skipped local identity trackID=\(request.trackID)")
+                result.skipped += 1
+                continue
+            }
+
             if tasks[request.trackID] != nil {
                 result.skipped += 1
                 continue

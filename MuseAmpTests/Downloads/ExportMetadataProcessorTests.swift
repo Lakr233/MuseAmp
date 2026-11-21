@@ -421,13 +421,11 @@ struct ExportMetadataProcessorTests {
         let paths = database.paths
         let downloadStore = DownloadStore(database: database, paths: paths)
         let metadataReader = EmbeddedMetadataReader()
-        let indexer = SongLibraryIndexer(databaseManager: database.databaseManager)
         let apiClient = try APIClient(baseURL: #require(URL(string: "https://example.com")))
         let importer = AudioFileImporter(
             paths: paths,
             database: database,
             metadataReader: metadataReader,
-            libraryIndexer: indexer,
             apiClient: apiClient,
         )
 

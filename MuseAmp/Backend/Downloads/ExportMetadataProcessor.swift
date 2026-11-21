@@ -60,12 +60,14 @@ enum ExportMetadataProcessor {
         _ info: ExportInfo,
         into fileURL: URL,
         timeout: TimeInterval = 30,
+        preservingExistingTags: Bool = false,
     ) async throws {
         try await DownloadArtworkProcessor.withOverallTimeout(seconds: timeout) {
             try await performEmbedExportMetadata(
                 info,
                 into: fileURL,
                 timeout: timeout,
+                preservingExistingTags: preservingExistingTags,
             )
         }
     }
@@ -73,11 +75,11 @@ enum ExportMetadataProcessor {
     /// Validates that the ExportInfo has all required fields for a complete
     /// metadata embed (trackID, albumID, title, artistName must be present).
     nonisolated static func validateExportInfo(_ info: ExportInfo) throws {
-        guard info.trackID.isCatalogID else {
+        guard EmbeddedTrackIdentity.isTrackID(info.trackID) else {
             AppLog.error(logger, "validateExportInfo invalid trackID='\(info.trackID)'")
             throw ExportError.invalidTrackID(info.trackID)
         }
-        guard let albumID = info.albumID, albumID.isCatalogID else {
+        guard let albumID = info.albumID, EmbeddedTrackIdentity.isAlbumID(albumID) else {
             AppLog.error(logger, "validateExportInfo missing or invalid albumID trackID=\(info.trackID) albumID='\(info.albumID ?? "nil")'")
             throw ExportError.invalidAlbumID(info.trackID, info.albumID)
         }
@@ -92,38 +94,20 @@ enum ExportMetadataProcessor {
         AppLog.verbose(logger, "validateExportInfo passed trackID=\(info.trackID) albumID=\(albumID) title='\(sanitizedLogText(title, maxLength: 40))' artist='\(sanitizedLogText(artist, maxLength: 40))'")
     }
 
-    /// Reads back the file metadata and verifies the embedded comment JSON
-    /// contains valid trackID and albumID catalog IDs.
-    static func verifyEmbeddedMetadata(in fileURL: URL, expectedTrackID: String) async throws {
-        AppLog.verbose(logger, "verifyEmbeddedMetadata start trackID=\(expectedTrackID) file=\(fileURL.lastPathComponent)")
-        let asset = AVURLAsset(url: fileURL)
-        guard await (try? asset.load(.isReadable)) == true else {
-            AppLog.error(logger, "verifyEmbeddedMetadata asset not readable trackID=\(expectedTrackID)")
-            throw ExportError.verificationFailed(expectedTrackID, reason: "file not readable after export")
+    /// Reads the identity back instead of trusting that an export retained it.
+    static func verifyEmbeddedMetadata(
+        in fileURL: URL,
+        expectedTrackID: String,
+        expectedAlbumID: String? = nil,
+    ) async throws {
+        let items = try await AVMetadataHelper.collectMetadataItems(from: AVURLAsset(url: fileURL))
+        guard let identity = try await EmbeddedTrackIdentity.read(from: items),
+              identity.trackID == expectedTrackID,
+              expectedAlbumID == nil || identity.albumID == expectedAlbumID
+        else {
+            AppLog.error(logger, "verifyEmbeddedMetadata missing or mismatched identity trackID=\(expectedTrackID)")
+            throw ExportError.verificationFailed(expectedTrackID, reason: "missing or mismatched trackID/albumID")
         }
-        let items = try await AVMetadataHelper.collectMetadataItems(from: asset)
-        AppLog.verbose(logger, "verifyEmbeddedMetadata loaded \(items.count) metadata item(s) trackID=\(expectedTrackID)")
-
-        for item in items {
-            guard AVMetadataHelper.isComment(item) else { continue }
-            guard let value = try? await item.load(.stringValue),
-                  let data = value.data(using: .utf8),
-                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-            else {
-                continue
-            }
-            guard let trackID = json["trackID"] as? String, trackID.isCatalogID,
-                  let albumID = json["albumID"] as? String, albumID.isCatalogID
-            else {
-                let raw = sanitizedLogText(value, maxLength: 120)
-                AppLog.error(logger, "verifyEmbeddedMetadata comment JSON missing valid IDs trackID=\(expectedTrackID) raw='\(raw)'")
-                throw ExportError.verificationFailed(expectedTrackID, reason: "comment JSON missing valid trackID/albumID")
-            }
-            AppLog.verbose(logger, "verifyEmbeddedMetadata passed trackID=\(trackID) albumID=\(albumID)")
-            return
-        }
-        AppLog.error(logger, "verifyEmbeddedMetadata no comment metadata found trackID=\(expectedTrackID)")
-        throw ExportError.verificationFailed(expectedTrackID, reason: "no comment metadata item found in exported file")
     }
 }
 
@@ -132,8 +116,16 @@ private extension ExportMetadataProcessor {
         _ info: ExportInfo,
         into fileURL: URL,
         timeout: TimeInterval,
+        preservingExistingTags: Bool,
     ) async throws {
         AppLog.verbose(logger, "start trackID=\(info.trackID) file=\(fileURL.lastPathComponent)")
+        if preservingExistingTags {
+            guard EmbeddedTrackIdentity.isTrackID(info.trackID),
+                  let albumID = info.albumID, EmbeddedTrackIdentity.isAlbumID(albumID)
+            else {
+                throw ExportError.verificationFailed(info.trackID, reason: "invalid identity for import fallback")
+            }
+        }
         guard FileManager.default.isReadableFile(atPath: fileURL.path) else {
             AppLog.warning(logger, "file not readable trackID=\(info.trackID)")
             throw ExportError.fileUnreadable
@@ -163,16 +155,20 @@ private extension ExportMetadataProcessor {
 
         let replacesAlbumArtist = info.albumArtistName.nilIfEmpty != nil
         var metadata = existingMetadata.filter {
-            !AVMetadataHelper.isComment($0) && !AVMetadataHelper.isLyrics($0)
-                && !matchesTitle($0) && !matchesArtist($0) && !matchesAlbum($0)
-                && !(replacesAlbumArtist && AVMetadataHelper.albumArtistTag.priority(of: $0) != nil)
+            !AVMetadataHelper.isComment($0) && (preservingExistingTags || (
+                !AVMetadataHelper.isLyrics($0)
+                    && !matchesTitle($0) && !matchesArtist($0) && !matchesAlbum($0)
+                    && !(replacesAlbumArtist && AVMetadataHelper.albumArtistTag.priority(of: $0) != nil)
+            ))
         }
 
-        metadata.append(commentMetadataItem(for: info))
-        if let lyrics = info.lyrics, !lyrics.isEmpty {
-            metadata.append(lyricsMetadataItem(lyrics))
+        try await metadata.append(commentMetadataItem(for: info, preserving: existingMetadata))
+        if !preservingExistingTags {
+            if let lyrics = info.lyrics, !lyrics.isEmpty {
+                metadata.append(lyricsMetadataItem(lyrics))
+            }
+            metadata.append(contentsOf: standardMetadataItems(for: info))
         }
-        metadata.append(contentsOf: standardMetadataItems(for: info))
 
         if await AVMetadataHelper.trackNumber(in: existingMetadata) == nil,
            let trackNumber = info.trackNumber, trackNumber > 0
@@ -207,6 +203,10 @@ private extension ExportMetadataProcessor {
         AppLog.verbose(logger, "exporting trackID=\(info.trackID) metadataCount=\(metadata.count)")
         do {
             try await DownloadArtworkProcessor.export(exportSession, timeout: timeout)
+            if preservingExistingTags {
+                try await verifyEmbeddedMetadata(in: tempURL, expectedTrackID: info.trackID, expectedAlbumID: info.albumID)
+            }
+            try Task.checkCancellation()
             _ = try FileManager.default.replaceItemAt(fileURL, withItemAt: tempURL)
             AppLog.info(logger, "success trackID=\(info.trackID)")
         } catch {
@@ -251,11 +251,38 @@ private extension ExportMetadataProcessor {
         }
     }
 
-    static func commentMetadataItem(for info: ExportInfo) -> AVMetadataItem {
-        var payload: [String: Any] = [
-            "v": 1,
-            "trackID": info.trackID,
-        ]
+    static func commentMetadataItem(
+        for info: ExportInfo,
+        preserving items: [AVMetadataItem],
+    ) async throws -> AVMetadataItem {
+        var payload: [String: Any] = [:]
+        var originalComments: [String] = []
+        for item in items where AVMetadataHelper.isComment(item) {
+            guard let comment = try await item.load(.stringValue) else { continue }
+            do {
+                if let existing = try EmbeddedTrackIdentity.payload(from: comment) {
+                    if existing["trackID"] as? String == info.trackID {
+                        payload.merge(existing) { current, _ in current }
+                    }
+                } else if !originalComments.contains(comment) {
+                    originalComments.append(comment)
+                }
+            } catch EmbeddedTrackIdentity.IdentityError.invalidComment {
+                AppLog.warning(logger, "Preserving unrecognized identity comment while exporting known trackID=\(info.trackID)")
+                if !originalComments.contains(comment) {
+                    originalComments.append(comment)
+                }
+            }
+        }
+        if !originalComments.isEmpty {
+            let preserved = payload["originalComments"] as? [String] ?? []
+            payload["originalComments"] = preserved + originalComments.filter { !preserved.contains($0) }
+        }
+        payload["v"] = 1
+        if EmbeddedTrackIdentity.isLocalTrackID(info.trackID) {
+            payload["source"] = EmbeddedTrackIdentity.source
+        }
+        payload["trackID"] = info.trackID
         if let albumID = info.albumID {
             payload["albumID"] = albumID
         }
@@ -263,7 +290,7 @@ private extension ExportMetadataProcessor {
             payload["artworkURL"] = artworkURL.absoluteString
         }
 
-        let jsonData = (try? JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys])) ?? Data()
+        let jsonData = try JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys])
         let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
 
         let item = AVMutableMetadataItem()

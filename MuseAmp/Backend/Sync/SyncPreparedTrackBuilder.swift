@@ -138,41 +138,8 @@ nonisolated extension SyncPreparedTrackBuilder {
         do {
             let asset = AVURLAsset(url: fileURL)
             let items = try await AVMetadataHelper.collectMetadataItems(from: asset)
-            var commentCount = 0
-            var sawMismatchedTrackID: String?
-            var sawInvalidAlbumID: String?
-            var sawJSONFailure = false
-            for item in items where item.identifier == .iTunesMetadataUserComment {
-                commentCount += 1
-                guard let value = try? await item.load(.stringValue),
-                      let data = value.data(using: .utf8),
-                      let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-                else {
-                    sawJSONFailure = true
-                    continue
-                }
-                guard let trackID = json["trackID"] as? String else {
-                    sawJSONFailure = true
-                    continue
-                }
-                guard trackID == expectedTrackID else {
-                    sawMismatchedTrackID = trackID
-                    continue
-                }
-                guard let albumID = json["albumID"] as? String, albumID.isCatalogID else {
-                    sawInvalidAlbumID = json["albumID"] as? String ?? "nil"
-                    continue
-                }
-                AppLog.verbose(
-                    self,
-                    "sourceHasCatalogComment match trackID=\(expectedTrackID) albumID=\(albumID) file=\(fileURL.lastPathComponent)",
-                )
-                return true
-            }
-            AppLog.verbose(
-                self,
-                "sourceHasCatalogComment no match trackID=\(expectedTrackID) totalMetadataItems=\(items.count) commentItems=\(commentCount) jsonFailure=\(sawJSONFailure) mismatchedTrackID=\(sawMismatchedTrackID ?? "nil") invalidAlbumID=\(sawInvalidAlbumID ?? "nil") file=\(fileURL.lastPathComponent)",
-            )
+            let identity = try await EmbeddedTrackIdentity.read(from: items)
+            return identity?.trackID == expectedTrackID
         } catch {
             AppLog.verbose(self, "sourceHasCatalogComment check failed trackID=\(expectedTrackID) error=\(error.localizedDescription)")
         }

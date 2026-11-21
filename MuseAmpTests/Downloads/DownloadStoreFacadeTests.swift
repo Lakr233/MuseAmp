@@ -19,6 +19,87 @@ struct DownloadStoreFacadeTests {
         return (sandbox, paths, database, store)
     }
 
+    @MainActor
+    private func makeManager(database: MusicLibraryDatabase, store: DownloadStore) -> DownloadManager {
+        DownloadManager(
+            paths: database.paths,
+            databaseManager: database.databaseManager,
+            downloadStore: store,
+            apiClient: APIClient(baseURL: URL(string: "https://example.invalid")!),
+            lyricsCacheStore: LyricsCacheStore(paths: database.paths),
+            networkMonitor: NetworkMonitor(),
+            screenAwakeHandler: { _ in },
+        )
+    }
+
+    @Test
+    @MainActor
+    func `local track and album identities are skipped without creating download jobs`() throws {
+        let (sandbox, _, database, store) = try makeStoreComponents()
+        _ = sandbox
+        let manager = makeManager(database: database, store: store)
+        let localTrack = "local-track-" + String(repeating: "a", count: 64)
+        let localAlbum = "local-album-" + String(repeating: "b", count: 64)
+        let requests = [(localTrack, "456"), ("123", localAlbum), (localTrack, localAlbum)].map {
+            SongDownloadRequest(trackID: $0.0, albumID: $0.1, title: "Song", artistName: "Artist", albumName: "Album", artworkURL: nil)
+        }
+
+        let result = manager.submitRequests(requests)
+
+        #expect(result.queued == 0)
+        #expect(result.skipped == 3)
+        #expect(manager.tasksPublisher.value.isEmpty)
+        #expect(try database.allDownloadJobs().isEmpty)
+    }
+
+    @Test
+    @MainActor
+    func `mixed submissions still queue catalog tracks`() throws {
+        let (sandbox, _, database, store) = try makeStoreComponents()
+        _ = sandbox
+        let manager = makeManager(database: database, store: store)
+        manager.isPausedAll = true
+        let local = SongDownloadRequest(
+            trackID: "local-track-" + String(repeating: "a", count: 64),
+            albumID: "local-album-" + String(repeating: "b", count: 64),
+            title: "Local Song", artistName: "Artist", albumName: "Album", artworkURL: nil,
+        )
+        let catalog = SongDownloadRequest(trackID: "123", albumID: "456", title: "Catalog Song", artistName: "Artist", albumName: "Album", artworkURL: nil)
+
+        let result = manager.submitRequests([local, catalog])
+
+        #expect(result.queued == 1)
+        #expect(result.skipped == 1)
+        #expect(manager.tasksPublisher.value.map(\.trackID) == [catalog.trackID])
+        #expect(try database.allDownloadJobs().map(\.trackID) == [catalog.trackID])
+    }
+
+    @Test
+    @MainActor
+    func `a local song remaining in a playlist after removal is not downloaded`() async throws {
+        let (sandbox, _, database, store) = try makeStoreComponents()
+        let track = try await sandbox.ingestTrack(
+            makeMockTrack(trackID: "local-track-" + String(repeating: "a", count: 64)), into: database,
+        )
+        let playlist = try await database.createPlaylist(name: "Local songs")
+        let entry = PlaylistEntry(trackID: track.trackID, title: track.title, artistName: track.artistName, albumID: track.albumID, albumTitle: track.albumTitle, artworkURL: nil)
+        try await database.addEntry(entry, to: playlist.id)
+        MusicLibraryTrackRemovalService(databaseManager: database.databaseManager).removeTrack(trackID: track.trackID)
+        #expect(try database.track(byID: track.trackID) == nil)
+        let savedPlaylist = try #require(try database.fetchPlaylist(id: playlist.id))
+        #expect(savedPlaylist.entries.map(\.trackID) == [track.trackID])
+        let manager = makeManager(database: database, store: store)
+
+        let result = manager.submitRequests(savedPlaylist.entries.map {
+            $0.downloadRequest(albumID: $0.albumID ?? "unknown", apiBaseURL: nil)
+        })
+
+        #expect(result.queued == 0)
+        #expect(result.skipped == 1)
+        #expect(manager.tasksPublisher.value.isEmpty)
+        #expect(try database.allDownloadJobs().isEmpty)
+    }
+
     @Test
     func `DownloadStore categorizes active and failed download records`() throws {
         let (sandbox, _, database, store) = try makeStoreComponents()

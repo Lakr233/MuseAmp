@@ -5,6 +5,40 @@ import Testing
 @Suite(.serialized)
 struct APIClientTransferTests {
     @Test
+    func `manifest claiming protocol four cannot carry local identities`() async throws {
+        let trackID = "local-track-" + String(repeating: "a", count: 64)
+        let client = makeClient { request in
+            let response = try #require(HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil))
+            let payload: [String: Any] = [
+                "deviceName": "Sender", "protocolVersion": "4",
+                "entries": [["trackID": trackID, "albumID": "456", "title": "Song", "artistName": "Artist", "albumTitle": "Album", "durationSeconds": 2, "fileExtension": "m4a"]],
+            ]
+            return try (response, JSONSerialization.data(withJSONObject: payload))
+        }
+        await #expect(throws: (any Error).self) {
+            try await client.fetchTransferManifest(endpoint: SyncEndpoint(host: "example.local", port: 18080), token: "token")
+        }
+    }
+
+    @Test
+    func `local identities never trigger remote music requests`() async throws {
+        let client = makeClient { _ in
+            Issue.record("A local identity must not be sent to the server")
+            throw URLError(.badURL)
+        }
+        let trackID = "local-track-" + String(repeating: "a", count: 64)
+        let albumID = "local-album-" + String(repeating: "b", count: 64)
+        #expect(try await client.song(id: trackID) == nil)
+        #expect(try await client.album(id: albumID) == nil)
+        #expect(try await client.lyrics(id: trackID, bypassCache: true).isEmpty)
+        for id in [trackID, albumID] {
+            await #expect(throws: (any Error).self) {
+                try await client.playback(id: id)
+            }
+        }
+    }
+
+    @Test
     func `authenticate transfer posts password and returns token`() async throws {
         let client = makeClient { request in
             #expect(request.httpMethod == "POST")

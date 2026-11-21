@@ -110,6 +110,10 @@ final class APIClient: @unchecked Sendable {
     }
 
     nonisolated func album(id: String) async throws -> CatalogAlbum? {
+        guard !EmbeddedTrackIdentity.isLocalTrackID(id), !EmbeddedTrackIdentity.isLocalAlbumID(id) else {
+            AppLog.info(self, "Skipping remote lookup for a local identity")
+            return nil
+        }
         AppLog.verbose(self, "album id=\(id)")
         do {
             let response = try await synchronizedState().service.album(id: id)
@@ -122,6 +126,10 @@ final class APIClient: @unchecked Sendable {
     }
 
     nonisolated func song(id: String) async throws -> CatalogSong? {
+        guard !EmbeddedTrackIdentity.isLocalTrackID(id), !EmbeddedTrackIdentity.isLocalAlbumID(id) else {
+            AppLog.info(self, "Skipping remote lookup for a local identity")
+            return nil
+        }
         AppLog.verbose(self, "song id=\(id)")
         do {
             let response = try await synchronizedState().service.song(id: id)
@@ -136,6 +144,10 @@ final class APIClient: @unchecked Sendable {
     /// Pass `bypassCache` to ask the server again instead of returning the
     /// lyrics response cached earlier in this session (Reload, Rebuild).
     nonisolated func lyrics(id: String, bypassCache: Bool = false) async throws -> String {
+        guard !EmbeddedTrackIdentity.isLocalTrackID(id), !EmbeddedTrackIdentity.isLocalAlbumID(id) else {
+            AppLog.info(self, "Skipping remote lookup for a local identity")
+            return ""
+        }
         AppLog.verbose(self, "lyrics id=\(id) bypassCache=\(bypassCache)")
         do {
             let response = try await synchronizedState().service.lyrics(id: id, bypassCache: bypassCache)
@@ -148,6 +160,10 @@ final class APIClient: @unchecked Sendable {
     }
 
     nonisolated func playback(id: String) async throws -> PlaybackInfo {
+        guard !EmbeddedTrackIdentity.isLocalTrackID(id), !EmbeddedTrackIdentity.isLocalAlbumID(id) else {
+            AppLog.warning(self, "playback rejected remote lookup for a local identity")
+            throw APIError.invalidRequest
+        }
         AppLog.verbose(self, "playback id=\(id)")
         let state = synchronizedState()
         do {

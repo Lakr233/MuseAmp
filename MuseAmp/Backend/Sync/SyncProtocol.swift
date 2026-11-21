@@ -10,9 +10,21 @@ import Foundation
 nonisolated enum SyncConstants {
     static let bonjourType = "_museamp-sync._tcp."
     static let protocolVersion = "4"
+    static let localIdentityProtocolVersion = "5"
 
-    static func isCompatible(protocolVersion: String?) -> Bool {
-        protocolVersion == Self.protocolVersion
+    static func requiredProtocolVersion(for entries: [SyncManifestEntry]) -> String {
+        entries.contains {
+            EmbeddedTrackIdentity.isLocalTrackID($0.trackID)
+                || $0.albumID.map(EmbeddedTrackIdentity.isLocalAlbumID) == true
+        } ? localIdentityProtocolVersion : protocolVersion
+    }
+
+    static func isCompatible(protocolVersion: String?, entries: [SyncManifestEntry] = []) -> Bool {
+        guard protocolVersion == Self.protocolVersion || protocolVersion == localIdentityProtocolVersion else {
+            return false
+        }
+        return requiredProtocolVersion(for: entries) == Self.protocolVersion
+            || protocolVersion == localIdentityProtocolVersion
     }
 }
 
@@ -243,7 +255,8 @@ nonisolated struct SyncManifest: Codable {
         entries: [SyncManifestEntry],
     ) {
         self.deviceName = deviceName
-        self.protocolVersion = protocolVersion
+        self.protocolVersion = protocolVersion == SyncConstants.protocolVersion
+            ? SyncConstants.requiredProtocolVersion(for: entries) : protocolVersion
         self.session = session
         self.entries = entries
     }
