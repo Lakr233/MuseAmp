@@ -23,7 +23,7 @@ extension SongRowContent {
         let seconds = Int(audioTrack.durationSeconds)
         self.init(
             title: audioTrack.title.sanitizedTrackTitle,
-            subtitle: [audioTrack.artistName, audioTrack.albumTitle].filter { !$0.isEmpty }.joined(separator: " · "),
+            subtitle: [audioTrack.artistName, audioTrack.albumTitle].joinedForDisplay,
             trailingText: seconds > 0 ? formattedDuration(seconds: seconds) : nil,
             artworkURL: artworkURL,
         )
@@ -38,7 +38,7 @@ extension SongRowContent {
                                   let albumName = playbackTrack.albumName,
                                   !albumName.isEmpty
         {
-            "\(playbackTrack.artistName) · \(albumName)"
+            [playbackTrack.artistName, albumName].joinedForDisplay
         } else {
             playbackTrack.artistName
         }
@@ -52,12 +52,9 @@ extension SongRowContent {
     }
 
     init(playlistEntry: PlaylistEntry, artworkURL: URL? = nil) {
-        let subtitle = [playlistEntry.artistName, playlistEntry.albumTitle].compactMap { value in
-            guard let value, !value.isEmpty else {
-                return nil
-            }
-            return value
-        }.joined(separator: " · ")
+        let subtitle = [playlistEntry.artistName, playlistEntry.albumTitle]
+            .compactMap(\.self)
+            .joinedForDisplay
 
         self.init(
             title: playlistEntry.title.sanitizedTrackTitle,

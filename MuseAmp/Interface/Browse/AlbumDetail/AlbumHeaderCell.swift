@@ -52,7 +52,7 @@ final class AlbumHeaderCell: TableBaseCell {
         headerView.configure(content: AlbumHeaderContent(
             albumName: album.attributes.name,
             artistName: album.attributes.artistName,
-            metadataText: meta.joined(separator: " \u{00B7} "),
+            metadataText: meta.joinedForDisplay,
             playButtonTitle: String(localized: "Play"),
             shuffleButtonTitle: String(localized: "Shuffle"),
         ))

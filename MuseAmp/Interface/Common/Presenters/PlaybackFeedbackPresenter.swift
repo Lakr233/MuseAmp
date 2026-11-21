@@ -112,7 +112,7 @@ enum PlaybackFeedbackPresenter {
     }
 
     private static func trackSummary(for track: PlaybackTrack) -> String {
-        "\(track.title.sanitizedTrackTitle) · \(track.artistName)"
+        [track.title.sanitizedTrackTitle, track.artistName].joinedForDisplay
     }
 
     private static func countSummary(count: Int) -> String {

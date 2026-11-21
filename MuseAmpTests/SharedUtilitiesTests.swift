@@ -327,3 +327,27 @@ struct CellContextMenuPreviewHelperTests {
         #expect(result == nil)
     }
 }
+
+// MARK: - Array+JoinedForDisplay Tests
+
+struct JoinedForDisplayTests {
+    @Test
+    func `joins pieces with a comma`() {
+        #expect(["Artist", "Album", "12 songs"].joinedForDisplay == "Artist, Album, 12 songs")
+    }
+
+    @Test
+    func `skips empty pieces`() {
+        #expect(["", "Artist", ""].joinedForDisplay == "Artist")
+        #expect(["Artist", ""].joinedForDisplay == "Artist")
+        #expect([String]().joinedForDisplay.isEmpty)
+    }
+
+    @Test
+    func `never uses a middle dot`() {
+        let joined = ["A", "B", "C"].joinedForDisplay
+        #expect(!joined.contains("\u{00B7}"))
+        #expect(!joined.contains("\u{2022}"))
+        #expect(!joined.contains("\u{30FB}"))
+    }
+}

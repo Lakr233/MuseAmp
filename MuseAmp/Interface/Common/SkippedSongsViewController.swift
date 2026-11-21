@@ -208,7 +208,7 @@ private final class SkippedSongCell: TableBaseCell {
         content.text = item.title.nilIfEmpty ?? item.trackID
         content.secondaryText = [item.artistName.nilIfEmpty, item.reason.nilIfEmpty]
             .compactMap(\.self)
-            .joined(separator: " · ")
+            .joinedForDisplay
         content.secondaryTextProperties.color = .secondaryLabel
         content.secondaryTextProperties.numberOfLines = 2
         content.image = UIImage(systemName: "exclamationmark.triangle")
