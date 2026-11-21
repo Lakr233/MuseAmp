@@ -198,13 +198,8 @@ class SearchViewController: UIViewController {
             let cell = tableView.dequeueReusableCell(withIdentifier: AmSongCell.reuseID, for: indexPath) as! AmSongCell
             if let song = searchState.songs.items.first(where: { $0.id == id }) {
                 let subtitle = [song.attributes.artistName, song.attributes.albumName]
-                    .compactMap { value in
-                        guard let value, !value.isEmpty else {
-                            return nil
-                        }
-                        return value
-                    }
-                    .joined(separator: " · ")
+                    .compactMap(\.self)
+                    .joinedForDisplay
                 let title = song.attributes.name.sanitizedTrackTitle
                 cell.configure(
                     content: SongRowContent(
@@ -273,9 +268,7 @@ class SearchViewController: UIViewController {
             if let match = searchState.lyricsMatches.first(where: { $0.track.trackID == id }) {
                 let track = match.track
                 let title = track.title.sanitizedTrackTitle
-                let subtitle = [match.matchedLine, track.artistName]
-                    .filter { !$0.isEmpty }
-                    .joined(separator: " · ")
+                let subtitle = [match.matchedLine, track.artistName].joinedForDisplay
                 let artworkFileURL = environment.paths.artworkCacheURL(for: track.trackID)
                 let artworkURL = FileManager.default.fileExists(atPath: artworkFileURL.path) ? artworkFileURL : nil
                 cell.configure(

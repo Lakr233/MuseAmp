@@ -381,9 +381,7 @@ final class SongLibraryViewController: UIViewController {
     ) {
         cell.configure(content: SongRowContent(audioTrack: track, artworkURL: artworkURL))
 
-        let subtitle = [track.artistName, track.albumTitle]
-            .filter { !$0.isEmpty }
-            .joined(separator: " · ")
+        let subtitle = [track.artistName, track.albumTitle].joinedForDisplay
 
         cell.setAttributedTitle(SearchHighlightHelper.attributedString(
             text: track.title.sanitizedTrackTitle,

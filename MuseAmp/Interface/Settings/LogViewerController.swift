@@ -128,9 +128,7 @@ final class LogViewerController: UIViewController, UITableViewDataSource, UITabl
         cell.detailTextLabel?.font = .monospacedSystemFont(ofSize: 9, weight: .regular)
         cell.detailTextLabel?.numberOfLines = 1
         cell.detailTextLabel?.textColor = .secondaryLabel
-        cell.detailTextLabel?.text = line.timestamp.isEmpty
-            ? line.category
-            : "\(line.timestamp) · \(line.category)"
+        cell.detailTextLabel?.text = [line.timestamp, line.category].joinedForDisplay
         cell.backgroundColor = .systemBackground
         cell.selectionStyle = .none
         return cell

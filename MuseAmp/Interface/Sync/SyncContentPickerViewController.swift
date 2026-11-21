@@ -175,7 +175,7 @@ private extension SyncContentPickerViewController {
                     album.trackCount == 1
                         ? String(localized: "1 song")
                         : String(localized: "\(album.trackCount) songs"),
-                ].joined(separator: " · ")
+                ].joinedForDisplay
 
                 cell.configure(
                     content: MediaRowContent(
