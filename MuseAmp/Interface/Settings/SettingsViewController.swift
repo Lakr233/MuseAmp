@@ -184,6 +184,7 @@ extension SettingsViewController {
         ConfigurableObject(
             icon: "stethoscope",
             title: "Diagnostics",
+            explain: "Logs, database rebuild, and lyrics index rebuild for troubleshooting.",
             ephemeralAnnotation: .page { [environment] in
                 SettingsViewController(environment: environment, page: .diagnostics)
             },

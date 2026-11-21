@@ -3473,6 +3473,22 @@
         }
       }
     },
+    "Logs, database rebuild, and lyrics index rebuild for troubleshooting." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Logs, database rebuild, and lyrics index rebuild for troubleshooting."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日志、重建数据库和歌词索引，用于排查问题。"
+          }
+        }
+      }
+    },
     "Lossless" : {
       "localizations" : {
         "en" : {
