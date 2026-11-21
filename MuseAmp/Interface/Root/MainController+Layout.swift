@@ -45,12 +45,33 @@ extension MainController {
         guard rootSplitViewController.parent == nil else { return }
 
         AppLog.Layout.info(self, "installRelaxedLayout selectedPlaylistID=\(selectedPlaylistID?.uuidString ?? "nil")")
-        rootSplitViewController.preferredDisplayMode = .oneBesideSecondary
-        rootSplitViewController.preferredSplitBehavior = .tile
-        rootSplitViewController.primaryBackgroundStyle = .sidebar
-        rootSplitViewController.preferredPrimaryColumnWidthFraction = 0.22
-        rootSplitViewController.minimumPrimaryColumnWidth = 180
-        rootSplitViewController.maximumPrimaryColumnWidth = 320
+        // The split view keeps its view, and the column layout of its last
+        // size, while the compact layout is installed. A display mode change
+        // lays the columns out at once; inside the rotation or fold that
+        // brought the size class back, UIKit then raises "unexpected column
+        // dimension for resizing". Only the first install sets it directly.
+        if rootSplitViewController.isViewLoaded {
+            restoreRelaxedDisplayModeAfterTransition()
+        } else {
+            rootSplitViewController.preferredDisplayMode = .oneBesideSecondary
+        }
+        // Constant after the first install; skipping unchanged values keeps
+        // a reinstall from scheduling a column layout mid-transition.
+        if rootSplitViewController.preferredSplitBehavior != .tile {
+            rootSplitViewController.preferredSplitBehavior = .tile
+        }
+        if rootSplitViewController.primaryBackgroundStyle != .sidebar {
+            rootSplitViewController.primaryBackgroundStyle = .sidebar
+        }
+        if rootSplitViewController.preferredPrimaryColumnWidthFraction != 0.22 {
+            rootSplitViewController.preferredPrimaryColumnWidthFraction = 0.22
+        }
+        if rootSplitViewController.minimumPrimaryColumnWidth != 180 {
+            rootSplitViewController.minimumPrimaryColumnWidth = 180
+        }
+        if rootSplitViewController.maximumPrimaryColumnWidth != 320 {
+            rootSplitViewController.maximumPrimaryColumnWidth = 320
+        }
         rootSplitViewController.presentsWithGesture = true
         rootSplitViewController.delegate = self
 
@@ -73,11 +94,37 @@ extension MainController {
         rootSplitViewController.didMove(toParent: self)
     }
 
+    /// Sets the sidebar back beside the content once the size transition
+    /// that reinstalled the split view has finished, unless the layout has
+    /// changed again by then.
+    private func restoreRelaxedDisplayModeAfterTransition() {
+        let generation = layoutTransitionGeneration
+        let restore: () -> Void = { [weak self] in
+            guard let self,
+                  layoutTransitionGeneration == generation,
+                  rootSplitViewController.parent === self,
+                  rootSplitViewController.preferredDisplayMode != .oneBesideSecondary
+            else { return }
+            AppLog.Layout.info(self, "restoreRelaxedDisplayModeAfterTransition")
+            rootSplitViewController.preferredDisplayMode = .oneBesideSecondary
+        }
+        let queued = transitionCoordinator?.animate(
+            alongsideTransition: nil,
+            completion: { _ in restore() },
+        ) ?? false
+        guard !queued else { return }
+        DispatchQueue.main.async(execute: restore)
+    }
+
     func installCatalystLayout() {
         installRelaxedLayout()
         AppLog.Layout.info(self, "installCatalystLayout applying Catalyst overrides")
-        rootSplitViewController.preferredDisplayMode = .oneBesideSecondary
-        rootSplitViewController.preferredSplitBehavior = .tile
+        if rootSplitViewController.preferredDisplayMode != .oneBesideSecondary {
+            rootSplitViewController.preferredDisplayMode = .oneBesideSecondary
+        }
+        if rootSplitViewController.preferredSplitBehavior != .tile {
+            rootSplitViewController.preferredSplitBehavior = .tile
+        }
         rootSplitViewController.presentsWithGesture = false
 
         // Hide the sidebar toggle button so the sidebar stays always visible.

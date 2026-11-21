@@ -407,6 +407,8 @@ class MainController: UIViewController {
             Interface.quickAnimate(duration: 0.25) {
                 self.rootSplitViewController.preferredDisplayMode = .secondaryOnly
             } completion: { _ in
+                // A fold during the animation may have detached the split view.
+                guard self.rootSplitViewController.parent === self else { return }
                 self.rootSplitViewController.preferredDisplayMode = .automatic
             }
         }
@@ -427,6 +429,8 @@ class MainController: UIViewController {
             Interface.quickAnimate(duration: 0.25) {
                 self.rootSplitViewController.preferredDisplayMode = .secondaryOnly
             } completion: { _ in
+                // A fold during the animation may have detached the split view.
+                guard self.rootSplitViewController.parent === self else { return }
                 self.rootSplitViewController.preferredDisplayMode = .automatic
             }
         }
